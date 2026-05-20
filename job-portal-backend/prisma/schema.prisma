@@ -135,6 +135,7 @@ model EmployerProfile {
   industry_id         Int
   company_size        String?
   location            String?
+  phone               String?
   
   cover_image    String?   // ← Add this
   user_id             String  @unique

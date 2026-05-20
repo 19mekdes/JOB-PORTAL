@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Users,
@@ -11,7 +11,13 @@ import {
   Mail,
   Phone,
   MapPin,
-  Calendar} from 'lucide-react'
+  Calendar,
+  Briefcase,
+  GraduationCap,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  Key} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -37,8 +43,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -58,11 +64,14 @@ interface User {
   is_active: boolean
   created_at: string
   updated_at: string
+  last_login?: string
   seeker_profile?: {
     skills: string[]
     experience: string
     education: string
     resume_url: string
+    title?: string
+    bio?: string
   }
   employer_profile?: {
     company_name: string
@@ -70,11 +79,26 @@ interface User {
     website: string
     location: string
     jobs_count?: number
+    logo_url?: string
+  }
+  stats?: {
+    jobs_count?: number
+    applications_count?: number
+    views_count?: number
   }
 }
 
+interface UserStats {
+  total: number
+  active: number
+  suspended: number
+  jobSeekers: number
+  employers: number
+  admins: number
+  superAdmins: number
+}
+
 const UserManagement: React.FC = () => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const navigate = useNavigate()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -84,19 +108,33 @@ const UserManagement: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [isSuspendOpen, setIsSuspendOpen] = useState(false)
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
   const [suspendReason, setSuspendReason] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [activeTab, setActiveTab] = useState('all')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [stats, setStats] = useState<UserStats>({
+    total: 0,
+    active: 0,
+    suspended: 0,
+    jobSeekers: 0,
+    employers: 0,
+    admins: 0,
+    superAdmins: 0
+  })
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/immutability
-    fetchUsers()
-  }, [])
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await api.get('/admin/users')
+      const response = await api.get(`/admin/users?page=${page}&limit=20&search=${searchTerm}&role=${roleFilter}&status=${statusFilter}`)
       setUsers(response.data.data || [])
+      setTotalPages(response.data.pagination?.pages || 1)
+      
+      if (response.data.stats) {
+        setStats(response.data.stats)
+      }
     } catch (error) {
       console.error('Error fetching users:', error)
       toast({
@@ -107,11 +145,19 @@ const UserManagement: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, searchTerm, roleFilter, statusFilter])
 
-  const updateUserStatus = async (userId: string, isActive: boolean) => {
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchUsers()
+  }, [fetchUsers])
+
+  const updateUserStatus = async (userId: string, isActive: boolean, reason?: string) => {
     try {
-      await api.put(`/admin/users/${userId}/status`, { is_active: isActive })
+      await api.put(`/admin/users/${userId}/status`, { 
+        is_active: isActive,
+        reason: reason 
+      })
       toast({
         title: "Success",
         description: `User ${isActive ? 'activated' : 'suspended'} successfully`,
@@ -119,6 +165,7 @@ const UserManagement: React.FC = () => {
       fetchUsers()
       setIsDetailOpen(false)
       setIsSuspendOpen(false)
+      setSuspendReason('')
     } catch (error) {
       console.error('Error updating user status:', error)
       toast({
@@ -150,29 +197,52 @@ const UserManagement: React.FC = () => {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const updateUserRole = async (userId: string, role: string) => {
-    try {
-      await api.put(`/admin/users/${userId}/role`, { role })
-      toast({
-        title: "Success",
-        description: `User role updated to ${role}`,
-      })
-      fetchUsers()
-    } catch (error) {
-      console.error('Error updating user role:', error)
+  const resetUserPassword = async (userId: string) => {
+    if (newPassword !== confirmPassword) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to update user role",
+        description: "Passwords do not match",
+      })
+      return
+    }
+    
+    if (newPassword.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Password must be at least 6 characters",
+      })
+      return
+    }
+    
+    try {
+      await api.post(`/admin/users/${userId}/reset-password`, { newPassword })
+      toast({
+        title: "Success",
+        description: "Password reset successfully",
+      })
+      setIsResetPasswordOpen(false)
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (error) {
+      console.error('Error resetting password:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to reset password",
       })
     }
   }
 
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (role: string | undefined) => {
+    if (!role) {
+      return <Badge variant="secondary" className="bg-gray-100 text-gray-700">Unknown</Badge>
+    }
+    
     switch (role?.toLowerCase()) {
       case 'super admin':
-        return <Badge className="bg-red-100 text-red-800 border-red-200">Super Admin</Badge>
+        return <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0 px-3 py-1">Super Admin</Badge>
       case 'admin':
         return <Badge className="bg-purple-100 text-purple-800 border-purple-200">Admin</Badge>
       case 'employer':
@@ -180,19 +250,26 @@ const UserManagement: React.FC = () => {
       case 'job seeker':
         return <Badge className="bg-green-100 text-green-800 border-green-200">Job Seeker</Badge>
       default:
-        return <Badge variant="secondary">{role}</Badge>
+        return <Badge variant="secondary" className="bg-gray-100 text-gray-700">{role}</Badge>
     }
   }
 
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? (
-      <Badge className="bg-green-100 text-green-800">Active</Badge>
+      <Badge className="bg-green-100 text-green-800 border-green-200 flex items-center gap-1">
+        <CheckCircle className="h-3 w-3" />
+        Active
+      </Badge>
     ) : (
-      <Badge className="bg-red-100 text-red-800">Suspended</Badge>
+      <Badge className="bg-red-100 text-red-800 border-red-200 flex items-center gap-1">
+        <XCircle className="h-3 w-3" />
+        Suspended
+      </Badge>
     )
   }
 
   const formatDate = (date: string) => {
+    if (!date) return 'N/A'
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -200,38 +277,26 @@ const UserManagement: React.FC = () => {
     })
   }
 
-  const getStats = () => {
-    const total = users.length
-    const active = users.filter(u => u.is_active).length
-    const suspended = users.filter(u => !u.is_active).length
-    const jobSeekers = users.filter(u => u.user_type?.type_name === 'Job Seeker').length
-    const employers = users.filter(u => u.user_type?.type_name === 'Employer').length
-    const admins = users.filter(u => u.user_type?.type_name === 'Admin').length
-    const superAdmins = users.filter(u => u.user_type?.type_name === 'Super Admin').length
-
-    return { total, active, suspended, jobSeekers, employers, admins, superAdmins }
-  }
-
-  const stats = getStats()
-
   const filteredUsers = users.filter(user => {
+    const userTypeName = user.user_type?.type_name || ''
     const matchesSearch = 
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
-    const matchesRole = roleFilter === 'all' || user.user_type?.type_name === roleFilter
+      (user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (user.employer_profile?.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
+    const matchesRole = roleFilter === 'all' || userTypeName === roleFilter
     const matchesStatus = statusFilter === 'all' || 
       (statusFilter === 'active' && user.is_active) ||
       (statusFilter === 'suspended' && !user.is_active)
     const matchesTab = activeTab === 'all' || 
-      (activeTab === 'job_seekers' && user.user_type?.type_name === 'Job Seeker') ||
-      (activeTab === 'employers' && user.user_type?.type_name === 'Employer') ||
-      (activeTab === 'admins' && (user.user_type?.type_name === 'Admin' || user.user_type?.type_name === 'Super Admin'))
+      (activeTab === 'job_seekers' && userTypeName === 'Job Seeker') ||
+      (activeTab === 'employers' && userTypeName === 'Employer') ||
+      (activeTab === 'admins' && (userTypeName === 'Admin' || userTypeName === 'Super Admin'))
     return matchesSearch && matchesRole && matchesStatus && matchesTab
   })
 
   if (loading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 bg-white rounded-xl p-4">
         <div className="h-32 bg-gray-100 rounded-lg animate-pulse" />
         <div className="h-96 bg-gray-100 rounded-lg animate-pulse" />
       </div>
@@ -239,14 +304,14 @@ const UserManagement: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-white min-h-screen p-6 rounded-xl">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-500 mt-1">Manage and monitor platform users</p>
         </div>
-        <Button variant="outline" onClick={fetchUsers}>
+        <Button variant="outline" onClick={() => fetchUsers()} className="bg-white border-gray-300">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>
@@ -254,43 +319,48 @@ const UserManagement: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        <Card className="cursor-pointer hover:shadow-md transition" onClick={() => { setActiveTab('all'); setRoleFilter('all') }}>
+        <Card className="cursor-pointer hover:shadow-md transition bg-white border border-gray-200" onClick={() => { 
+          setActiveTab('all'); 
+          setRoleFilter('all'); 
+          setStatusFilter('all');
+          setSearchTerm('');
+        }}>
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             <p className="text-xs text-gray-500">Total Users</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md transition border-green-200" onClick={() => setStatusFilter('active')}>
+        <Card className="cursor-pointer hover:shadow-md transition border-green-200 bg-white" onClick={() => setStatusFilter('active')}>
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-green-600">{stats.active}</p>
             <p className="text-xs text-gray-500">Active</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md transition border-red-200" onClick={() => setStatusFilter('suspended')}>
+        <Card className="cursor-pointer hover:shadow-md transition border-red-200 bg-white" onClick={() => setStatusFilter('suspended')}>
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-red-600">{stats.suspended}</p>
             <p className="text-xs text-gray-500">Suspended</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md transition border-blue-200" onClick={() => { setActiveTab('job_seekers'); setRoleFilter('Job Seeker') }}>
+        <Card className="cursor-pointer hover:shadow-md transition border-blue-200 bg-white" onClick={() => { setActiveTab('job_seekers'); setRoleFilter('Job Seeker') }}>
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-blue-600">{stats.jobSeekers}</p>
             <p className="text-xs text-gray-500">Job Seekers</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md transition border-purple-200" onClick={() => { setActiveTab('employers'); setRoleFilter('Employer') }}>
+        <Card className="cursor-pointer hover:shadow-md transition border-purple-200 bg-white" onClick={() => { setActiveTab('employers'); setRoleFilter('Employer') }}>
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-purple-600">{stats.employers}</p>
             <p className="text-xs text-gray-500">Employers</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md transition border-orange-200" onClick={() => { setActiveTab('admins'); setRoleFilter('Admin') }}>
+        <Card className="cursor-pointer hover:shadow-md transition border-orange-200 bg-white" onClick={() => { setActiveTab('admins'); setRoleFilter('Admin') }}>
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-orange-600">{stats.admins}</p>
             <p className="text-xs text-gray-500">Admins</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md transition border-red-200" onClick={() => { setActiveTab('admins'); setRoleFilter('Super Admin') }}>
+        <Card className="cursor-pointer hover:shadow-md transition border-red-200 bg-white" onClick={() => { setActiveTab('admins'); setRoleFilter('Super Admin') }}>
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-red-600">{stats.superAdmins}</p>
             <p className="text-xs text-gray-500">Super Admins</p>
@@ -298,171 +368,200 @@ const UserManagement: React.FC = () => {
         </Card>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">All Users</TabsTrigger>
-          <TabsTrigger value="job_seekers">Job Seekers</TabsTrigger>
-          <TabsTrigger value="employers">Employers</TabsTrigger>
-          <TabsTrigger value="admins">Admins</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={activeTab} className="space-y-4 mt-4">
-          {/* Filters */}
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>
-                  {activeTab === 'all' ? 'All Users' : 
-                   activeTab === 'job_seekers' ? 'Job Seekers' :
-                   activeTab === 'employers' ? 'Employers' : 'Admins'}
-                  <span className="text-sm text-gray-500 ml-2">({filteredUsers.length})</span>
-                </CardTitle>
-                <div className="flex gap-3">
-                  <div className="relative w-64">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Search by email or name..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-                  <Select value={roleFilter} onValueChange={setRoleFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Filter by role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Roles</SelectItem>
-                      <SelectItem value="Job Seeker">Job Seeker</SelectItem>
-                      <SelectItem value="Employer">Employer</SelectItem>
-                      <SelectItem value="Admin">Admin</SelectItem>
-                      <SelectItem value="Super Admin">Super Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="suspended">Suspended</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+      {/* Filters Card */}
+      <Card className="bg-white border border-gray-200 shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-center flex-wrap gap-4">
+            <CardTitle className="text-gray-900">
+              {activeTab === 'all' ? 'All Users' : 
+               activeTab === 'job_seekers' ? 'Job Seekers' :
+               activeTab === 'employers' ? 'Employers' : 'Admins'}
+              <span className="text-sm text-gray-500 ml-2">({filteredUsers.length})</span>
+            </CardTitle>
+            <div className="flex gap-3 flex-wrap">
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search by email, name or company..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 bg-white border-gray-300"
+                />
               </div>
-            </CardHeader>
-            <CardContent>
-              {filteredUsers.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500">No users found</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>User</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Joined</TableHead>
-                        <TableHead>Activity</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredUsers.map((user) => (
-                        <TableRow key={user.id} className="hover:bg-gray-50">
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-9 w-9">
-                                <AvatarFallback className="bg-blue-100 text-blue-600">
-                                  {user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium text-gray-900">{user.full_name || 'N/A'}</p>
-                                <p className="text-sm text-gray-500">{user.email}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{getRoleBadge(user.user_type?.type_name)}</TableCell>
-                          <TableCell>{getStatusBadge(user.is_active)}</TableCell>
-                          <TableCell className="text-gray-500 text-sm">{formatDate(user.created_at)}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2 text-sm">
-                              {user.user_type?.type_name === 'Employer' && user.employer_profile?.jobs_count !== undefined && (
-                                <span className="text-blue-600">{user.employer_profile.jobs_count} jobs</span>
-                              )}
-                              {user.user_type?.type_name === 'Job Seeker' && user.seeker_profile?.skills?.length && (
-                                <span className="text-green-600">{user.seeker_profile.skills.length} skills</span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedUser(user)
-                                  setIsDetailOpen(true)
-                                }}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              {user.is_active ? (
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="text-yellow-600"
-                                  onClick={() => {
-                                    setSelectedUser(user)
-                                    setIsSuspendOpen(true)
-                                  }}
-                                >
-                                  <UserX className="h-4 w-4" />
-                                </Button>
-                              ) : (
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="text-green-600"
-                                  onClick={() => updateUserStatus(user.id, true)}
-                                >
-                                  <UserCheck className="h-4 w-4" />
-                                </Button>
-                              )}
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-red-600"
-                                onClick={() => deleteUser(user.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-40 bg-white border-gray-300">
+                  <SelectValue placeholder="Filter by role" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-gray-200">
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="Job Seeker">Job Seeker</SelectItem>
+                  <SelectItem value="Employer">Employer</SelectItem>
+                  <SelectItem value="Admin">Admin</SelectItem>
+                  <SelectItem value="Super Admin">Super Admin</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40 bg-white border-gray-300">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-gray-200">
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {filteredUsers.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-500">No users found</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-gray-50">
+                  <TableRow className="border-b border-gray-200">
+                    <TableHead className="text-gray-700">User</TableHead>
+                    <TableHead className="text-gray-700">Role</TableHead>
+                    <TableHead className="text-gray-700">Status</TableHead>
+                    <TableHead className="text-gray-700">Joined</TableHead>
+                    <TableHead className="text-gray-700">Activity</TableHead>
+                    <TableHead className="text-right text-gray-700">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id} className="hover:bg-gray-50 border-b border-gray-100">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9 bg-blue-100">
+                            <AvatarFallback className="bg-blue-100 text-blue-600">
+                              {user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {user.full_name || user.employer_profile?.company_name || 'N/A'}
+                            </p>
+                            <p className="text-sm text-gray-500">{user.email}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getRoleBadge(user.user_type?.type_name)}</TableCell>
+                      <TableCell>{getStatusBadge(user.is_active)}</TableCell>
+                      <TableCell className="text-gray-500 text-sm">{formatDate(user.created_at)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-sm">
+                          {user.user_type?.type_name === 'Employer' && user.stats?.jobs_count !== undefined && (
+                            <span className="text-blue-600">{user.stats.jobs_count} jobs</span>
+                          )}
+                          {user.user_type?.type_name === 'Job Seeker' && user.stats?.applications_count !== undefined && (
+                            <span className="text-green-600">{user.stats.applications_count} apps</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user)
+                              setIsDetailOpen(true)
+                            }}
+                            className="hover:bg-gray-100"
+                          >
+                            <Eye className="h-4 w-4 text-gray-600" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user)
+                              setIsResetPasswordOpen(true)
+                            }}
+                            className="hover:bg-gray-100"
+                          >
+                            <Key className="h-4 w-4 text-gray-600" />
+                          </Button>
+                          {user.is_active ? (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-yellow-600 hover:bg-yellow-50"
+                              onClick={() => {
+                                setSelectedUser(user)
+                                setIsSuspendOpen(true)
+                              }}
+                            >
+                              <UserX className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-green-600 hover:bg-green-50"
+                              onClick={() => updateUserStatus(user.id, true)}
+                            >
+                              <UserCheck className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-600 hover:bg-red-50"
+                            onClick={() => deleteUser(user.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center gap-2 mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="bg-white border-gray-300"
+              >
+                Previous
+              </Button>
+              <span className="px-4 py-2 text-sm text-gray-700">
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="bg-white border-gray-300"
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* User Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white">
           {selectedUser && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-xl flex items-center gap-2">
+                <DialogTitle className="text-xl flex items-center gap-2 text-gray-900">
                   <Users className="h-5 w-5" />
                   User Details
                 </DialogTitle>
@@ -470,15 +569,17 @@ const UserManagement: React.FC = () => {
               
               <div className="space-y-6">
                 {/* User Header */}
-                <div className="bg-blue-50 p-5 rounded-xl">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
                   <div className="flex items-center gap-4">
-                    <Avatar className="h-16 w-16">
+                    <Avatar className="h-16 w-16 bg-blue-200">
                       <AvatarFallback className="bg-blue-200 text-blue-700 text-xl">
                         {selectedUser.full_name?.charAt(0) || selectedUser.email.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900">{selectedUser.full_name || 'N/A'}</h2>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-bold text-gray-900">
+                        {selectedUser.full_name || selectedUser.employer_profile?.company_name || 'N/A'}
+                      </h2>
                       <p className="text-gray-600">{selectedUser.email}</p>
                       <div className="flex gap-2 mt-2">
                         {getRoleBadge(selectedUser.user_type?.type_name)}
@@ -495,22 +596,22 @@ const UserManagement: React.FC = () => {
                     {selectedUser.phone && (
                       <div className="flex items-center gap-2 text-sm">
                         <Phone className="h-4 w-4 text-gray-400" />
-                        <span>{selectedUser.phone}</span>
+                        <span className="text-gray-700">{selectedUser.phone}</span>
                       </div>
                     )}
                     {selectedUser.location && (
                       <div className="flex items-center gap-2 text-sm">
                         <MapPin className="h-4 w-4 text-gray-400" />
-                        <span>{selectedUser.location}</span>
+                        <span className="text-gray-700">{selectedUser.location}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-2 text-sm">
                       <Mail className="h-4 w-4 text-gray-400" />
-                      <span>{selectedUser.email}</span>
+                      <span className="text-gray-700">{selectedUser.email}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="h-4 w-4 text-gray-400" />
-                      <span>Joined: {formatDate(selectedUser.created_at)}</span>
+                      <span className="text-gray-700">Joined: {formatDate(selectedUser.created_at)}</span>
                     </div>
                   </div>
                 </div>
@@ -518,8 +619,11 @@ const UserManagement: React.FC = () => {
                 {/* Role-specific Information */}
                 {selectedUser.user_type?.type_name === 'Employer' && selectedUser.employer_profile && (
                   <div className="bg-green-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-3">Company Information</h3>
-                    <p className="font-medium">{selectedUser.employer_profile.company_name}</p>
+                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <Briefcase className="h-4 w-4" />
+                      Company Information
+                    </h3>
+                    <p className="font-medium text-gray-900">{selectedUser.employer_profile.company_name}</p>
                     {selectedUser.employer_profile.company_description && (
                       <p className="text-sm text-gray-600 mt-2">{selectedUser.employer_profile.company_description}</p>
                     )}
@@ -533,40 +637,46 @@ const UserManagement: React.FC = () => {
 
                 {selectedUser.user_type?.type_name === 'Job Seeker' && selectedUser.seeker_profile && (
                   <div className="bg-green-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-3">Skills & Experience</h3>
+                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4" />
+                      Professional Information
+                    </h3>
+                    {selectedUser.seeker_profile.title && (
+                      <p className="font-medium text-gray-900">{selectedUser.seeker_profile.title}</p>
+                    )}
                     {selectedUser.seeker_profile.skills && selectedUser.seeker_profile.skills.length > 0 && (
                       <div className="mb-3">
-                        <p className="text-sm font-medium mb-1">Skills</p>
+                        <p className="text-sm font-medium mb-1 text-gray-700">Skills</p>
                         <div className="flex flex-wrap gap-1">
                           {selectedUser.seeker_profile.skills.map((skill, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">{skill}</Badge>
+                            <Badge key={i} variant="secondary" className="text-xs bg-gray-100 text-gray-700">{skill}</Badge>
                           ))}
                         </div>
-                      </div>
-                    )}
-                    {selectedUser.seeker_profile.experience && (
-                      <div className="mb-2">
-                        <p className="text-sm font-medium mb-1">Experience</p>
-                        <p className="text-sm text-gray-600">{selectedUser.seeker_profile.experience}</p>
-                      </div>
-                    )}
-                    {selectedUser.seeker_profile.education && (
-                      <div>
-                        <p className="text-sm font-medium mb-1">Education</p>
-                        <p className="text-sm text-gray-600">{selectedUser.seeker_profile.education}</p>
                       </div>
                     )}
                   </div>
                 )}
 
                 {/* Moderation Actions */}
-                <div className="border-t pt-4">
+                <div className="border-t pt-4 border-gray-200">
                   <h3 className="font-semibold text-gray-900 mb-3">Moderation Actions</h3>
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 flex-wrap">
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedUser(selectedUser)
+                        setIsResetPasswordOpen(true)
+                        setIsDetailOpen(false)
+                      }}
+                      className="border-gray-300 bg-white"
+                    >
+                      <Key className="h-4 w-4 mr-2 text-gray-600" />
+                      Reset Password
+                    </Button>
                     {selectedUser.is_active ? (
                       <Button 
                         variant="outline" 
-                        className="text-yellow-600 border-yellow-600"
+                        className="text-yellow-600 border-yellow-600 hover:bg-yellow-50"
                         onClick={() => {
                           setIsDetailOpen(false)
                           setIsSuspendOpen(true)
@@ -577,7 +687,7 @@ const UserManagement: React.FC = () => {
                       </Button>
                     ) : (
                       <Button 
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-green-600 hover:bg-green-700 text-white"
                         onClick={() => updateUserStatus(selectedUser.id, true)}
                       >
                         <UserCheck className="h-4 w-4 mr-2" />
@@ -600,41 +710,98 @@ const UserManagement: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Reset Password Dialog */}
+      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
+        <DialogContent className="bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900">Reset User Password</DialogTitle>
+            <DialogDescription className="text-gray-500">
+              Set a new password for {selectedUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="newPassword" className="text-gray-700">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                className="mt-2 bg-white border-gray-300"
+              />
+            </div>
+            <div>
+              <Label htmlFor="confirmPassword" className="text-gray-700">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                className="mt-2 bg-white border-gray-300"
+              />
+            </div>
+            <div className="bg-yellow-50 p-3 rounded-lg">
+              <p className="text-sm text-yellow-800 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                The user will be able to log in with this new password immediately.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsResetPasswordOpen(false)
+              setNewPassword('')
+              setConfirmPassword('')
+            }} className="border-gray-300 bg-white">
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => selectedUser && resetUserPassword(selectedUser.id)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Reset Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Suspend User Dialog */}
       <Dialog open={isSuspendOpen} onOpenChange={setIsSuspendOpen}>
-        <DialogContent>
+        <DialogContent className="bg-white">
           <DialogHeader>
-            <DialogTitle>Suspend User Account</DialogTitle>
+            <DialogTitle className="text-gray-900">Suspend User Account</DialogTitle>
+            <DialogDescription className="text-gray-500">
+              Suspending {selectedUser?.email}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="reason">Suspension Reason</Label>
+              <Label htmlFor="reason" className="text-gray-700">Suspension Reason (Optional)</Label>
               <Textarea
                 id="reason"
                 placeholder="Please provide a reason for suspending this user..."
                 value={suspendReason}
                 onChange={(e) => setSuspendReason(e.target.value)}
                 rows={4}
-                className="mt-2"
+                className="mt-2 bg-white border-gray-300"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                This reason will be sent to the user via email.
-              </p>
             </div>
-            <div className="bg-yellow-50 p-3 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                ⚠️ Suspending a user will prevent them from logging in and accessing the platform.
-                They will not be able to post jobs or apply for positions.
+            <div className="bg-red-50 p-3 rounded-lg">
+              <p className="text-sm text-red-800 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                Suspending a user will prevent them from logging in and accessing the platform.
               </p>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsSuspendOpen(false)}>
+            <Button variant="outline" onClick={() => setIsSuspendOpen(false)} className="border-gray-300 bg-white">
               Cancel
             </Button>
             <Button 
               variant="destructive" 
-              onClick={() => selectedUser && updateUserStatus(selectedUser.id, false)}
+              onClick={() => selectedUser && updateUserStatus(selectedUser.id, false, suspendReason)}
             >
               Suspend User
             </Button>

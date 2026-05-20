@@ -5,26 +5,15 @@ import {
   Users,
   Briefcase,
   FileText,
-  Download,
-  RefreshCw,
   Activity,
   Award,
   Building2,
   UserCheck,
   CheckCircle,
-  XCircle
-} from 'lucide-react'
+  XCircle} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { toast } from '@/hooks/use-toast'
@@ -57,7 +46,6 @@ interface AnalyticsData {
   interviewApplications: number
   acceptedApplications: number
   rejectedApplications: number
-  applicationsByStatus: Array<{ status: string; count: number }>
   
   // Engagement Metrics
   totalViews: number
@@ -66,12 +54,9 @@ interface AnalyticsData {
   conversionRate: number
   
   // Monthly Trends
-  monthlyData: Array<{
-    month: string
-    users: number
-    jobs: number
-    applications: number
-  }>
+  jobsByMonth: Array<{ month: string; count: number }>
+  applicationsByMonth: Array<{ month: string; count: number }>
+  viewsByMonth: Array<{ month: string; count: number }>
   
   // Top Performers
   topIndustries: Array<{ name: string; count: number }>
@@ -79,22 +64,56 @@ interface AnalyticsData {
   topSkills: Array<{ skill: string; count: number }>
 }
 
-const Analytics: React.FC = () => {
+const AdminAnalytics: React.FC = () => {
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [period, setPeriod] = useState('30d')
+  const [period] = useState('30d')
   const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
     fetchAnalytics()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period])
 
   const fetchAnalytics = async () => {
     try {
       setLoading(true)
       const response = await api.get(`/admin/analytics?period=${period}`)
-      setData(response.data.data)
+      const analyticsData = response.data.data
+      
+      // Safely handle arrays with fallbacks
+      setData({
+        totalUsers: analyticsData.totalUsers || 0,
+        totalJobSeekers: analyticsData.totalJobSeekers || 0,
+        totalEmployers: analyticsData.totalEmployers || 0,
+        totalAdmins: analyticsData.totalAdmins || 0,
+        newUsersThisMonth: analyticsData.newUsersThisMonth || 0,
+        userGrowth: analyticsData.userGrowth || 0,
+        activeUsers: analyticsData.activeUsers || 0,
+        totalJobs: analyticsData.totalJobs || 0,
+        activeJobs: analyticsData.activeJobs || 0,
+        closedJobs: analyticsData.closedJobs || 0,
+        newJobsThisMonth: analyticsData.newJobsThisMonth || 0,
+        jobGrowth: analyticsData.jobGrowth || 0,
+        jobsByIndustry: Array.isArray(analyticsData.jobsByIndustry) ? analyticsData.jobsByIndustry : [],
+        jobsByType: Array.isArray(analyticsData.jobsByType) ? analyticsData.jobsByType : [],
+        totalApplications: analyticsData.totalApplications || 0,
+        pendingApplications: analyticsData.pendingApplications || 0,
+        reviewedApplications: analyticsData.reviewedApplications || 0,
+        shortlistedApplications: analyticsData.shortlistedApplications || 0,
+        interviewApplications: analyticsData.interviewApplications || 0,
+        acceptedApplications: analyticsData.acceptedApplications || 0,
+        rejectedApplications: analyticsData.rejectedApplications || 0,
+        totalViews: analyticsData.totalViews || 0,
+        averageViewsPerJob: analyticsData.averageViewsPerJob || 0,
+        averageApplicationsPerJob: analyticsData.averageApplicationsPerJob || 0,
+        conversionRate: analyticsData.conversionRate || 0,
+        jobsByMonth: Array.isArray(analyticsData.jobsByMonth) ? analyticsData.jobsByMonth : [],
+        applicationsByMonth: Array.isArray(analyticsData.applicationsByMonth) ? analyticsData.applicationsByMonth : [],
+        viewsByMonth: Array.isArray(analyticsData.viewsByMonth) ? analyticsData.viewsByMonth : [],
+        topIndustries: Array.isArray(analyticsData.topIndustries) ? analyticsData.topIndustries : [],
+        topEmployers: Array.isArray(analyticsData.topEmployers) ? analyticsData.topEmployers : [],
+        topSkills: Array.isArray(analyticsData.topSkills) ? analyticsData.topSkills : []
+      })
     } catch (error) {
       console.error('Error fetching analytics:', error)
       toast({
@@ -107,31 +126,6 @@ const Analytics: React.FC = () => {
     }
   }
 
-  const handleExport = async (format: string) => {
-    try {
-      const response = await api.get(`/admin/analytics/export?format=${format}`, {
-        responseType: 'blob'
-      })
-      const url = window.URL.createObjectURL(new Blob([response.data]))
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', `analytics_report_${new Date().toISOString()}.${format}`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      toast({
-        title: "Success",
-        description: `Report exported as ${format.toUpperCase()}`,
-      })
-    } catch (error) {
-      console.error('Error exporting analytics:', error)
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to export report",
-      })
-    }
-  }
 
   if (loading || !data) {
     return (
@@ -141,7 +135,7 @@ const Analytics: React.FC = () => {
           <div className="h-10 w-32 bg-gray-200 rounded animate-pulse" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(8)].map((_, i) => (
+          {[...Array(4)].map((_, i) => (
             <div key={i} className="h-32 bg-gray-100 rounded-lg animate-pulse" />
           ))}
         </div>
@@ -189,12 +183,12 @@ const Analytics: React.FC = () => {
   ]
 
   const applicationStats = [
-    { label: 'Pending', count: data.pendingApplications, color: 'bg-yellow-500', percentage: (data.pendingApplications / data.totalApplications) * 100 },
-    { label: 'Reviewed', count: data.reviewedApplications, color: 'bg-blue-500', percentage: (data.reviewedApplications / data.totalApplications) * 100 },
-    { label: 'Shortlisted', count: data.shortlistedApplications, color: 'bg-purple-500', percentage: (data.shortlistedApplications / data.totalApplications) * 100 },
-    { label: 'Interview', count: data.interviewApplications, color: 'bg-indigo-500', percentage: (data.interviewApplications / data.totalApplications) * 100 },
-    { label: 'Accepted', count: data.acceptedApplications, color: 'bg-green-500', percentage: (data.acceptedApplications / data.totalApplications) * 100 },
-    { label: 'Rejected', count: data.rejectedApplications, color: 'bg-red-500', percentage: (data.rejectedApplications / data.totalApplications) * 100 }
+    { label: 'Pending', count: data.pendingApplications, color: 'bg-yellow-500', percentage: data.totalApplications > 0 ? (data.pendingApplications / data.totalApplications) * 100 : 0 },
+    { label: 'Reviewed', count: data.reviewedApplications, color: 'bg-blue-500', percentage: data.totalApplications > 0 ? (data.reviewedApplications / data.totalApplications) * 100 : 0 },
+    { label: 'Shortlisted', count: data.shortlistedApplications, color: 'bg-purple-500', percentage: data.totalApplications > 0 ? (data.shortlistedApplications / data.totalApplications) * 100 : 0 },
+    { label: 'Interview', count: data.interviewApplications, color: 'bg-indigo-500', percentage: data.totalApplications > 0 ? (data.interviewApplications / data.totalApplications) * 100 : 0 },
+    { label: 'Accepted', count: data.acceptedApplications, color: 'bg-green-500', percentage: data.totalApplications > 0 ? (data.acceptedApplications / data.totalApplications) * 100 : 0 },
+    { label: 'Rejected', count: data.rejectedApplications, color: 'bg-red-500', percentage: data.totalApplications > 0 ? (data.rejectedApplications / data.totalApplications) * 100 : 0 }
   ]
 
   return (
@@ -205,26 +199,7 @@ const Analytics: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Analytics & Reports</h1>
           <p className="text-gray-500 mt-1">Platform performance metrics and insights</p>
         </div>
-        <div className="flex gap-3">
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-              <SelectItem value="1y">Last year</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" onClick={() => handleExport('csv')}>
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
-          <Button variant="outline" onClick={fetchAnalytics}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
+        
       </div>
 
       {/* Stats Cards */}
@@ -239,7 +214,7 @@ const Analytics: React.FC = () => {
                     <p className="text-sm text-gray-500">{stat.title}</p>
                     <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
                     <p className="text-xs text-gray-400 mt-1">{stat.change}</p>
-                    <Badge variant={stat.trend.startsWith('+') ? 'success' : 'default'} className="mt-1">
+                    <Badge variant="secondary" className="mt-1 text-xs">
                       {stat.trend}
                     </Badge>
                   </div>
@@ -277,7 +252,7 @@ const Analytics: React.FC = () => {
                       <span>{stat.label}</span>
                       <span className="font-medium">{stat.count} ({Math.round(stat.percentage)}%)</span>
                     </div>
-                    <Progress value={stat.percentage} className={`h-2 ${stat.color}`} />
+                    <Progress value={stat.percentage} className={`h-2`} />
                   </div>
                 ))}
               </div>
@@ -294,22 +269,26 @@ const Analytics: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {data.jobsByIndustry.slice(0, 5).map((industry, i) => (
-                    <div key={i} className="flex justify-between items-center">
-                      <span className="text-sm">{industry.industry}</span>
-                      <div className="flex items-center gap-3">
-                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{ width: `${(industry.count / data.totalJobs) * 100}%` }}
-                          />
+                {data.jobsByIndustry.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">No industry data available</div>
+                ) : (
+                  <div className="space-y-3">
+                    {data.jobsByIndustry.slice(0, 5).map((industry, i) => (
+                      <div key={i} className="flex justify-between items-center">
+                        <span className="text-sm">{industry.industry}</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-32 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full" 
+                              style={{ width: `${data.totalJobs > 0 ? (industry.count / data.totalJobs) * 100 : 0}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium">{industry.count}</span>
                         </div>
-                        <span className="text-sm font-medium">{industry.count}</span>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -322,22 +301,26 @@ const Analytics: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {data.jobsByType.map((type, i) => (
-                    <div key={i} className="flex justify-between items-center">
-                      <span className="text-sm">{type.type}</span>
-                      <div className="flex items-center gap-3">
-                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-600 h-2 rounded-full" 
-                            style={{ width: `${(type.count / data.totalJobs) * 100}%` }}
-                          />
+                {data.jobsByType.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">No employment type data available</div>
+                ) : (
+                  <div className="space-y-3">
+                    {data.jobsByType.map((type, i) => (
+                      <div key={i} className="flex justify-between items-center">
+                        <span className="text-sm">{type.type}</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-32 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-600 h-2 rounded-full" 
+                              style={{ width: `${data.totalJobs > 0 ? (type.count / data.totalJobs) * 100 : 0}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium">{type.count}</span>
                         </div>
-                        <span className="text-sm font-medium">{type.count}</span>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -351,17 +334,21 @@ const Analytics: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {data.topEmployers.slice(0, 5).map((employer, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">{employer.name}</p>
-                      <p className="text-sm text-gray-500">{employer.jobCount} jobs • {employer.views.toLocaleString()} views</p>
+              {data.topEmployers.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">No employer data available</div>
+              ) : (
+                <div className="space-y-4">
+                  {data.topEmployers.slice(0, 5).map((employer, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">{employer.name}</p>
+                        <p className="text-sm text-gray-500">{employer.jobCount} jobs • {employer.views.toLocaleString()} views</p>
+                      </div>
+                      <Badge variant="secondary">#{i + 1}</Badge>
                     </div>
-                    <Badge variant="secondary">#{i + 1}</Badge>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -374,13 +361,17 @@ const Analytics: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {data.topSkills.map((skill, i) => (
-                  <Badge key={i} variant="secondary" className="text-sm py-1.5">
-                    {skill.skill} ({skill.count})
-                  </Badge>
-                ))}
-              </div>
+              {data.topSkills.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">No skill data available</div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {data.topSkills.map((skill, i) => (
+                    <Badge key={i} variant="secondary" className="text-sm py-1.5">
+                      {skill.skill} ({skill.count})
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -431,7 +422,7 @@ const Analytics: React.FC = () => {
                     <span>Applications per Job</span>
                     <span>{data.averageApplicationsPerJob}</span>
                   </div>
-                  <Progress value={(data.averageApplicationsPerJob / 50) * 100} className="h-2" />
+                  <Progress value={Math.min((data.averageApplicationsPerJob / 50) * 100, 100)} className="h-2" />
                 </div>
                 <Separator />
                 <div className="grid grid-cols-2 gap-4 text-center">
@@ -538,9 +529,9 @@ const Analytics: React.FC = () => {
                 <div>
                   <div className="flex justify-between text-sm mb-1">
                     <span>Active Users</span>
-                    <span>{((data.activeUsers / data.totalUsers) * 100).toFixed(1)}%</span>
+                    <span>{data.totalUsers > 0 ? ((data.activeUsers / data.totalUsers) * 100).toFixed(1) : 0}%</span>
                   </div>
-                  <Progress value={(data.activeUsers / data.totalUsers) * 100} className="h-2" />
+                  <Progress value={data.totalUsers > 0 ? (data.activeUsers / data.totalUsers) * 100 : 0} className="h-2" />
                   <p className="text-xs text-gray-500 mt-1">{data.activeUsers.toLocaleString()} out of {data.totalUsers.toLocaleString()} users active</p>
                 </div>
               </div>
@@ -552,4 +543,4 @@ const Analytics: React.FC = () => {
   )
 }
 
-export default Analytics
+export default AdminAnalytics

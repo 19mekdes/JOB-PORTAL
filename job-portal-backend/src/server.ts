@@ -228,12 +228,10 @@ async function sendNewJobAlertEmail(userEmail: string, userName: string, jobs: a
     </body>
     </html>
   `
+ await sendEmail(userEmail, `🔔 New Job${jobs.length > 1 ? 's' : ''} Alert`, html)
+ }
 
-  await sendEmail(userEmail, `🔔 New Job${jobs.length > 1 ? 's' : ''} Alert`, html)
 }
-
-
-
 // ========== MIDDLEWARE ==========
 app.use(cors({ origin: true, credentials: true, methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization'] }))
 app.options('*', cors())
@@ -274,6 +272,106 @@ async function createNotification(userId: string, title: string, message: string
     return null
   }
 }
+
+
+
+// ========== MARK NOTIFICATION AS READ ==========
+app.put('/api/notifications/:id/read', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const userId = req.user!.id
+    
+    const notification = await prisma.notification.updateMany({
+      where: { 
+        id: parseInt(id), 
+        user_id: userId 
+      },
+      data: { is_read: true }
+    })
+    
+    if (notification.count === 0) {
+      return res.status(404).json({ success: false, message: 'Notification not found' })
+    }
+    
+    res.json({ success: true, message: 'Notification marked as read' })
+  } catch (error: any) {
+    console.error('Error marking notification as read:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// ========== MARK ALL NOTIFICATIONS AS READ ==========
+app.put('/api/notifications/read-all', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id
+    
+    await prisma.notification.updateMany({
+      where: { 
+        user_id: userId, 
+        is_read: false 
+      },
+      data: { is_read: true }
+    })
+    
+    res.json({ success: true, message: 'All notifications marked as read' })
+  } catch (error: any) {
+    console.error('Error marking all notifications as read:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+// ========== GET NOTIFICATIONS ==========
+app.get('/api/notifications', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id
+    const { page = 1, limit = 20 } = req.query
+    
+    const notifications = await prisma.notification.findMany({
+      where: { user_id: userId },
+      orderBy: { created_at: 'desc' },
+      skip: (Number(page) - 1) * Number(limit),
+      take: Number(limit)
+    })
+    
+    const unreadCount = await prisma.notification.count({
+      where: { user_id: userId, is_read: false }
+    })
+    
+    res.json({ 
+      success: true, 
+      data: notifications, 
+      unreadCount,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total: await prisma.notification.count({ where: { user_id: userId } })
+      }
+    })
+  } catch (error: any) {
+    console.error('Error fetching notifications:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// ========== GET UNREAD NOTIFICATIONS FOR PUSH ==========
+app.get('/api/notifications/unread', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id
+    
+    const notifications = await prisma.notification.findMany({
+      where: { 
+        user_id: userId, 
+        is_read: false 
+      },
+      orderBy: { created_at: 'desc' },
+      take: 50
+    })
+    
+    res.json({ success: true, data: notifications })
+  } catch (error: any) {
+    console.error('Error fetching unread notifications:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
 
 // ========== INITIALIZE DEFAULT DATA ==========
 async function initializeDefaultData() {
@@ -690,216 +788,6 @@ app.delete('/api/jobs/:id', authMiddleware, async (req: Request, res: Response) 
 
 
 
-// ========== EMPLOYER DASHBOARD & ANALYTICS ==========
-
-// Get employer dashboard statistics
-app.get('/api/employer/dashboard', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user!.id
-    
-    // Find employer profile
-    const employer = await prisma.employerProfile.findFirst({
-      where: { user_id: userId }
-    })
-    
-    if (!employer) {
-      return res.status(404).json({ success: false, message: 'Employer profile not found' })
-    }
-    
-    // Get all jobs for this employer with relations
-    const jobs = await prisma.jobPost.findMany({
-      where: { employer_id: employer.id },
-      include: {
-        status: true,
-        employment_type: true,  // ← Add this to include employment_type
-        _count: {
-          select: { applications: true }
-        }
-      }
-    })
-    
-    // Calculate statistics
-    const totalJobs = jobs.length
-    const activeJobs = jobs.filter(job => job.status?.status_name === 'Open').length
-    const closedJobs = jobs.filter(job => job.status?.status_name === 'Closed').length
-    const draftJobs = jobs.filter(job => job.status?.status_name === 'Draft').length
-    
-    const totalApplications = jobs.reduce((sum, job) => sum + (job._count?.applications || 0), 0)
-    
-    // Get recent applications (last 10)
-    const recentApplications = await prisma.jobApplication.findMany({
-      where: {
-        job: {
-          employer_id: employer.id
-        }
-      },
-      include: {
-        job: {
-          select: {
-            id: true,
-            title: true
-          }
-        },
-        seeker: {
-          select: {
-            id: true,
-            full_name: true,
-            avatar: true
-          }
-        },
-        status: true
-      },
-      orderBy: { applied_at: 'desc' },
-      take: 10
-    })
-    
-    // Get recent jobs (last 5)
-    const recentJobs = await prisma.jobPost.findMany({
-      where: { employer_id: employer.id },
-      include: {
-        status: true,
-        employment_type: true  // ← Add this here too
-      },
-      orderBy: { created_at: 'desc' },
-      take: 5
-    })
-    
-    // Get applications by status
-    const applicationsByStatus = await prisma.jobApplication.groupBy({
-      by: ['status_id'],
-      where: {
-        job: {
-          employer_id: employer.id
-        }
-      },
-      _count: {
-        id: true
-      }
-    })
-    
-    // Get status names
-    const statuses = await prisma.jobApplicationStatus.findMany()
-    const statusCounts = applicationsByStatus.map(item => ({
-      status: statuses.find(s => s.id === item.status_id)?.status_name || 'Unknown',
-      count: item._count.id
-    }))
-    
-    res.json({
-      success: true,
-      data: {
-        totalJobs,
-        activeJobs,
-        closedJobs,
-        draftJobs,
-        totalApplications,
-        recentApplications,
-        recentJobs,
-        applicationsByStatus: statusCounts
-      }
-    })
-  } catch (error: any) {
-    console.error('Error fetching employer dashboard:', error)
-    res.status(500).json({ success: false, message: error.message })
-  }
-})
-
-// Get employer analytics/charts data
-app.get('/api/employer/analytics', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user!.id
-    const { period = '30d' } = req.query
-    
-    // Calculate date range
-    const days = period === '7d' ? 7 : period === '90d' ? 90 : 30
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
-    
-    const employer = await prisma.employerProfile.findFirst({
-      where: { user_id: userId }
-    })
-    
-    if (!employer) {
-      return res.status(404).json({ success: false, message: 'Employer profile not found' })
-    }
-    
-    // Get jobs with employment_type relation
-    const jobs = await prisma.jobPost.findMany({
-      where: { employer_id: employer.id },
-      include: {
-        employment_type: true,  // ← Add this
-        applications: {
-          where: {
-            applied_at: { gte: startDate }
-          }
-        }
-      }
-    })
-    
-    // Applications over time
-    const applicationsOverTime = await prisma.jobApplication.findMany({
-      where: {
-        job: { employer_id: employer.id },
-        applied_at: { gte: startDate }
-      },
-      select: {
-        applied_at: true,
-        status: true
-      },
-      orderBy: { applied_at: 'asc' }
-    })
-    
-    // Group applications by date
-    const applicationsByDate: Record<string, number> = {}
-    applicationsOverTime.forEach(app => {
-      const date = app.applied_at.toISOString().split('T')[0]
-      applicationsByDate[date] = (applicationsByDate[date] || 0) + 1
-    })
-    
-    // Jobs by type
-    const jobsByType = jobs.reduce((acc, job) => {
-      const type = job.employment_type?.type_name || 'Unknown'
-      acc[type] = (acc[type] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-    
-    // Applications by status
-    const allApplications = await prisma.jobApplication.findMany({
-      where: { job: { employer_id: employer.id } },
-      include: { status: true }
-    })
-    
-    const applicationsByStatus = allApplications.reduce((acc, app) => {
-      const status = app.status?.status_name || 'Unknown'
-      acc[status] = (acc[status] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-    
-    // View trends (job views over time)
-    const jobViews = jobs.map(job => ({
-      title: job.title,
-      views: job.views_count || 0,
-      applications: job.applications_count || 0
-    }))
-    
-    res.json({
-      success: true,
-      data: {
-        applicationsOverTime: Object.entries(applicationsByDate).map(([date, count]) => ({ date, count })),
-        jobsByType: Object.entries(jobsByType).map(([type, count]) => ({ type, count })),
-        applicationsByStatus: Object.entries(applicationsByStatus).map(([status, count]) => ({ status, count })),
-        topJobs: jobViews.sort((a, b) => b.views - a.views).slice(0, 5),
-        totalViews: jobs.reduce((sum, job) => sum + (job.views_count || 0), 0),
-        totalApplications: allApplications.length
-      }
-    })
-  } catch (error: any) {
-    console.error('Error fetching employer analytics:', error)
-    res.status(500).json({ success: false, message: error.message })
-  }
-})
-
-
-
 // ========== EMPLOYER DASHBOARD ==========
 app.get('/api/employer/dashboard', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -950,6 +838,8 @@ app.get('/api/employer/dashboard', authMiddleware, async (req: Request, res: Res
     // Calculate stats
     const totalJobs = jobs.length
     const activeJobs = jobs.filter(job => job.status?.status_name === 'Open').length
+    const closedJobs = jobs.filter(job => job.status?.status_name === 'Closed').length
+    const draftJobs = jobs.filter(job => job.status?.status_name === 'Draft').length
     const totalApplications = allApplications.length
     const totalViews = jobs.reduce((sum, job) => sum + (job.views_count || 0), 0)
     
@@ -987,8 +877,8 @@ app.get('/api/employer/dashboard', authMiddleware, async (req: Request, res: Res
     // FORMAT RECENT JOBS - Extract status_name as string
     const recentJobs = jobs.slice(0, 5).map(job => ({
       id: job.id,
-      title: job.title,
-      location: job.location,
+      title: job.title || 'Untitled',
+      location: job.location || 'Not specified',
       applications_count: job._count?.applications || 0,
       views_count: job.views_count || 0,
       status: job.status?.status_name || 'Unknown', // ← Convert to string!
@@ -999,7 +889,7 @@ app.get('/api/employer/dashboard', authMiddleware, async (req: Request, res: Res
     const recentApplications = allApplications.slice(0, 5).map(app => ({
       id: app.id,
       job_title: app.job?.title || 'Unknown Position',
-      applicant_name: app.seeker?.full_name || app.seeker?.user?.full_name || 'Anonymous',
+      applicant_name: app.seeker?.full_name || app.seeker?.user?.full_name || 'Anonymous Applicant',
       status: app.status?.status_name || 'Pending', // ← Convert to string!
       applied_at: app.applied_at,
       applied_days_ago: Math.floor((Date.now() - new Date(app.applied_at).getTime()) / (1000 * 60 * 60 * 24))
@@ -1010,6 +900,8 @@ app.get('/api/employer/dashboard', authMiddleware, async (req: Request, res: Res
       data: {
         totalJobs,
         activeJobs,
+        closedJobs,
+        draftJobs,
         totalApplications,
         totalViews,
         pendingApplications,
@@ -1030,7 +922,6 @@ app.get('/api/employer/dashboard', authMiddleware, async (req: Request, res: Res
     res.status(500).json({ success: false, message: error.message })
   }
 })
-
 
 // ========== EMPLOYER JOB ROUTES ==========
 app.get('/api/employer/jobs', authMiddleware, async (req: Request, res: Response) => {
@@ -1583,6 +1474,1046 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
   }
 })
 
+
+
+
+// ========== ADMIN ANALYTICS ENDPOINT ==========
+app.get('/api/admin/analytics', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    // Check if user is admin or super admin
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    if (currentUser?.user_type?.type_name !== 'Admin' && 
+        currentUser?.user_type?.type_name !== 'Super Admin') {
+      return res.status(403).json({ success: false, message: 'Access denied' })
+    }
+    
+    const { period = '30d' } = req.query
+    const days = period === '7d' ? 7 : period === '90d' ? 90 : period === '1y' ? 365 : 30
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+    
+    // User Statistics
+    const totalUsers = await prisma.user.count()
+    const totalJobSeekers = await prisma.user.count({ 
+      where: { user_type: { type_name: 'Job Seeker' } } 
+    })
+    const totalEmployers = await prisma.user.count({ 
+      where: { user_type: { type_name: 'Employer' } } 
+    })
+    const totalAdmins = await prisma.user.count({ 
+      where: { user_type: { type_name: { in: ['Admin', 'Super Admin'] } } } 
+    })
+    
+    const newUsersThisMonth = await prisma.user.count({
+      where: { created_at: { gte: startDate } }
+    })
+    
+    // Job Statistics
+    const totalJobs = await prisma.jobPost.count()
+    const activeJobs = await prisma.jobPost.count({ 
+      where: { status: { status_name: 'Open' } } 
+    })
+    const closedJobs = await prisma.jobPost.count({ 
+      where: { status: { status_name: 'Closed' } } 
+    })
+    const newJobsThisMonth = await prisma.jobPost.count({
+      where: { created_at: { gte: startDate } }
+    })
+    
+    // Application Statistics
+    const totalApplications = await prisma.jobApplication.count()
+    const newApplicationsThisMonth = await prisma.jobApplication.count({
+      where: { applied_at: { gte: startDate } }
+    })
+    
+    const pendingApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Pending' } } 
+    })
+    const reviewedApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Reviewed' } } 
+    })
+    const shortlistedApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Shortlisted' } } 
+    })
+    const interviewApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Interview' } } 
+    })
+    const acceptedApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Accepted' } } 
+    })
+    const rejectedApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Rejected' } } 
+    })
+    
+    // Engagement Metrics
+    const totalViewsResult = await prisma.jobPost.aggregate({
+      _sum: { views_count: true }
+    })
+    const totalViews = totalViewsResult._sum.views_count || 0
+    const averageViewsPerJob = totalJobs > 0 ? Math.round(totalViews / totalJobs) : 0
+    const averageApplicationsPerJob = totalJobs > 0 ? Math.round(totalApplications / totalJobs) : 0
+    const conversionRate = totalViews > 0 ? Math.round((totalApplications / totalViews) * 100) : 0
+    
+    // Monthly trend data (last 6 months)
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const monthlyData = []
+    const now = new Date()
+    
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date()
+      d.setMonth(d.getMonth() - i)
+      const monthName = months[d.getMonth()]
+      const year = d.getFullYear()
+      
+      const usersCount = await prisma.user.count({
+        where: {
+          created_at: {
+            gte: new Date(year, d.getMonth(), 1),
+            lt: new Date(year, d.getMonth() + 1, 1)
+          }
+        }
+      })
+      
+      const jobsCount = await prisma.jobPost.count({
+        where: {
+          created_at: {
+            gte: new Date(year, d.getMonth(), 1),
+            lt: new Date(year, d.getMonth() + 1, 1)
+          }
+        }
+      })
+      
+      const applicationsCount = await prisma.jobApplication.count({
+        where: {
+          applied_at: {
+            gte: new Date(year, d.getMonth(), 1),
+            lt: new Date(year, d.getMonth() + 1, 1)
+          }
+        }
+      })
+      
+      monthlyData.push({
+        month: monthName,
+        users: usersCount,
+        jobs: jobsCount,
+        applications: applicationsCount
+      })
+    }
+    
+    // Applications by status
+    const applicationsByStatus = [
+      { status: 'Pending', count: pendingApplications },
+      { status: 'Reviewed', count: reviewedApplications },
+      { status: 'Shortlisted', count: shortlistedApplications },
+      { status: 'Interview', count: interviewApplications },
+      { status: 'Accepted', count: acceptedApplications },
+      { status: 'Rejected', count: rejectedApplications }
+    ].filter(s => s.count > 0)
+    
+    res.json({
+      success: true,
+      data: {
+        totalUsers,
+        totalJobSeekers,
+        totalEmployers,
+        totalAdmins,
+        totalJobs,
+        activeJobs,
+        closedJobs,
+        totalApplications,
+        pendingApplications,
+        reviewedApplications,
+        shortlistedApplications,
+        interviewApplications,
+        acceptedApplications,
+        rejectedApplications,
+        newUsersThisMonth,
+        newJobsThisMonth,
+        newApplicationsThisMonth,
+        totalViews,
+        averageViewsPerJob,
+        averageApplicationsPerJob,
+        conversionRate,
+        jobsByMonth: monthlyData,
+        applicationsByStatus
+      }
+    })
+  } catch (error: any) {
+    console.error('Error fetching admin analytics:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// ========== ADMIN GET ALL JOBS ==========
+app.get('/api/admin/jobs', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    if (currentUser?.user_type?.type_name !== 'Admin' && 
+        currentUser?.user_type?.type_name !== 'Super Admin') {
+      return res.status(403).json({ success: false, message: 'Access denied' })
+    }
+    
+    const { limit = 10, status, search } = req.query
+    
+    let where: any = {}
+    if (status && status !== 'all') {
+      where.status = { status_name: status }
+    }
+    if (search) {
+      where.OR = [
+        { title: { contains: search as string, mode: 'insensitive' } },
+        { employer: { company_name: { contains: search as string, mode: 'insensitive' } } }
+      ]
+    }
+    
+    const jobs = await prisma.jobPost.findMany({
+      where,
+      include: {
+        employer: true,
+        industry: true,
+        employment_type: true,
+        status: true
+      },
+      orderBy: { created_at: 'desc' },
+      take: limit ? parseInt(limit as string) : undefined
+    })
+    
+    res.json({ success: true, data: jobs })
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+// ========== ADMIN USER MANAGEMENT ==========
+app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    console.log('🔍 Admin users endpoint called')
+    
+    // Check if user is admin or super admin
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    console.log('Current user:', currentUser?.email, 'Role:', currentUser?.user_type?.type_name)
+    
+    if (!currentUser || (currentUser.user_type?.type_name !== 'Admin' && currentUser.user_type?.type_name !== 'Super Admin')) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin only.' })
+    }
+    
+    // Get query parameters
+    const { page = 1, limit = 20, search = '', role = 'all', status = 'all' } = req.query
+    
+    // Build where clause
+    let where: any = {}
+    
+    if (search) {
+      where.OR = [
+        { email: { contains: search as string, mode: 'insensitive' } },
+        { full_name: { contains: search as string, mode: 'insensitive' } },
+        { seeker_profile: { full_name: { contains: search as string, mode: 'insensitive' } } },
+        { employer_profile: { company_name: { contains: search as string, mode: 'insensitive' } } }
+      ]
+    }
+    
+    if (role && role !== 'all') {
+      where.user_type = { type_name: role as string }
+    }
+    
+    if (status && status !== 'all') {
+      where.is_active = status === 'active'
+    }
+    
+    // Get users with user_type always included
+    const users = await prisma.user.findMany({
+      where,
+      include: {
+        user_type: true,  // Always include user_type
+        seeker_profile: true,
+        employer_profile: {
+          include: {
+            industry: true
+          }
+        }
+      },
+      orderBy: { created_at: 'desc' },
+      skip: (Number(page) - 1) * Number(limit),
+      take: Number(limit)
+    })
+    
+    // Get total count
+    const total = await prisma.user.count({ where })
+    
+    // Calculate stats
+    const stats = {
+      total: await prisma.user.count(),
+      active: await prisma.user.count({ where: { is_active: true } }),
+      suspended: await prisma.user.count({ where: { is_active: false } }),
+      jobSeekers: await prisma.user.count({ where: { user_type: { type_name: 'Job Seeker' } } }),
+      employers: await prisma.user.count({ where: { user_type: { type_name: 'Employer' } } }),
+      admins: await prisma.user.count({ where: { user_type: { type_name: 'Admin' } } }),
+      superAdmins: await prisma.user.count({ where: { user_type: { type_name: 'Super Admin' } } })
+    }
+    
+    // Format users - ensure user_type is always present
+    const formattedUsers = users.map(user => {
+      // Ensure user_type exists with default if somehow missing
+      const userType = user.user_type || { id: 0, type_name: 'Job Seeker' }
+      
+      // Get phone from seeker_profile only
+      const phone = user.seeker_profile?.phone || null
+      const location = user.seeker_profile?.location || user.employer_profile?.location || null
+      const fullName = user.full_name || user.seeker_profile?.full_name || user.employer_profile?.company_name || 'N/A'
+      
+      return {
+        id: user.id,
+        email: user.email,
+        full_name: fullName,
+        phone: phone,
+        location: location,
+        user_type: userType,
+        is_active: user.is_active,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        seeker_profile: user.seeker_profile ? {
+          ...user.seeker_profile,
+          skills: user.seeker_profile.skills || []
+        } : null,
+        employer_profile: user.employer_profile ? {
+          ...user.employer_profile,
+          jobs_count: 0  // Will be calculated below
+        } : null,
+        stats: {
+          jobs_count: 0,
+          applications_count: 0
+        }
+      }
+    })
+    
+    // Calculate jobs count and applications count for each user
+    for (const user of formattedUsers) {
+      if (user.employer_profile) {
+        user.employer_profile.jobs_count = await prisma.jobPost.count({ 
+          where: { employer_id: user.id } 
+        })
+        user.stats.jobs_count = user.employer_profile.jobs_count
+      }
+      if (user.seeker_profile) {
+        user.stats.applications_count = await prisma.jobApplication.count({ 
+          where: { seeker_id: user.id } 
+        })
+      }
+    }
+    
+    console.log(`Found ${formattedUsers.length} users, Total: ${total}`)
+    
+    res.json({
+      success: true,
+      data: formattedUsers,
+      stats,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit))
+      }
+    })
+  } catch (error: any) {
+    console.error('Error fetching users:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+// ========== ADMIN JOB MANAGEMENT ==========
+app.get('/api/admin/jobs', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    console.log('\n🔍 ========== ADMIN JOBS API ==========')
+    
+    // Get current user
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    console.log('User:', currentUser?.email)
+    console.log('Role:', currentUser?.user_type?.type_name)
+    
+    // Check if admin
+    if (!currentUser || (currentUser.user_type?.type_name !== 'Admin' && 
+        currentUser.user_type?.type_name !== 'Super Admin')) {
+      return res.status(403).json({ success: false, message: 'Access denied' })
+    }
+    
+    // Get ALL jobs with their relations
+    const jobs = await prisma.jobPost.findMany({
+      include: {
+        employer: {
+          include: {
+            user: {
+              select: { email: true, full_name: true }
+            }
+          }
+        },
+        industry: true,
+        employment_type: true,
+        status: true
+      },
+      orderBy: { created_at: 'desc' }
+    })
+    
+    console.log(`📊 Found ${jobs.length} total jobs in database`)
+    
+    // Log each job's status for debugging
+    jobs.forEach(job => {
+      console.log(`Job: ${job.title}, Status: ${job.status?.status_name || 'NO STATUS'}, Status ID: ${job.status_id}`)
+    })
+    
+    // Calculate stats
+    const stats = {
+      total: jobs.length,
+      pending: jobs.filter(j => j.status?.status_name === 'Pending').length,
+      approved: jobs.filter(j => j.status?.status_name === 'Open').length,
+      rejected: jobs.filter(j => j.status?.status_name === 'Rejected').length,
+      closed: jobs.filter(j => j.status?.status_name === 'Closed').length,
+      draft: jobs.filter(j => j.status?.status_name === 'Draft').length,
+      archived: jobs.filter(j => j.status?.status_name === 'Archived').length
+    }
+    
+    console.log('📈 Stats:', stats)
+    
+    res.json({
+      success: true,
+      data: jobs,
+      stats,
+      pagination: {
+        page: 1,
+        limit: jobs.length,
+        total: jobs.length,
+        pages: 1
+      }
+    })
+  } catch (error: any) {
+    console.error('❌ Error:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+
+// ========== ADMIN APPLICATIONS MANAGEMENT ==========
+
+// Get all applications for admin
+app.get('/api/admin/applications', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    console.log('\n🔍 ========== ADMIN APPLICATIONS API ==========')
+    
+    // Check if user is admin
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    if (!currentUser || (currentUser.user_type?.type_name !== 'Admin' && 
+        currentUser.user_type?.type_name !== 'Super Admin')) {
+      return res.status(403).json({ success: false, message: 'Access denied' })
+    }
+    
+    const { search = '', status = 'all', page = 1, limit = 20 } = req.query
+    
+    // Build where clause
+    let where: any = {}
+    
+    if (search) {
+      where.OR = [
+        { job: { title: { contains: search as string, mode: 'insensitive' } } },
+        { seeker: { full_name: { contains: search as string, mode: 'insensitive' } } },
+        { seeker: { user: { email: { contains: search as string, mode: 'insensitive' } } } },
+        { job: { employer: { company_name: { contains: search as string, mode: 'insensitive' } } } }
+      ]
+    }
+    
+    if (status && status !== 'all') {
+      where.status = { status_name: status as string }
+    }
+    
+    // Get applications
+    const applications = await prisma.jobApplication.findMany({
+      where,
+      include: {
+        job: {
+          include: {
+            employer: {
+              include: {
+                user: {
+                  select: { email: true, full_name: true }
+                }
+              }
+            },
+            industry: true,
+            employment_type: true
+          }
+        },
+        seeker: {
+          include: {
+            user: {
+              select: { email: true, full_name: true }
+            }
+          }
+        },
+        status: true
+      },
+      orderBy: { applied_at: 'desc' },
+      skip: (Number(page) - 1) * Number(limit),
+      take: Number(limit)
+    })
+    
+    // Get total count
+    const total = await prisma.jobApplication.count({ where })
+    
+    // Calculate stats
+    const stats = {
+      total: await prisma.jobApplication.count(),
+      pending: await prisma.jobApplication.count({ where: { status: { status_name: 'Pending' } } }),
+      reviewed: await prisma.jobApplication.count({ where: { status: { status_name: 'Reviewed' } } }),
+      shortlisted: await prisma.jobApplication.count({ where: { status: { status_name: 'Shortlisted' } } }),
+      interview: await prisma.jobApplication.count({ where: { status: { status_name: 'Interview' } } }),
+      accepted: await prisma.jobApplication.count({ where: { status: { status_name: 'Accepted' } } }),
+      rejected: await prisma.jobApplication.count({ where: { status: { status_name: 'Rejected' } } })
+    }
+    
+    console.log(`Found ${applications.length} applications`)
+    console.log('Stats:', stats)
+    
+    res.json({
+      success: true,
+      data: applications,
+      stats,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit))
+      }
+    })
+  } catch (error: any) {
+    console.error('Error fetching applications:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Update application status (admin)
+app.put('/api/admin/applications/:id/status', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const { status } = req.body
+    
+    console.log(`Updating application ${id} status to: ${status}`)
+    
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    if (!currentUser || (currentUser.user_type?.type_name !== 'Admin' && 
+        currentUser.user_type?.type_name !== 'Super Admin')) {
+      return res.status(403).json({ success: false, message: 'Access denied' })
+    }
+    
+    const statusRecord = await prisma.jobApplicationStatus.findFirst({
+      where: { status_name: status }
+    })
+    
+    if (!statusRecord) {
+      return res.status(404).json({ success: false, message: `Status '${status}' not found` })
+    }
+    
+    const application = await prisma.jobApplication.update({
+      where: { id },
+      data: {
+        status_id: statusRecord.id,
+        updated_at: new Date()
+      },
+      include: {
+        job: true,
+        seeker: {
+          include: { user: true }
+        }
+      }
+    })
+    
+    // Create notification for job seeker
+    await prisma.notification.create({
+      data: {
+        user_id: application.seeker.user_id,
+        title: 'Application Status Updated',
+        message: `Your application for "${application.job.title}" has been ${status.toLowerCase()}`,
+        type: 'application_update',
+        metadata: { application_id: id, status },
+        created_at: new Date()
+      }
+    })
+    
+    res.json({ success: true, message: `Application ${status.toLowerCase()} successfully` })
+  } catch (error: any) {
+    console.error('Error updating application status:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Update job status (approve/reject)
+app.put('/api/admin/jobs/:jobId/status', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { jobId } = req.params
+    const { status, reason } = req.body
+    
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    if (currentUser?.user_type?.type_name !== 'Admin' && 
+        currentUser?.user_type?.type_name !== 'Super Admin') {
+      return res.status(403).json({ success: false, message: 'Access denied' })
+    }
+    
+    const statusRecord = await prisma.jobPostStatus.findFirst({
+      where: { status_name: status }
+    })
+    
+    if (!statusRecord) {
+      return res.status(404).json({ success: false, message: 'Status not found' })
+    }
+    
+    const job = await prisma.jobPost.update({
+      where: { id: jobId },
+      data: {
+        status_id: statusRecord.id,
+        updated_at: new Date()
+      },
+      include: {
+        employer: {
+          include: { user: true }
+        }
+      }
+    })
+    
+    app.get('/api/admin/analytics', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    });
+    
+    if (currentUser?.user_type?.type_name !== 'Admin' && 
+        currentUser?.user_type?.type_name !== 'Super Admin') {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+    
+    // ========== BASIC STATS ==========
+    const totalUsers = await prisma.user.count();
+    const totalJobSeekers = await prisma.user.count({ 
+      where: { user_type: { type_name: 'Job Seeker' } } 
+    });
+    const totalEmployers = await prisma.user.count({ 
+      where: { user_type: { type_name: 'Employer' } } 
+    });
+    const totalAdmins = await prisma.user.count({ 
+      where: { user_type: { type_name: { in: ['Admin', 'Super Admin'] } } } 
+    });
+    
+    const totalJobs = await prisma.jobPost.count();
+    const activeJobs = await prisma.jobPost.count({ 
+      where: { status: { status_name: 'Open' } } 
+    });
+    const closedJobs = await prisma.jobPost.count({ 
+      where: { status: { status_name: 'Closed' } } 
+    });
+    
+    const totalApplications = await prisma.jobApplication.count();
+    const pendingApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Pending' } } 
+    });
+    const acceptedApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Accepted' } } 
+    });
+    const rejectedApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Rejected' } } 
+    });
+    
+    const totalViews = (await prisma.jobPost.aggregate({ _sum: { views_count: true } }))._sum.views_count || 0;
+    const averageApplicationsPerJob = totalJobs > 0 ? Math.round(totalApplications / totalJobs) : 0;
+    const conversionRate = totalViews > 0 ? Math.round((totalApplications / totalViews) * 100) : 0;
+    
+    // ========== JOBS BY INDUSTRY (DIRECT QUERY) ==========
+    const jobsByIndustryRaw = await prisma.$queryRaw`
+      SELECT i.industry_name, COUNT(j.id) as count
+      FROM "JobIndustry" i
+      INNER JOIN "JobPost" j ON j.industry_id = i.id
+      GROUP BY i.id, i.industry_name
+      ORDER BY count DESC
+      LIMIT 5
+    `;
+    
+    const jobsByIndustry = (jobsByIndustryRaw as any[]).map(item => ({
+      industry: item.industry_name,
+      count: Number(item.count)
+    }));
+    
+    // ========== JOBS BY TYPE (DIRECT QUERY) ==========
+    const jobsByTypeRaw = await prisma.$queryRaw`
+      SELECT e.type_name, COUNT(j.id) as count
+      FROM "EmploymentType" e
+      INNER JOIN "JobPost" j ON j.employment_type_id = e.id
+      GROUP BY e.id, e.type_name
+      ORDER BY count DESC
+    `;
+    
+    const jobsByType = (jobsByTypeRaw as any[]).map(item => ({
+      type: item.type_name,
+      count: Number(item.count)
+    }));
+    
+    // ========== TOP EMPLOYERS (DIRECT QUERY) ==========
+    const topEmployersRaw = await prisma.$queryRaw`
+      SELECT ep.company_name, COUNT(j.id) as job_count, COALESCE(SUM(j.views_count), 0) as total_views
+      FROM "EmployerProfile" ep
+      INNER JOIN "JobPost" j ON j.employer_id = ep.id
+      GROUP BY ep.id, ep.company_name
+      ORDER BY job_count DESC
+      LIMIT 5
+    `;
+    
+    const topEmployers = (topEmployersRaw as any[]).map(item => ({
+      name: item.company_name,
+      jobCount: Number(item.job_count),
+      views: Number(item.total_views)
+    }));
+    
+    // ========== TOP SKILLS ==========
+    const allSkills = await prisma.jobSeekerProfile.findMany({
+      select: { skills: true }
+    });
+    const skillCount: Record<string, number> = {};
+    allSkills.forEach(profile => {
+      if (profile.skills && Array.isArray(profile.skills)) {
+        profile.skills.forEach(skill => {
+          if (skill && skill.trim()) {
+            skillCount[skill] = (skillCount[skill] || 0) + 1;
+          }
+        });
+      }
+    });
+    const topSkills = Object.entries(skillCount)
+      .map(([skill, count]) => ({ skill, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    
+    // ========== APPLICATION STATUS DISTRIBUTION ==========
+    const reviewedApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Reviewed' } } 
+    });
+    const shortlistedApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Shortlisted' } } 
+    });
+    const interviewApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Interview' } } 
+    });
+    
+    console.log('Jobs by Industry:', jobsByIndustry);
+    console.log('Jobs by Type:', jobsByType);
+    console.log('Top Employers:', topEmployers);
+    
+    res.json({
+      success: true,
+      data: {
+        totalUsers,
+        totalJobSeekers,
+        totalEmployers,
+        totalAdmins,
+        newUsersThisMonth: totalUsers,
+        userGrowth: 0,
+        activeUsers: totalUsers,
+        totalJobs,
+        activeJobs,
+        closedJobs,
+        newJobsThisMonth: totalJobs,
+        jobGrowth: 0,
+        jobsByIndustry,
+        jobsByType,
+        totalApplications,
+        pendingApplications,
+        reviewedApplications,
+        shortlistedApplications,
+        interviewApplications,
+        acceptedApplications,
+        rejectedApplications,
+        totalViews,
+        averageViewsPerJob: totalJobs > 0 ? Math.round(totalViews / totalJobs) : 0,
+        averageApplicationsPerJob,
+        conversionRate,
+        jobsByMonth: [],
+        applicationsByMonth: [],
+        topSkills,
+        topEmployers
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching analytics:', error);
+    res.status(500).json({ success: false, message: error.message, stack: error.stack });
+  }
+});
+    // Create notification for employer
+    if (reason) {
+      await prisma.notification.create({
+        data: {
+          user_id: job.employer.user_id,
+          title: `Job ${status}`,
+          message: `Your job "${job.title}" has been ${status.toLowerCase()}.${reason ? ` Reason: ${reason}` : ''}`,
+          type: 'job_update',
+          metadata: { job_id: jobId, status, reason },
+          created_at: new Date()
+        }
+      })
+    }
+    
+    res.json({ success: true, message: `Job ${status.toLowerCase()} successfully` })
+  } catch (error: any) {
+    console.error('Error updating job status:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Bulk action on jobs
+app.post('/api/admin/jobs/bulk-action', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { jobIds, action } = req.body
+    
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    if (currentUser?.user_type?.type_name !== 'Admin' && 
+        currentUser?.user_type?.type_name !== 'Super Admin') {
+      return res.status(403).json({ success: false, message: 'Access denied' })
+    }
+    
+    const status = action === 'approve' ? 'Open' : 'Rejected'
+    const statusRecord = await prisma.jobPostStatus.findFirst({
+      where: { status_name: status }
+    })
+    
+    await prisma.jobPost.updateMany({
+      where: { id: { in: jobIds } },
+      data: {
+        status_id: statusRecord!.id,
+        updated_at: new Date()
+      }
+    })
+    
+    res.json({ success: true, message: `${jobIds.length} jobs ${action}d successfully` })
+  } catch (error: any) {
+    console.error('Error in bulk action:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Delete job (admin only)
+app.delete('/api/admin/jobs/:jobId', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { jobId } = req.params
+    
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    if (currentUser?.user_type?.type_name !== 'Admin' && 
+        currentUser?.user_type?.type_name !== 'Super Admin') {
+      return res.status(403).json({ success: false, message: 'Access denied' })
+    }
+    
+    const job = await prisma.jobPost.findUnique({
+      where: { id: jobId },
+      include: { employer: true }
+    })
+    
+    if (!job) {
+      return res.status(404).json({ success: false, message: 'Job not found' })
+    }
+    
+    await prisma.jobPost.delete({ where: { id: jobId } })
+    
+    // Notify employer
+    await prisma.notification.create({
+      data: {
+        user_id: job.employer.user_id,
+        title: 'Job Deleted',
+        message: `Your job "${job.title}" has been deleted by an administrator.`,
+        type: 'job_update',
+        metadata: { job_id: jobId },
+        created_at: new Date()
+      }
+    })
+    
+    res.json({ success: true, message: 'Job deleted successfully' })
+  } catch (error: any) {
+    console.error('Error deleting job:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// ========== UPDATE USER STATUS (Suspend/Activate) ==========
+app.put('/api/admin/users/:userId/status', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params
+    const { is_active, reason } = req.body
+    
+    // Check admin permission
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    if (currentUser?.user_type?.type_name !== 'Admin' && currentUser?.user_type?.type_name !== 'Super Admin') {
+      return res.status(403).json({ success: false, message: 'Access denied' })
+    }
+    
+    // Don't allow modifying own status
+    if (userId === req.user!.id) {
+      return res.status(400).json({ success: false, message: 'Cannot modify your own status' })
+    }
+    
+    // Check if user exists
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId }
+    })
+    
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+    
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { 
+        is_active: is_active,
+        updated_at: new Date()
+      }
+    })
+    
+    // Create notification for user
+    if (reason) {
+      await prisma.notification.create({
+        data: {
+          user_id: userId,
+          title: is_active ? 'Account Activated' : 'Account Suspended',
+          message: is_active 
+            ? 'Your account has been reactivated. You can now log in again.'
+            : `Your account has been suspended. Reason: ${reason}`,
+          type: 'account_status',
+          created_at: new Date()
+        }
+      })
+    }
+    
+    console.log(`✅ User ${userId} status updated to ${is_active ? 'active' : 'suspended'}`)
+    
+    res.json({ success: true, message: `User ${is_active ? 'activated' : 'suspended'} successfully` })
+  } catch (error: any) {
+    console.error('Error updating user status:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// ========== DELETE USER (Soft Delete) ==========
+app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params
+    
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    if (currentUser?.user_type?.type_name !== 'Admin' && currentUser?.user_type?.type_name !== 'Super Admin') {
+      return res.status(403).json({ success: false, message: 'Access denied' })
+    }
+    
+    // Don't allow deleting own account
+    if (userId === req.user!.id) {
+      return res.status(400).json({ success: false, message: 'Cannot delete your own account' })
+    }
+    
+    // Check if user exists
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId }
+    })
+    
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+    
+    // Soft delete - deactivate instead of hard delete
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { 
+        is_active: false,
+        updated_at: new Date()
+      }
+    })
+    
+    console.log(`✅ User ${userId} deactivated by admin`)
+    
+    res.json({ success: true, message: 'User deactivated successfully' })
+  } catch (error: any) {
+    console.error('Error deleting user:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// ========== RESET USER PASSWORD ==========
+app.post('/api/admin/users/:userId/reset-password', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params
+    const { newPassword } = req.body
+    
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    if (currentUser?.user_type?.type_name !== 'Admin' && currentUser?.user_type?.type_name !== 'Super Admin') {
+      return res.status(403).json({ success: false, message: 'Access denied' })
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' })
+    }
+    
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+    
+    await prisma.user.update({
+      where: { id: userId },
+      data: { 
+        password: hashedPassword,
+        updated_at: new Date()
+      }
+    })
+    
+    console.log(`✅ Password reset for user ${userId}`)
+    
+    res.json({ success: true, message: 'Password reset successfully' })
+  } catch (error: any) {
+    console.error('Error resetting password:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
 // ========== JOB SEEKER PREFERENCES ==========
 
 // Get job seeker preferences
@@ -2094,4 +3025,4 @@ const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
-}
+

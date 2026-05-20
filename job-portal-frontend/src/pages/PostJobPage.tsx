@@ -170,29 +170,19 @@ const PostJobPage: React.FC = () => {
 
   const getStatusColor = (statusId: string) => {
     switch (statusId) {
-      case '1': return 'text-green-600 bg-green-50 border-green-200'
-      case '2': return 'text-red-600 bg-red-50 border-red-200'
-      case '3': return 'text-yellow-600 bg-yellow-50 border-yellow-200'
-      default: return 'text-gray-600 bg-gray-50 border-gray-200'
+      case '1': return 'text-green-700 bg-green-50 border-green-200'
+      case '2': return 'text-red-700 bg-red-50 border-red-200'
+      case '3': return 'text-yellow-700 bg-yellow-50 border-yellow-200'
+      default: return 'text-gray-700 bg-gray-50 border-gray-200'
     }
   }
 
   const getStatusIcon = (statusId: string) => {
     switch (statusId) {
-      case '1': return <CheckCircle className="h-4 w-4" />
-      case '2': return <XCircle className="h-4 w-4" />
-      case '3': return <Clock className="h-4 w-4" />
-      default: return <AlertCircle className="h-4 w-4" />
-    }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const getStatusLabel = (statusId: string) => {
-    switch (statusId) {
-      case '1': return 'Open - Visible to job seekers'
-      case '2': return 'Closed - Hidden from job seekers'
-      case '3': return 'Draft - Not published yet'
-      default: return 'Unknown'
+      case '1': return <CheckCircle className="h-4 w-4 text-green-600" />
+      case '2': return <XCircle className="h-4 w-4 text-red-600" />
+      case '3': return <Clock className="h-4 w-4 text-yellow-600" />
+      default: return <AlertCircle className="h-4 w-4 text-gray-600" />
     }
   }
 
@@ -201,7 +191,6 @@ const PostJobPage: React.FC = () => {
 
     setIsLoading(true)
     
-    // If saving as draft, force status to Draft (id: 3)
     const finalStatusId = publishStatus === 'draft' ? '3' : formData.status_id
     
     const submitData = {
@@ -263,91 +252,81 @@ const PostJobPage: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-100">
-            <TabsTrigger value="basic">Basic Info</TabsTrigger>
-            <TabsTrigger value="details">Job Details</TabsTrigger>
-            <TabsTrigger value="requirements">Requirements & Benefits</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 bg-gray-100 rounded-lg">
+            <TabsTrigger value="basic" className="rounded-md">Basic Info</TabsTrigger>
+            <TabsTrigger value="details" className="rounded-md">Job Details</TabsTrigger>
+            <TabsTrigger value="requirements" className="rounded-md">Requirements & Benefits</TabsTrigger>
           </TabsList>
 
           {/* Basic Info Tab */}
           <TabsContent value="basic" className="space-y-4">
-            <Card className="border border-gray-200 shadow-sm rounded-xl">
-              <CardHeader className="border-b border-gray-100">
-                <CardTitle>Basic Information</CardTitle>
+            <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+              <CardHeader className="border-b border-gray-100 pb-4">
+                <CardTitle className="text-lg font-semibold">Basic Information</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 pt-6">
+              <CardContent className="space-y-4 pt-5">
                 <div>
-                  <Label>Job Title *</Label>
+                  <Label className="text-sm font-medium text-gray-700">Job Title *</Label>
                   <Input
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="e.g., Senior Software Engineer"
-                    className="mt-1.5 rounded-lg"
+                    className="mt-1.5 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <Label>Job Description *</Label>
+                  <Label className="text-sm font-medium text-gray-700">Job Description *</Label>
                   <Textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Describe the role, responsibilities, and requirements..."
                     rows={6}
-                    className="mt-1.5 rounded-lg"
+                    className="mt-1.5 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     {formData.description.length} / 50+ characters
                   </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Location *</Label>
-                    <Input
-                      value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      placeholder="City, State or Remote"
-                      className="mt-1.5 rounded-lg"
-                    />
-                  </div>
-                  
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Location *</Label>
+                  <Input
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="City, State or Remote"
+                    className="mt-1.5 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Job Details Tab - WITH STATUS DROPDOWN */}
+          {/* Job Details Tab */}
           <TabsContent value="details" className="space-y-4">
-            <Card className="border border-gray-200 shadow-sm rounded-xl">
-              <CardHeader className="border-b border-gray-100">
-                <CardTitle>Job Details</CardTitle>
+            <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+              <CardHeader className="border-b border-gray-100 pb-4">
+                <CardTitle className="text-lg font-semibold">Job Details</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 pt-6">
-                
-                {/* JOB STATUS DROPDOWN - NEW */}
+              <CardContent className="space-y-4 pt-5">
+                {/* Job Status Dropdown */}
                 <div>
-                  <Label className="text-gray-700">Job Status *</Label>
+                  <Label className="text-sm font-medium text-gray-700">Job Status *</Label>
                   <Select
                     value={formData.status_id}
                     onValueChange={(value) => setFormData({ ...formData, status_id: value })}
                   >
-                    <SelectTrigger className="mt-1.5 rounded-lg bg-white">
+                    <SelectTrigger className="mt-1.5 rounded-lg border-gray-300 bg-white">
                       <SelectValue placeholder="Select job status" />
                     </SelectTrigger>
-                    <SelectContent 
-                      className="bg-white border border-gray-200 shadow-lg rounded-lg z-100"
-                      position="popper"
-                      sideOffset={5}
-                    >
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg rounded-lg">
                       {JOB_STATUSES.map((status) => (
                         <SelectItem 
                           key={status.id} 
                           value={status.id.toString()}
-                          className={`cursor-pointer hover:bg-gray-100 focus:bg-gray-100 ${getStatusColor(status.id.toString())}`}
+                          className="cursor-pointer hover:bg-gray-50"
                         >
                           <div className="flex items-center gap-2 py-1">
-                            {status.status_name === 'Open' && <CheckCircle className="h-4 w-4 text-green-600" />}
-                            {status.status_name === 'Closed' && <XCircle className="h-4 w-4 text-red-600" />}
-                            {status.status_name === 'Draft' && <Clock className="h-4 w-4 text-yellow-600" />}
-                            {status.status_name}
+                            {getStatusIcon(status.id.toString())}
+                            <span className="text-gray-700">{status.status_name}</span>
                             <span className="text-xs text-gray-400 ml-2">
                               {status.status_name === 'Open' && '(Visible to job seekers)'}
                               {status.status_name === 'Closed' && '(Hidden from job seekers)'}
@@ -358,33 +337,28 @@ const PostJobPage: React.FC = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  
                 </div>
 
                 {/* Employment Type Dropdown */}
                 <div>
-                  <Label>Employment Type *</Label>
+                  <Label className="text-sm font-medium text-gray-700">Employment Type *</Label>
                   <Select
                     value={formData.employment_type_id}
                     onValueChange={(value) => setFormData({ ...formData, employment_type_id: value })}
                   >
-                    <SelectTrigger className="mt-1.5 rounded-lg bg-white">
+                    <SelectTrigger className="mt-1.5 rounded-lg border-gray-300 bg-white">
                       <SelectValue placeholder="Select employment type" />
                     </SelectTrigger>
-                    <SelectContent 
-                      className="bg-white border border-gray-200 shadow-lg rounded-lg z-100"
-                      position="popper"
-                      sideOffset={5}
-                    >
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg rounded-lg">
                       {employmentTypes.map((type) => (
                         <SelectItem 
                           key={type.id} 
                           value={type.id.toString()}
-                          className="cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
+                          className="cursor-pointer hover:bg-gray-50"
                         >
                           <div className="flex items-center gap-2 py-1">
                             <Clock className="h-4 w-4 text-gray-500" />
-                            {type.type_name}
+                            <span className="text-gray-700">{type.type_name}</span>
                           </div>
                         </SelectItem>
                       ))}
@@ -394,28 +368,24 @@ const PostJobPage: React.FC = () => {
 
                 {/* Industry Dropdown */}
                 <div>
-                  <Label>Industry *</Label>
+                  <Label className="text-sm font-medium text-gray-700">Industry *</Label>
                   <Select
                     value={formData.industry_id}
                     onValueChange={(value) => setFormData({ ...formData, industry_id: value })}
                   >
-                    <SelectTrigger className="mt-1.5 rounded-lg bg-white">
+                    <SelectTrigger className="mt-1.5 rounded-lg border-gray-300 bg-white">
                       <SelectValue placeholder="Select industry" />
                     </SelectTrigger>
-                    <SelectContent 
-                      className="bg-white border border-gray-200 shadow-lg rounded-lg z-100"
-                      position="popper"
-                      sideOffset={5}
-                    >
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg rounded-lg">
                       {industries.map((industry) => (
                         <SelectItem 
                           key={industry.id} 
                           value={industry.id.toString()}
-                          className="cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
+                          className="cursor-pointer hover:bg-gray-50"
                         >
                           <div className="flex items-center gap-2 py-1">
                             <Building2 className="h-4 w-4 text-gray-500" />
-                            {industry.industry_name}
+                            <span className="text-gray-700">{industry.industry_name}</span>
                           </div>
                         </SelectItem>
                       ))}
@@ -426,7 +396,7 @@ const PostJobPage: React.FC = () => {
                 {/* Salary Range */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>Minimum Salary</Label>
+                    <Label className="text-sm font-medium text-gray-700">Minimum Salary</Label>
                     <div className="relative mt-1.5">
                       <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
@@ -434,12 +404,12 @@ const PostJobPage: React.FC = () => {
                         value={formData.salary_min}
                         onChange={(e) => setFormData({ ...formData, salary_min: e.target.value })}
                         placeholder="50000"
-                        className="pl-9 rounded-lg"
+                        className="pl-9 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                   </div>
                   <div>
-                    <Label>Maximum Salary</Label>
+                    <Label className="text-sm font-medium text-gray-700">Maximum Salary</Label>
                     <div className="relative mt-1.5">
                       <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
@@ -447,7 +417,7 @@ const PostJobPage: React.FC = () => {
                         value={formData.salary_max}
                         onChange={(e) => setFormData({ ...formData, salary_max: e.target.value })}
                         placeholder="80000"
-                        className="pl-9 rounded-lg"
+                        className="pl-9 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -458,28 +428,28 @@ const PostJobPage: React.FC = () => {
 
           {/* Requirements & Benefits Tab */}
           <TabsContent value="requirements" className="space-y-4">
-            <Card className="border border-gray-200 shadow-sm rounded-xl">
-              <CardHeader className="border-b border-gray-100">
-                <CardTitle>Requirements & Benefits</CardTitle>
+            <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+              <CardHeader className="border-b border-gray-100 pb-4">
+                <CardTitle className="text-lg font-semibold">Requirements & Benefits</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6 pt-6">
+              <CardContent className="space-y-6 pt-5">
                 <div>
-                  <Label>Requirements</Label>
+                  <Label className="text-sm font-medium text-gray-700">Requirements</Label>
                   <div className="flex gap-2 mt-1.5">
                     <Input
                       value={requirementInput}
                       onChange={(e) => setRequirementInput(e.target.value)}
                       placeholder="e.g., 5+ years of React experience"
                       onKeyPress={(e) => e.key === 'Enter' && addRequirement()}
-                      className="flex-1 rounded-lg"
+                      className="flex-1 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     />
-                    <Button type="button" onClick={addRequirement} variant="outline">
+                    <Button type="button" onClick={addRequirement} variant="outline" className="border-gray-300">
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-3">
                     {requirementsList.map((req, i) => (
-                      <Badge key={i} variant="secondary" className="gap-1 py-1.5">
+                      <Badge key={i} variant="secondary" className="gap-1 py-1.5 px-3 bg-gray-100 text-gray-700">
                         {req}
                         <X 
                           className="h-3 w-3 ml-1 cursor-pointer hover:text-red-500" 
@@ -489,24 +459,24 @@ const PostJobPage: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                <Separator />
+                <Separator className="bg-gray-100" />
                 <div>
-                  <Label>Benefits</Label>
+                  <Label className="text-sm font-medium text-gray-700">Benefits</Label>
                   <div className="flex gap-2 mt-1.5">
                     <Input
                       value={benefitInput}
                       onChange={(e) => setBenefitInput(e.target.value)}
                       placeholder="e.g., Health insurance"
                       onKeyPress={(e) => e.key === 'Enter' && addBenefit()}
-                      className="flex-1 rounded-lg"
+                      className="flex-1 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     />
-                    <Button type="button" onClick={addBenefit} variant="outline">
+                    <Button type="button" onClick={addBenefit} variant="outline" className="border-gray-300">
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-3">
                     {benefitsList.map((ben, i) => (
-                      <Badge key={i} variant="secondary" className="gap-1 py-1.5">
+                      <Badge key={i} variant="secondary" className="gap-1 py-1.5 px-3 bg-gray-100 text-gray-700">
                         {ben}
                         <X 
                           className="h-3 w-3 ml-1 cursor-pointer hover:text-red-500" 
@@ -522,12 +492,12 @@ const PostJobPage: React.FC = () => {
         </Tabs>
 
         {/* Status Preview Banner */}
-        <div className={`mt-4 p-3 rounded-lg border flex items-center gap-2 ${getStatusColor(formData.status_id)}`}>
+        <div className={`mt-6 p-3 rounded-lg border flex items-center gap-2 ${getStatusColor(formData.status_id)}`}>
           {getStatusIcon(formData.status_id)}
           <span className="text-sm font-medium">
             Status: {JOB_STATUSES.find(s => s.id.toString() === formData.status_id)?.status_name}
           </span>
-          <span className="text-xs ml-2">
+          <span className="text-xs ml-2 text-gray-600">
             {formData.status_id === '1' && '- This job will be visible to job seekers immediately'}
             {formData.status_id === '2' && '- This job will be hidden from job seekers'}
             {formData.status_id === '3' && '- This job will be saved as draft, not published yet'}
@@ -536,14 +506,14 @@ const PostJobPage: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="outline" onClick={() => navigate('/employer/jobs')}>
+          <Button variant="outline" onClick={() => navigate('/employer/jobs')} className="border-gray-300">
             Cancel
           </Button>
-          <Button variant="outline" onClick={() => handleSubmit('draft')} disabled={isLoading}>
+          <Button variant="outline" onClick={() => handleSubmit('draft')} disabled={isLoading} className="border-gray-300">
             {isLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             Save as Draft
           </Button>
-          <Button onClick={() => handleSubmit('published')} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={() => handleSubmit('published')} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
             {isLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
             Publish Job
           </Button>
