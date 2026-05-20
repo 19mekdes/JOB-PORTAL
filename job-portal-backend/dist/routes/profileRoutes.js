@@ -7,6 +7,8 @@ const express_1 = __importDefault(require("express"));
 const profileController_1 = require("../controllers/profileController");
 const authMiddleware_1 = require("../middleware/authMiddleware");
 const roleMiddleware_1 = require("../middleware/roleMiddleware");
+// Import Cloudinary upload configurations straight from your config file
+const cloudinary_1 = require("../config/cloudinary");
 const router = express_1.default.Router();
 // All profile routes require authentication
 router.use(authMiddleware_1.protect);
@@ -15,6 +17,61 @@ router.use(authMiddleware_1.protect);
 router.get('/me', profileController_1.getProfile);
 // Get profile completion percentage
 router.get('/me/completion', profileController_1.getProfileCompletion);
+// ========== CLOUDINARY MEDIA UPLOAD ROUTES ==========
+// Upload Cover Image (Job Seeker specific)
+router.post('/cover', (0, roleMiddleware_1.authorize)('Job Seeker'), cloudinary_1.uploadCover.single('cover_image'), async (req, res, next) => {
+    // If you move the logic code out of app.ts into controllers/profileController later,
+    // you can easily replace this inline function with a single named controller execution.
+    try {
+        const userId = req.user.id;
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No cover image file uploaded' });
+        }
+        // @ts-ignore - tracking profile update via Prisma client context global bindings
+        const profile = await global.prisma.jobSeekerProfile.findFirst({ where: { user_id: userId } });
+        if (!profile)
+            return res.status(404).json({ success: false, message: 'Profile record not found' });
+        // @ts-ignore
+        const updated = await global.prisma.jobSeekerProfile.update({
+            where: { id: profile.id },
+            data: { cover_image: req.file.path }
+        });
+        return res.json({
+            success: true,
+            data: { cover_image: updated.cover_image },
+            message: 'Cover image updated successfully'
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+// Upload Avatar / Profile Picture (Job Seeker specific)
+router.post('/avatar', (0, roleMiddleware_1.authorize)('Job Seeker'), cloudinary_1.uploadAvatar.single('avatar'), async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No avatar file uploaded' });
+        }
+        // @ts-ignore
+        const profile = await global.prisma.jobSeekerProfile.findFirst({ where: { user_id: userId } });
+        if (!profile)
+            return res.status(404).json({ success: false, message: 'Profile record not found' });
+        // @ts-ignore
+        const updated = await global.prisma.jobSeekerProfile.update({
+            where: { id: profile.id },
+            data: { avatar: req.file.path }
+        });
+        return res.json({
+            success: true,
+            data: { avatar: updated.avatar },
+            message: 'Profile picture updated successfully'
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+});
 // ========== JOB SEEKER PROFILE ROUTES ==========
 // Update job seeker profile
 router.put('/seeker', (0, roleMiddleware_1.authorize)('Job Seeker'), profileController_1.updateSeekerProfile);

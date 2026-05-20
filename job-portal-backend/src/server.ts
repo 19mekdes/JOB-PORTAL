@@ -1,3 +1,17 @@
+// Add this at the top of server.ts right after imports
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error)
+  process.exit(1)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason)
+  process.exit(1)
+})
+
+console.log('🚀 Starting server initialization...')
+
+
 import express, { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
@@ -167,8 +181,7 @@ async function sendApplicationStatusEmail(userEmail: string, userName: string, j
     </html>
   `
 
-  await sendEmail(to, `Application Status Update: ${status}`, html)
-}
+  await sendEmail(userEmail, `Application Status Update: ${status}`, html)
 
 // Send new job alert email
 async function sendNewJobAlertEmail(userEmail: string, userName: string, jobs: any[]) {
@@ -2057,6 +2070,8 @@ app.get('/api/notifications', authMiddleware, async (req: Request, res: Response
   }
 })
 
+
+
 // ========== LOOKUP TABLES ==========
 app.get('/api/job-statuses', async (req: Request, res: Response) => {
   try {
@@ -2079,3 +2094,4 @@ const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
+}
