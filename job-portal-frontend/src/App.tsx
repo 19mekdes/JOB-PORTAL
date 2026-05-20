@@ -69,6 +69,7 @@ import PrivateRoute, {
   AdminRoute,
   SuperAdminRoute
 } from '@/components/common/PrivateRoute'
+import JobSeekerPreferences from './pages/jobseeker/Preferences'
 
 function App() {
   return (
@@ -132,6 +133,7 @@ function App() {
               <Route path="/applications/:id" element={<ApplicationStatusPage />} />
               <Route path="/bookmarks" element={<BookmarksPage />} />
               <Route path="/saved-jobs" element={<BookmarksPage />} />
+              <Route path="/jobseeker/preferences" element={<JobSeekerPreferences />} />
               <Route path="/profile" element={<SeekerProfile />} />
             </Route>
           </Route>

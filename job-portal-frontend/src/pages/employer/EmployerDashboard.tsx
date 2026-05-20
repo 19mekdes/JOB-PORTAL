@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect } from 'react'
-import { useNavigate, Link, Outlet, useLocation } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/redux/store'
 import {
@@ -43,8 +43,20 @@ import {
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
+// Import recharts components
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip
+} from 'recharts'
+
 // Dashboard content component
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DashboardContent: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats>({
     totalJobs: 0,
@@ -69,46 +81,91 @@ const DashboardContent: React.FC = () => {
   useEffect(() => {
     fetchDashboardData()
   }, [])
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true)
-      const response = await api.get('/employer/dashboard')
-      setStats(response.data.data)
-      setRecentJobs(response.data.data.recentJobs || [])
-      setRecentApplications(response.data.data.recentApplications || [])
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error)
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load dashboard data",
-      })
-    } finally {
-      setLoading(false)
-    }
+const fetchDashboardData = async () => {
+  try {
+    setLoading(true)
+    const response = await api.get('/employer/dashboard')
+    const dashboardData = response.data.data
+    
+    // Debug: Log what we received
+    console.log('Dashboard Data:', dashboardData)
+    console.log('Recent Jobs:', JSON.stringify(dashboardData.recentJobs, null, 2))
+    console.log('Recent Applications:', JSON.stringify(dashboardData.recentApplications, null, 2))
+    
+    // Update stats
+    setStats({
+      totalJobs: dashboardData.totalJobs || 0,
+      activeJobs: dashboardData.activeJobs || 0,
+      totalApplications: dashboardData.totalApplications || 0,
+      totalViews: dashboardData.totalViews || 0,
+      pendingApplications: dashboardData.pendingApplications || 0,
+      reviewedApplications: dashboardData.reviewedApplications || 0,
+      shortlistedApplications: dashboardData.shortlistedApplications || 0,
+      interviewApplications: dashboardData.interviewApplications || 0,
+      acceptedApplications: dashboardData.acceptedApplications || 0,
+      rejectedApplications: dashboardData.rejectedApplications || 0,
+      thisMonthJobs: dashboardData.thisMonthJobs || 0,
+      thisMonthApplications: dashboardData.thisMonthApplications || 0,
+      thisMonthViews: dashboardData.thisMonthViews || 0
+    })
+    
+    // Set recent jobs directly - status should already be a string from backend
+    setRecentJobs(dashboardData.recentJobs || [])
+    
+    // Set recent applications directly - status should already be a string from backend
+    setRecentApplications(dashboardData.recentApplications || [])
+    
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error)
+    toast({
+      variant: "destructive",
+      title: "Error",
+      description: "Failed to load dashboard data",
+    })
+  } finally {
+    setLoading(false)
   }
+}
 
-  const getStatusBadge = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 border-0">Pending</Badge>
-      case 'reviewed':
-        return <Badge className="bg-blue-100 text-blue-800 border-0">Reviewed</Badge>
-      case 'shortlisted':
-        return <Badge className="bg-purple-100 text-purple-800 border-0">Shortlisted</Badge>
-      case 'interview':
-        return <Badge className="bg-indigo-100 text-indigo-800 border-0">Interview</Badge>
-      case 'accepted':
-        return <Badge className="bg-green-100 text-green-800 border-0">Accepted</Badge>
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-800 border-0">Rejected</Badge>
-      default:
-        return <Badge variant="secondary" className="border-0">{status}</Badge>
-    }
+  const getStatusBadge = (status: any) => {
+  // Handle different possible formats of status
+  let statusStr = 'Unknown'
+  
+  if (typeof status === 'string') {
+    statusStr = status
+  } else if (status && typeof status === 'object') {
+    // If it's an object with status_name property
+    statusStr = status.status_name || status.name || 'Unknown'
+  } else if (status && status.toString) {
+    statusStr = status.toString()
   }
+  
+  switch (statusStr?.toLowerCase()) {
+    case 'open':
+      return <Badge className="bg-green-100 text-green-800 border-0">Open</Badge>
+    case 'closed':
+      return <Badge className="bg-red-100 text-red-800 border-0">Closed</Badge>
+    case 'draft':
+      return <Badge className="bg-gray-100 text-gray-800 border-0">Draft</Badge>
+    case 'pending':
+      return <Badge className="bg-yellow-100 text-yellow-800 border-0">Pending</Badge>
+    case 'reviewed':
+      return <Badge className="bg-blue-100 text-blue-800 border-0">Reviewed</Badge>
+    case 'shortlisted':
+      return <Badge className="bg-purple-100 text-purple-800 border-0">Shortlisted</Badge>
+    case 'interview':
+      return <Badge className="bg-indigo-100 text-indigo-800 border-0">Interview</Badge>
+    case 'accepted':
+      return <Badge className="bg-emerald-100 text-emerald-800 border-0">Accepted</Badge>
+    case 'rejected':
+      return <Badge className="bg-red-100 text-red-800 border-0">Rejected</Badge>
+    default:
+      return <Badge variant="secondary" className="border-0">{statusStr}</Badge>
+  }
+}
 
   const getTimeAgo = (date: string) => {
+    if (!date) return 'Recently'
     const diff = Math.floor((new Date().getTime() - new Date(date).getTime()) / (1000 * 60))
     if (diff < 1) return 'Just now'
     if (diff < 60) return `${diff} minutes ago`
@@ -347,7 +404,6 @@ interface RecentJob {
   id: string
   title: string
   location: string
-  salary_range: string
   applications_count: number
   views_count: number
   status: string
@@ -358,9 +414,9 @@ interface RecentApplication {
   id: string
   job_title: string
   applicant_name: string
-  applicant_email: string
   status: string
   applied_at: string
+  applied_days_ago?: number
 }
 
 interface Notification {
@@ -686,16 +742,13 @@ const EmployerDashboard: React.FC = () => {
           </div>
         </header>
 
-        {/* Dashboard Content - This is where child routes will render */}
+        {/* Dashboard Content */}
         <main className="p-4 sm:p-6">
-          <Outlet />
+          <DashboardContent />
         </main>
       </div>
     </div>
   )
 }
-
-// Import missing components
-import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 
 export default EmployerDashboard

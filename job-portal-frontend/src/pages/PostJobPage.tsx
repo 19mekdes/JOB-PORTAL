@@ -24,7 +24,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -309,14 +308,7 @@ const PostJobPage: React.FC = () => {
                       className="mt-1.5 rounded-lg"
                     />
                   </div>
-                  <div className="flex items-center space-x-2 pt-8">
-                    <Switch
-                      id="remote"
-                      checked={formData.is_remote}
-                      onCheckedChange={(checked) => setFormData({ ...formData, is_remote: checked })}
-                    />
-                    <Label htmlFor="remote">Remote Position</Label>
-                  </div>
+                  
                 </div>
               </CardContent>
             </Card>

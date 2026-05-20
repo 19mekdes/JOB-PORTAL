@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
+import { useTheme } from '@/context/ThemeContext'
 
 interface Notification {
   id: string
@@ -51,13 +52,13 @@ const EmployerLayout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useSelector((state: RootState) => state.auth)
+  const { darkMode } = useTheme() // Add theme hook
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   
-  // Real-time synchronization state for your Cloudinary company logo asset link
   const [liveLogo, setLiveLogo] = useState<string | null>(null)
 
   const navItems = [
@@ -88,18 +89,13 @@ const EmployerLayout: React.FC = () => {
     window.addEventListener('resize', handleResize)
     handleResize()
     return () => window.removeEventListener('resize', handleResize)
-  }, [user, location.pathname]) // Re-triggers on path routing adjustments to grab newly committed logos instantly
+  }, [user, location.pathname])
 
   const fetchLiveLogo = async () => {
     try {
       const response = await api.get('/employer/profile')
-      
       const rawData = response.data?.data
-      
-      // Look inside nested profile key first, fallback to checking flat root response properties directly
       const targetObj = rawData?.profile ? rawData.profile : rawData
-
-      // Extract your custom schema variant properties cleanly
       const logoUrl = targetObj?.logo_url || targetObj?.company_logo || targetObj?.logo
       
       if (logoUrl) {
@@ -188,7 +184,7 @@ const EmployerLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen ${darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
         <div 
@@ -199,26 +195,27 @@ const EmployerLayout: React.FC = () => {
 
       {/* Sidebar - Desktop */}
       <aside className={`
-        fixed top-0 left-0 z-40 h-screen bg-white border-r border-gray-200 shadow-lg transition-all duration-300
+        fixed top-0 left-0 z-40 h-screen shadow-lg transition-all duration-300
         ${sidebarOpen ? 'w-64' : 'w-20'}
         hidden lg:block
+        ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}
       `}>
         <div className="flex flex-col h-full">
           {/* Logo Dashboard Brand */}
-          <div className={`flex items-center ${sidebarOpen ? 'justify-between px-4' : 'justify-center px-2'} h-16 border-b border-gray-200`}>
+          <div className={`flex items-center ${sidebarOpen ? 'justify-between px-4' : 'justify-center px-2'} h-16 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             {sidebarOpen ? (
               <>
                 <Link to="/employer/dashboard" className="flex items-center gap-2">
                   <Building2 className="h-6 w-6 text-blue-600" />
-                  <span className="text-xl font-bold text-gray-900">Employer Hub</span>
+                  <span className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Employer Hub</span>
                 </Link>
                 <button
                   type="button"
                   onClick={toggleSidebar}
-                  className="p-1 rounded-lg hover:bg-gray-100 transition"
+                  className={`p-1 rounded-lg transition ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
                   title="Collapse sidebar"
                 >
-                  <PanelLeftClose className="h-5 w-5 text-gray-500" />
+                  <PanelLeftClose className={`h-5 w-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                 </button>
               </>
             ) : (
@@ -229,36 +226,36 @@ const EmployerLayout: React.FC = () => {
                 <button
                   type="button"
                   onClick={toggleSidebar}
-                  className="absolute -right-3 top-5 p-1 rounded-full bg-white border border-gray-200 shadow-md hover:bg-gray-100 transition"
+                  className={`absolute -right-3 top-5 p-1 rounded-full shadow-md transition ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}
                   title="Expand sidebar"
                 >
-                  <PanelLeftOpen className="h-4 w-4 text-gray-500" />
+                  <PanelLeftOpen className={`h-4 w-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                 </button>
               </>
             )}
           </div>
 
-          {/* User Info Sidebar - Upgraded with image mapping fallback tags */}
+          {/* User Info Sidebar */}
           {sidebarOpen ? (
-            <div className="p-4 border-b border-gray-200">
+            <div className={`p-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10 border border-gray-200 rounded-lg overflow-hidden bg-white">
+                <Avatar className={`h-10 w-10 border rounded-lg overflow-hidden ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-white'}`}>
                   {liveLogo && <AvatarImage src={liveLogo} alt="Employer Logo" className="h-full w-full object-cover" />}
-                  <AvatarFallback className="bg-blue-100 text-blue-600 font-bold rounded-none flex items-center justify-center w-full h-full">
+                  <AvatarFallback className={`${darkMode ? 'bg-gray-600 text-gray-300' : 'bg-blue-100 text-blue-600'} font-bold rounded-none flex items-center justify-center w-full h-full`}>
                     {getUserInitial()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{user?.full_name || 'Employer'}</p>
-                  <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                  <p className={`font-medium truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>{user?.full_name || 'Employer'}</p>
+                  <p className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{user?.email}</p>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="py-4 border-b border-gray-200 flex justify-center">
-              <Avatar className="h-10 w-10 border border-gray-200 rounded-lg overflow-hidden bg-white">
+            <div className={`py-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-center`}>
+              <Avatar className={`h-10 w-10 border rounded-lg overflow-hidden ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-white'}`}>
                 {liveLogo && <AvatarImage src={liveLogo} alt="Employer Logo" className="h-full w-full object-cover" />}
-                <AvatarFallback className="bg-blue-100 text-blue-600 font-bold rounded-none flex items-center justify-center w-full h-full">
+                <AvatarFallback className={`${darkMode ? 'bg-gray-600 text-gray-300' : 'bg-blue-100 text-blue-600'} font-bold rounded-none flex items-center justify-center w-full h-full`}>
                   {getUserInitial()}
                 </AvatarFallback>
               </Avatar>
@@ -277,8 +274,8 @@ const EmployerLayout: React.FC = () => {
                   onClick={() => setMobileSidebarOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
                     isActive 
-                      ? 'bg-blue-50 text-blue-700' 
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? darkMode ? 'bg-blue-900 text-blue-300' : 'bg-blue-50 text-blue-700'
+                      : darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
                   } ${!sidebarOpen && 'justify-center'}`}
                   title={!sidebarOpen ? item.label : ''}
                 >
@@ -290,11 +287,11 @@ const EmployerLayout: React.FC = () => {
           </nav>
 
           {/* Footer Action items container */}
-          <div className={`p-4 border-t border-gray-200 ${!sidebarOpen && 'flex justify-center'}`}>
+          <div className={`p-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${!sidebarOpen && 'flex justify-center'}`}>
             <button
               type="button"
               onClick={handleLogout}
-              className={`flex items-center gap-3 px-3 py-2 text-red-600 rounded-lg hover:bg-red-50 transition ${!sidebarOpen ? 'justify-center w-full' : 'w-full'}`}
+              className={`flex items-center gap-3 px-3 py-2 text-red-600 rounded-lg transition ${darkMode ? 'hover:bg-red-900/20' : 'hover:bg-red-50'} ${!sidebarOpen ? 'justify-center w-full' : 'w-full'}`}
               title={!sidebarOpen ? 'Sign Out' : ''}
             >
               <LogOut className="h-5 w-5 shrink-0" />
@@ -306,36 +303,37 @@ const EmployerLayout: React.FC = () => {
 
       {/* Mobile Drawer Navigation Sidebar */}
       <div className={`
-        fixed top-0 left-0 z-40 h-screen bg-white border-r border-gray-200 shadow-lg transition-transform duration-300
+        fixed top-0 left-0 z-40 h-screen shadow-lg transition-transform duration-300
         lg:hidden
         ${mobileSidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}
+        ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}
       `}>
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+          <div className={`flex items-center justify-between h-16 px-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <Link to="/employer/dashboard" className="flex items-center gap-2">
               <Building2 className="h-6 w-6 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">Employer Hub</span>
+              <span className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Employer Hub</span>
             </Link>
             <button
               type="button"
               onClick={() => setMobileSidebarOpen(false)}
-              className="p-1 rounded-lg hover:bg-gray-100"
+              className={`p-1 rounded-lg transition ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
             >
-              <X className="h-5 w-5 text-gray-500" />
+              <X className={`h-5 w-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
             </button>
           </div>
 
-          <div className="p-4 border-b border-gray-200">
+          <div className={`p-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 border border-gray-200 rounded-lg overflow-hidden bg-white">
+              <Avatar className={`h-10 w-10 border rounded-lg overflow-hidden ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-white'}`}>
                 {liveLogo && <AvatarImage src={liveLogo} alt="Mobile Brand Logo" className="h-full w-full object-cover" />}
-                <AvatarFallback className="bg-blue-100 text-blue-600 font-bold rounded-none flex items-center justify-center w-full h-full">
+                <AvatarFallback className={`${darkMode ? 'bg-gray-600 text-gray-300' : 'bg-blue-100 text-blue-600'} font-bold rounded-none flex items-center justify-center w-full h-full`}>
                   {getUserInitial()}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-medium text-gray-900">{user?.full_name || 'Employer'}</p>
-                <p className="text-xs text-gray-500">{user?.email}</p>
+                <p className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{user?.full_name || 'Employer'}</p>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{user?.email}</p>
               </div>
             </div>
           </div>
@@ -351,8 +349,8 @@ const EmployerLayout: React.FC = () => {
                   onClick={() => setMobileSidebarOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
                     isActive 
-                      ? 'bg-blue-50 text-blue-700' 
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? darkMode ? 'bg-blue-900 text-blue-300' : 'bg-blue-50 text-blue-700'
+                      : darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -362,11 +360,11 @@ const EmployerLayout: React.FC = () => {
             })}
           </nav>
 
-          <div className="p-4 border-t border-gray-200">
+          <div className={`p-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <button
               type="button"
               onClick={handleLogout}
-              className="flex items-center gap-3 w-full px-3 py-2 text-red-600 rounded-lg hover:bg-red-50 transition"
+              className={`flex items-center gap-3 w-full px-3 py-2 text-red-600 rounded-lg transition ${darkMode ? 'hover:bg-red-900/20' : 'hover:bg-red-50'}`}
             >
               <LogOut className="h-5 w-5" />
               <span>Sign Out</span>
@@ -378,22 +376,22 @@ const EmployerLayout: React.FC = () => {
       {/* Main Content Layout Block Context Window */}
       <div className={`transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'}`}>
         {/* Top Sticky Header */}
-        <header className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
+        <header className={`sticky top-0 z-30 border-b shadow-sm ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <div className="flex items-center justify-between h-16 px-4 sm:px-6">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setMobileSidebarOpen(true)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition lg:hidden"
+                className={`p-2 rounded-lg transition lg:hidden ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
               >
-                <Menu className="h-5 w-5 text-gray-600" />
+                <Menu className={`h-5 w-5 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} />
               </button>
               
-              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
-                <Search className="h-4 w-4 text-gray-400" />
+              <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <Search className={`h-4 w-4 ${darkMode ? 'text-gray-400' : 'text-gray-400'}`} />
                 <Input
                   placeholder="Search..."
-                  className="border-0 bg-transparent p-0 h-7 w-80 focus-visible:ring-0 text-sm"
+                  className={`border-0 bg-transparent p-0 h-7 w-80 focus-visible:ring-0 text-sm ${darkMode ? 'text-white placeholder:text-gray-400' : 'text-gray-900'}`}
                 />
               </div>
             </div>
@@ -402,8 +400,8 @@ const EmployerLayout: React.FC = () => {
               {/* Notifications Dropdown Panel */}
               <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
                 <DropdownMenuTrigger asChild>
-                  <button className="relative p-2 rounded-full hover:bg-gray-100 transition">
-                    <Bell className="h-5 w-5 text-gray-600" />
+                  <button className={`relative p-2 rounded-full transition ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <Bell className={`h-5 w-5 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} />
                     {unreadCount > 0 && (
                       <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-4.5 h-4.5 flex items-center justify-center px-1 shadow-md">
                         {unreadCount > 99 ? '99+' : unreadCount}
@@ -411,9 +409,9 @@ const EmployerLayout: React.FC = () => {
                     )}
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-96 max-h-96 overflow-y-auto p-0 bg-white border border-gray-200 shadow-lg"> Size Context mapping
-                  <div className="sticky top-0 bg-white border-b border-gray-100 p-3 flex justify-between items-center">
-                    <DropdownMenuLabel className="p-0 text-gray-900 font-semibold text-sm">
+                <DropdownMenuContent align="end" className={`w-96 max-h-96 overflow-y-auto p-0 border shadow-lg ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                  <div className={`sticky top-0 border-b p-3 flex justify-between items-center ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+                    <DropdownMenuLabel className={`p-0 font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                       Notifications ({unreadCount})
                     </DropdownMenuLabel>
                     {unreadCount > 0 && (
@@ -426,19 +424,21 @@ const EmployerLayout: React.FC = () => {
                       </button>
                     )}
                   </div>
-                  <DropdownMenuSeparator className="bg-gray-100" />
+                  <DropdownMenuSeparator className={darkMode ? 'bg-gray-700' : 'bg-gray-100'} />
                   {notifications.length === 0 ? (
                     <div className="p-8 text-center">
-                      <Bell className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-500 text-sm">No notifications yet</p>
-                      <p className="text-xs text-gray-400 mt-1">New notifications will appear here</p>
+                      <Bell className={`h-10 w-10 mx-auto mb-3 ${darkMode ? 'text-gray-600' : 'text-gray-400'}`} />
+                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>No notifications yet</p>
+                      <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>New notifications will appear here</p>
                     </div>
                   ) : (
                     notifications.map((notification) => (
                       <DropdownMenuItem
                         key={notification.id}
                         className={`p-3 cursor-pointer flex items-start gap-3 ${
-                          !notification.is_read ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'
+                          !notification.is_read 
+                            ? darkMode ? 'bg-blue-900/30' : 'bg-blue-50'
+                            : darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'
                         }`}
                         onClick={() => markNotificationAsRead(notification.id)}
                       >
@@ -446,10 +446,10 @@ const EmployerLayout: React.FC = () => {
                           {getNotificationIcon(notification.type)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium ${!notification.is_read ? 'text-gray-900' : 'text-gray-800'}`}>
+                          <p className={`text-sm font-medium ${!notification.is_read ? (darkMode ? 'text-white' : 'text-gray-900') : (darkMode ? 'text-gray-300' : 'text-gray-800')}`}>
                             {notification.title}
                           </p>
-                          <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">
+                          <p className={`text-xs mt-0.5 line-clamp-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                             {notification.message}
                           </p>
                           <div className="flex items-center gap-1 mt-1.5">
@@ -468,31 +468,31 @@ const EmployerLayout: React.FC = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Upgraded Top-Right Account Menu Dropdown containing crisp Image tags */}
+              {/* Top-Right Account Menu Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 focus:outline-none ml-2 hover:bg-gray-100 rounded-lg px-2 py-1 transition cursor-pointer">
-                    <Avatar className="h-8 w-8 border border-gray-200 rounded-lg overflow-hidden bg-white">
-                      {liveLogo && <AvatarImage src={liveLogo} alt="Navbar Logo Account Button" className="h-full w-full object-cover" />}
-                      <AvatarFallback className="bg-blue-500 text-white text-sm font-medium rounded-none flex items-center justify-center w-full h-full">
+                  <button className={`flex items-center gap-2 focus:outline-none ml-2 rounded-lg px-2 py-1 transition cursor-pointer ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <Avatar className={`h-8 w-8 border rounded-lg overflow-hidden ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-white'}`}>
+                      {liveLogo && <AvatarImage src={liveLogo} alt="Navbar Logo" className="h-full w-full object-cover" />}
+                      <AvatarFallback className={`${darkMode ? 'bg-gray-600 text-gray-300' : 'bg-blue-500 text-white'} text-sm font-medium rounded-none flex items-center justify-center w-full h-full`}>
                         {getUserInitial()}
                       </AvatarFallback>
                     </Avatar>
-                    <ChevronDown className="h-4 w-4 text-gray-600 hidden sm:block" />
+                    <ChevronDown className={`h-4 w-4 hidden sm:block ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 shadow-lg">
-                  <DropdownMenuLabel className="text-gray-900 font-semibold">My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-gray-100" />
-                  <DropdownMenuItem onClick={() => navigate('/employer/profile')} className="cursor-pointer hover:bg-gray-100">
-                    <UserCircle className="mr-2 h-4 w-4 text-gray-600" />
-                    <span className="text-gray-700">Profile</span>
+                <DropdownMenuContent align="end" className={`w-56 border shadow-lg ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                  <DropdownMenuLabel className={darkMode ? 'text-white' : 'text-gray-900'}>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator className={darkMode ? 'bg-gray-700' : 'bg-gray-100'} />
+                  <DropdownMenuItem onClick={() => navigate('/employer/profile')} className={`cursor-pointer ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <UserCircle className={`mr-2 h-4 w-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                    <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>Profile</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/employer/settings')} className="cursor-pointer hover:bg-gray-100">
-                    <Settings className="mr-2 h-4 w-4 text-gray-600" />
-                    <span className="text-gray-700">Settings</span>
+                  <DropdownMenuItem onClick={() => navigate('/employer/settings')} className={`cursor-pointer ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <Settings className={`mr-2 h-4 w-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                    <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>Settings</span>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-gray-100" />
+                  <DropdownMenuSeparator className={darkMode ? 'bg-gray-700' : 'bg-gray-100'} />
                   <DropdownMenuItem onClick={handleLogout} className="cursor-pointer hover:bg-red-50">
                     <LogOut className="mr-2 h-4 w-4 text-red-600" />
                     <span className="text-red-600">Sign Out</span>

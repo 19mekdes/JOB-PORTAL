@@ -81,31 +81,31 @@ const EditJob: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
-  const fetchJobData = async () => {
-    try {
-      const response = await api.get(`/jobs/${id}`)
-      const job = response.data.data
-      setFormData({
-        title: job.title || '',
-        description: job.description || '',
-        requirements: job.requirements || '',
-        benefits: job.benefits || '',
-        location: job.location || '',
-        employment_type_id: job.employment_type_id?.toString() || '',
-        industry_id: job.industry_id?.toString() || '',
-        salary_min: job.salary_min?.toString() || '',
-        salary_max: job.salary_max?.toString() || '',
-        is_remote: job.is_remote || false,
-        status_id: job.status_id?.toString() || '1'
-      })
-    } catch (error) {
-      console.error('Error fetching job:', error)
-      toast({ variant: "destructive", title: "Error", description: "Failed to load job data" })
-    } finally {
-      setLoading(false)
-    }
+const fetchJobData = async () => {
+  try {
+    const response = await api.get(`/jobs/${id}`)
+    const job = response.data.data
+    setFormData({
+      title: job.title || '',
+      description: job.description || '',
+      requirements: job.requirements || '',
+      benefits: job.benefits || '',
+      location: job.location || '',
+      // Convert numbers to strings for select inputs
+      employment_type_id: job.employment_type_id ? String(job.employment_type_id) : '',
+      industry_id: job.industry_id ? String(job.industry_id) : '',
+      salary_min: job.salary_min ? String(job.salary_min) : '',
+      salary_max: job.salary_max ? String(job.salary_max) : '',
+      is_remote: job.is_remote || false,
+      status_id: job.status_id ? String(job.status_id) : '1'
+    })
+  } catch (error) {
+    console.error('Error fetching job:', error)
+    toast({ variant: "destructive", title: "Error", description: "Failed to load job data" })
+  } finally {
+    setLoading(false)
   }
-
+}
   const fetchEmploymentTypes = async () => {
     try {
       const response = await api.get('/employment-types')
@@ -138,25 +138,50 @@ const EditJob: React.FC = () => {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSubmitting(true)
-    try {
-      await api.put(`/jobs/${id}`, formData)
-      
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setSubmitting(true)
+  try {
+    // Force convert all values to proper types
+    const submitData = {
+      title: formData.title || '',
+      description: formData.description || '',
+      requirements: formData.requirements || '',
+      benefits: formData.benefits || '',
+      location: formData.location || '',
+      // Force convert to number - this is the critical fix
+      employment_type_id: formData.employment_type_id ? Number(formData.employment_type_id) : null,
+      industry_id: formData.industry_id ? Number(formData.industry_id) : null,
+      salary_min: formData.salary_min ? Number(formData.salary_min) : null,
+      salary_max: formData.salary_max ? Number(formData.salary_max) : null,
+      is_remote: formData.is_remote || false,
+      status_id: formData.status_id ? Number(formData.status_id) : 1
+    }
+    
+    console.log('Sending to backend:', submitData)
+    
+    const response = await api.put(`/jobs/${id}`, submitData)
+    
+    if (response.data.success) {
       const statusInfo = getStatusBadge(formData.status_id)
       toast({ 
         title: "Success", 
         description: `Job updated successfully. Status: ${statusInfo.label}` 
       })
       navigate('/employer/jobs')
-    } catch (error) {
-      console.error('Error updating job:', error)
-      toast({ variant: "destructive", title: "Error", description: "Failed to update job" })
-    } finally {
-      setSubmitting(false)
     }
+  } catch (error: any) {
+    console.error('Error updating job:', error)
+    console.error('Error response:', error.response?.data)
+    toast({ 
+      variant: "destructive", 
+      title: "Error", 
+      description: error.response?.data?.message || "Failed to update job" 
+    })
+  } finally {
+    setSubmitting(false)
   }
+}
 
   const currentStatus = getStatusBadge(formData.status_id)
 

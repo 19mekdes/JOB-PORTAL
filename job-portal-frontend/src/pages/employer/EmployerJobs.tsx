@@ -1,4 +1,4 @@
- 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -89,86 +89,106 @@ const EmployerJobs: React.FC = () => {
     }
   }
 
-  const handleCloseJob = async (job: Job) => {
+  // FIXED: Close job - send status as 'Closed' string, not status_id
+  const handleCloseJob = async (jobId: string, jobTitle: string) => {
     try {
-      await api.put(`/jobs/${job.id}/status`, { status_id: 2 })
-      toast({
-        title: "Job Closed",
-        description: `${job.title} has been closed. Job seekers will no longer see it.`,
-      })
-      fetchJobs()
-    } catch (error) {
-      console.error('Error closing job:', error)
+      console.log('Closing job:', jobId);
+      const response = await api.put(`/jobs/${jobId}/status`, { status: 'Closed' });
+      
+      if (response.data.success) {
+        toast({
+          title: "Job Closed",
+          description: `${jobTitle} has been closed. Job seekers will no longer see it.`,
+        });
+        fetchJobs();
+      }
+    } catch (error: any) {
+      console.error('Error closing job:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to close job",
-      })
+        description: error.response?.data?.message || "Failed to close job",
+      });
     }
   }
 
-  const handleReopenJob = async (job: Job) => {
+  // FIXED: Reopen job - send status as 'Open' string, not status_id
+  const handleReopenJob = async (jobId: string, jobTitle: string) => {
     try {
-      await api.put(`/jobs/${job.id}/status`, { status_id: 1 })
-      toast({
-        title: "Job Reopened",
-        description: `${job.title} has been reopened. Job seekers can now see it.`,
-      })
-      fetchJobs()
-    } catch (error) {
-      console.error('Error reopening job:', error)
+      console.log('Reopening job:', jobId);
+      const response = await api.put(`/jobs/${jobId}/status`, { status: 'Open' });
+      
+      if (response.data.success) {
+        toast({
+          title: "Job Reopened",
+          description: `${jobTitle} has been reopened. Job seekers can now see it.`,
+        });
+        fetchJobs();
+      }
+    } catch (error: any) {
+      console.error('Error reopening job:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to reopen job",
-      })
+        description: error.response?.data?.message || "Failed to reopen job",
+      });
     }
   }
 
-  const handleDeleteJob = async (job: Job) => {
+  // FIXED: Delete job
+  const handleDeleteJob = async (jobId: string, jobTitle: string) => {
     try {
-      await api.delete(`/jobs/${job.id}`)
-      toast({
-        title: "Job Deleted",
-        description: `${job.title} has been deleted.`,
-      })
-      fetchJobs()
-    } catch (error) {
-      console.error('Error deleting job:', error)
+      const response = await api.delete(`/jobs/${jobId}`);
+      
+      if (response.data.success) {
+        toast({
+          title: "Job Deleted",
+          description: `${jobTitle} has been deleted.`,
+        });
+        fetchJobs();
+      }
+    } catch (error: any) {
+      console.error('Error deleting job:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to delete job",
-      })
+        description: error.response?.data?.message || "Failed to delete job",
+      });
     }
   }
 
   const confirmAction = () => {
-    if (!selectedJob) return
-    if (actionType === 'close') handleCloseJob(selectedJob)
-    else if (actionType === 'reopen') handleReopenJob(selectedJob)
-    else if (actionType === 'delete') handleDeleteJob(selectedJob)
-    setIsDialogOpen(false)
-    setSelectedJob(null)
-    setActionType(null)
-    setOpenMenuId(null)
+    if (!selectedJob) return;
+    
+    if (actionType === 'close') {
+      handleCloseJob(selectedJob.id, selectedJob.title);
+    } else if (actionType === 'reopen') {
+      handleReopenJob(selectedJob.id, selectedJob.title);
+    } else if (actionType === 'delete') {
+      handleDeleteJob(selectedJob.id, selectedJob.title);
+    }
+    
+    setIsDialogOpen(false);
+    setSelectedJob(null);
+    setActionType(null);
+    setOpenMenuId(null);
   }
 
   const openConfirmDialog = (job: Job, type: 'close' | 'reopen' | 'delete') => {
-    setSelectedJob(job)
-    setActionType(type)
-    setIsDialogOpen(true)
-    setOpenMenuId(null)
+    setSelectedJob(job);
+    setActionType(type);
+    setIsDialogOpen(true);
+    setOpenMenuId(null);
   }
 
   const handleCopyLink = (jobId: string, jobTitle: string) => {
-    const link = `${window.location.origin}/jobs/${jobId}`
-    navigator.clipboard.writeText(link)
+    const link = `${window.location.origin}/jobs/${jobId}`;
+    navigator.clipboard.writeText(link);
     toast({ 
       title: "Link Copied", 
       description: `Link for ${jobTitle} copied to clipboard` 
-    })
-    setOpenMenuId(null)
+    });
+    setOpenMenuId(null);
   }
 
   const getStatusBadge = (status: string) => {
@@ -191,8 +211,8 @@ const EmployerJobs: React.FC = () => {
   }
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
   if (loading) {
@@ -265,13 +285,12 @@ const EmployerJobs: React.FC = () => {
                     {getStatusBadge(job.status?.status_name)}
                   </div>
                   
-                  {/* 3-Dot Menu - FIXED */}
+                  {/* 3-Dot Menu */}
                   <DropdownMenu open={openMenuId === job.id} onOpenChange={(open) => setOpenMenuId(open ? job.id : null)}>
                     <DropdownMenuTrigger asChild>
                       <Button 
                         variant="ghost" 
                         className="h-8 w-8 p-0 rounded-full hover:bg-gray-100"
-                        onClick={() => setOpenMenuId(openMenuId === job.id ? null : job.id)}
                       >
                         <MoreVertical className="h-4 w-4 text-gray-500" />
                       </Button>

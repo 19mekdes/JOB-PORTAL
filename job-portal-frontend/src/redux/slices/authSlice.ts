@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import authService from '../../services/authService'
+import authService, { LoginCredentials } from '../../services/authService'
 
 interface AuthState {
   user: any | null
@@ -10,50 +10,59 @@ interface AuthState {
   message: string
 }
 
-// Get user from localStorage only once on app load
-const getUserFromStorage = () => {
-  const userStr = localStorage.getItem('user')
-  if (userStr) {
-    try {
-      return JSON.parse(userStr)
-    } catch {
-      return null
-    }
-  }
-  return null
-}
-
 const initialState: AuthState = {
-  user: getUserFromStorage(),
+  // Use your service's built-in helper to sync user on page loads/refreshes
+  user: authService.getStoredUser(), 
   isLoading: false,
   isError: false,
   isSuccess: false,
   message: ''
 }
 
-// ✅ LOGIN ACTION
+// ✅ FIXED LOGIN ACTION
 export const login = createAsyncThunk(
   'auth/login',
-  async ({ email, password }: { email: string; password: string }) => {
-    const response = await authService.login(email, password)
-    localStorage.setItem('user', JSON.stringify(response.user))
-    return response
+  async ({ email, password, rememberMe }: LoginCredentials, thunkAPI) => {
+    try {
+      const response = await authService.login(email, password, rememberMe)
+      
+      if (response.success && response.user) {
+        // Use your service's helper function to structure and save user + token data
+        authService.storeUserData(response.user, response.token, response.refreshToken)
+        return response.user
+      } else {
+        return thunkAPI.rejectWithValue(response.message || 'Login failed')
+      }
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message || 'Server error during login'
+      return thunkAPI.rejectWithValue(msg)
+    }
   }
 )
 
-// ✅ REGISTER ACTION - ADD THIS
+// ✅ FIXED REGISTER ACTION
 export const register = createAsyncThunk(
   'auth/register',
-  async (userData: any) => {
-    const response = await authService.register(userData)
-    localStorage.setItem('user', JSON.stringify(response.user))
-    return response
+  async (userData: any, thunkAPI) => {
+    try {
+      const response = await authService.register(userData)
+      
+      if (response.success && response.user) {
+        authService.storeUserData(response.user, response.token, response.refreshToken)
+        return response.user
+      } else {
+        return thunkAPI.rejectWithValue(response.message || 'Registration failed')
+      }
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message || 'Server error during registration'
+      return thunkAPI.rejectWithValue(msg)
+    }
   }
 )
 
 // ✅ LOGOUT ACTION
 export const logout = createAsyncThunk('auth/logout', async () => {
-  localStorage.removeItem('user')
+  await authService.logout()
   return null
 })
 
@@ -62,61 +71,6 @@ export const getMe = createAsyncThunk('auth/getMe', async () => {
   const response = await authService.getMe()
   return response
 })
-
-// ✅ UPDATE PROFILE ACTION
-export const updateProfile = createAsyncThunk(
-  'auth/updateProfile',
-  async (profileData: any) => {
-    const response = await authService.updateProfile(profileData)
-    localStorage.setItem('user', JSON.stringify(response))
-    return response
-  }
-)
-
-// ✅ CHANGE PASSWORD ACTION
-export const changePassword = createAsyncThunk(
-  'auth/changePassword',
-  async ({ current_password, new_password }: { current_password: string; new_password: string }) => {
-    const response = await authService.changePassword(current_password, new_password)
-    return response
-  }
-)
-
-// ✅ FORGOT PASSWORD ACTION
-export const forgotPassword = createAsyncThunk(
-  'auth/forgotPassword',
-  async (email: string) => {
-    const response = await authService.forgotPassword(email)
-    return response
-  }
-)
-
-// ✅ RESET PASSWORD ACTION
-export const resetPassword = createAsyncThunk(
-  'auth/resetPassword',
-  async ({ token, new_password }: { token: string; new_password: string }) => {
-    const response = await authService.resetPassword(token, new_password)
-    return response
-  }
-)
-
-// ✅ VERIFY EMAIL ACTION
-export const verifyEmail = createAsyncThunk(
-  'auth/verifyEmail',
-  async (token: string) => {
-    const response = await authService.verifyEmail(token)
-    return response
-  }
-)
-
-// ✅ RESEND VERIFICATION ACTION
-export const resendVerification = createAsyncThunk(
-  'auth/resendVerification',
-  async (email: string) => {
-    const response = await authService.resendVerification(email)
-    return response
-  }
-)
 
 const authSlice = createSlice({
   name: 'auth',
@@ -127,10 +81,6 @@ const authSlice = createSlice({
       state.isError = false
       state.isSuccess = false
       state.message = ''
-    },
-    clearUser: (state) => {
-      state.user = null
-      localStorage.removeItem('user')
     }
   },
   extraReducers: (builder) => {
@@ -139,33 +89,34 @@ const authSlice = createSlice({
       .addCase(login.pending, (state) => {
         state.isLoading = true
         state.isError = false
+        state.isSuccess = false
       })
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false
         state.isSuccess = true
-        state.user = action.payload.user
+        state.user = action.payload // Now receives the direct user payload clean of wrappers
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false
         state.isError = true
-        state.message = action.error.message || 'Login failed'
+        state.message = action.payload as string
         state.user = null
-        localStorage.removeItem('user')
       })
       // Register
       .addCase(register.pending, (state) => {
         state.isLoading = true
         state.isError = false
+        state.isSuccess = false
       })
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false
         state.isSuccess = true
-        state.user = action.payload.user
+        state.user = action.payload
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false
         state.isError = true
-        state.message = action.error.message || 'Registration failed'
+        state.message = action.payload as string
         state.user = null
       })
       // Logout
@@ -173,76 +124,14 @@ const authSlice = createSlice({
         state.user = null
         state.isSuccess = false
         state.isError = false
+        state.message = ''
       })
       // Get Me
-      .addCase(getMe.pending, (state) => {
-        state.isLoading = true
-      })
       .addCase(getMe.fulfilled, (state, action) => {
-        state.isLoading = false
         state.user = action.payload
-      })
-      .addCase(getMe.rejected, (state) => {
-        state.isLoading = false
-        state.user = null
-        localStorage.removeItem('user')
-      })
-      // Update Profile
-      .addCase(updateProfile.fulfilled, (state, action) => {
-        if (state.user) {
-          state.user = { ...state.user, ...action.payload }
-        }
-      })
-      // Change Password
-      .addCase(changePassword.fulfilled, (state) => {
-        state.isSuccess = true
-        state.message = 'Password changed successfully'
-      })
-      .addCase(changePassword.rejected, (state, action) => {
-        state.isError = true
-        state.message = action.error.message || 'Failed to change password'
-      })
-      // Forgot Password
-      .addCase(forgotPassword.fulfilled, (state) => {
-        state.isSuccess = true
-        state.message = 'Password reset email sent'
-      })
-      .addCase(forgotPassword.rejected, (state, action) => {
-        state.isError = true
-        state.message = action.error.message || 'Failed to send reset email'
-      })
-      // Reset Password
-      .addCase(resetPassword.fulfilled, (state) => {
-        state.isSuccess = true
-        state.message = 'Password reset successfully'
-      })
-      .addCase(resetPassword.rejected, (state, action) => {
-        state.isError = true
-        state.message = action.error.message || 'Failed to reset password'
-      })
-      // Verify Email
-      .addCase(verifyEmail.fulfilled, (state) => {
-        state.isSuccess = true
-        state.message = 'Email verified successfully'
-        if (state.user) {
-          state.user.email_verified = true
-        }
-      })
-      .addCase(verifyEmail.rejected, (state, action) => {
-        state.isError = true
-        state.message = action.error.message || 'Failed to verify email'
-      })
-      // Resend Verification
-      .addCase(resendVerification.fulfilled, (state) => {
-        state.isSuccess = true
-        state.message = 'Verification email sent'
-      })
-      .addCase(resendVerification.rejected, (state, action) => {
-        state.isError = true
-        state.message = action.error.message || 'Failed to send verification email'
       })
   }
 })
 
-export const { reset, clearUser } = authSlice.actions
+export const { reset } = authSlice.actions
 export default authSlice.reducer

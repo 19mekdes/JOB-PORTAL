@@ -89,6 +89,7 @@ model JobSeekerProfile {
   github_url   String?  // ← ADD THIS
   portfolio_url String? // ← ADD THIS
   availability String?  // ← ADD THIS
+   preferences  JobSeekerPreference?
   user_id    String   @unique
 
   user         User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -98,6 +99,33 @@ model JobSeekerProfile {
   @@index([user_id])
 }
 
+
+
+// ========== JOB SEEKER PREFERENCES ==========
+
+model JobSeekerPreference {
+  id                       String   @id @default(uuid())
+  seeker_id                String   @unique
+  job_alerts_enabled       Boolean  @default(true)
+  email_notifications      Boolean  @default(true)
+  push_notifications       Boolean  @default(false)
+  profile_visibility       String   @default("public") // public, private, employers_only
+  preferred_job_types      String[] @default([])
+  preferred_locations      String[] @default([])
+  preferred_industries     Int[]    @default([])
+  min_salary               Int?
+  max_salary               Int?
+  experience_level         String   @default("entry") // entry, mid, senior, executive
+  notification_frequency   String   @default("instant") // instant, daily, weekly
+  resume_visibility        Boolean  @default(true)
+  allow_employer_contact   Boolean  @default(true)
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
+
+  seeker JobSeekerProfile @relation(fields: [seeker_id], references: [id], onDelete: Cascade)
+
+  @@index([seeker_id])
+}
 model EmployerProfile {
   id                  String  @id @default(uuid())
   company_name        String

@@ -17,7 +17,30 @@ const Login: React.FC = () => {
   
   const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
-  const { isLoading, isError, message } = useSelector((state: RootState) => state.auth)
+  const { isLoading, isError, message, user } = useSelector((state: RootState) => state.auth)
+
+  // Redirect when user is in Redux state
+  React.useEffect(() => {
+    console.log('🔍 Login page - user in Redux:', user)
+    console.log('🔍 User type:', user?.user_type)
+    
+    if (user) {
+      console.log('✅ User found in Redux, redirecting smoothly...')
+      
+      // Fixed: Using client-side routing instead of window.location.href to preserve state
+      if (user.user_type === 'Super Admin') {
+        navigate('/super-admin/dashboard', { replace: true })
+      } else if (user.user_type === 'Admin') {
+        navigate('/admin/dashboard', { replace: true })
+      } else if (user.user_type === 'Employer') {
+        navigate('/employer/dashboard', { replace: true })
+      } else if (user.user_type === 'Job Seeker') {
+        navigate('/dashboard', { replace: true })
+      } else {
+        navigate('/', { replace: true })
+      }
+    }
+  }, [user, navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,21 +49,17 @@ const Login: React.FC = () => {
       return
     }
     
-    const result = await dispatch(login({ email, password }))
+    console.log('🚀 Dispatching login for:', email)
     
-    if (result.type === 'auth/login/fulfilled') {
-      const userStr = localStorage.getItem('user')
-      const user = userStr ? JSON.parse(userStr) : null
+    try {
+      const result = await dispatch(login({ email, password, rememberMe })).unwrap()
+      console.log('✅ Login successful:', result)
+      console.log('👤 User:', result.user)
+      console.log('📋 User type:', result.user?.user_type)
       
-      if (user?.user_type === 'Super Admin') {
-        navigate('/super-admin/dashboard')
-      } else if (user?.user_type === 'Admin') {
-        navigate('/admin/dashboard')
-      } else if (user?.user_type === 'Employer') {
-        navigate('/employer/dashboard')
-      } else {
-        navigate('/dashboard')
-      }
+      // The useEffect will handle redirect smoothly when user state updates
+    } catch (error) {
+      console.error('❌ Login error:', error)
     }
   }
 
