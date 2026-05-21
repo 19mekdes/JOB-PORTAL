@@ -1,4 +1,6 @@
-// src/pages/admin/AdminLayout.tsx
+/* eslint-disable react-hooks/immutability */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link, Outlet, useLocation } from 'react-router-dom'
 import { useSelector } from 'react-redux'
