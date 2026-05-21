@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   Users,
   Search,
@@ -99,7 +98,6 @@ interface UserStats {
 }
 
 const UserManagement: React.FC = () => {
-  const navigate = useNavigate()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -242,7 +240,7 @@ const UserManagement: React.FC = () => {
     
     switch (role?.toLowerCase()) {
       case 'super admin':
-        return <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0 px-3 py-1">Super Admin</Badge>
+        return <Badge className="bg-linear-to-r from-red-500 to-red-600 text-white border-0 px-3 py-1">Super Admin</Badge>
       case 'admin':
         return <Badge className="bg-purple-100 text-purple-800 border-purple-200">Admin</Badge>
       case 'employer':
@@ -569,7 +567,7 @@ const UserManagement: React.FC = () => {
               
               <div className="space-y-6">
                 {/* User Header */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
+                <div className="bg-linear-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16 bg-blue-200">
                       <AvatarFallback className="bg-blue-200 text-blue-700 text-xl">
