@@ -1,4 +1,5 @@
-/* eslint-disable react-hooks/immutability */
+/* eslint-disable react-hooks/set-state-in-effect */
+ 
 import React, { useState, useEffect, useCallback } from 'react'
 import {
   FileText,
@@ -98,7 +99,7 @@ const AdminApplications: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all')
   const [selectedApp, setSelectedApp] = useState<Application | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const [isStatusUpdateOpen, setIsStatusUpdateOpen] = useState(false)
+  const [, setIsStatusUpdateOpen] = useState(false)
   const [newStatus, setNewStatus] = useState('')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -440,7 +441,7 @@ const AdminApplications: React.FC = () => {
               
               <div className="space-y-6">
                 {/* Applicant Info */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
+                <div className="bg-linear-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16 bg-blue-200">
                       <AvatarFallback className="bg-blue-200 text-blue-700 text-xl">

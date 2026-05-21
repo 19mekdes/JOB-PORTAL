@@ -1,7 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/set-state-in-effect */
-/* eslint-disable react-hooks/immutability */
-import React, { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+ import React, { useState, useEffect, useCallback } from 'react'
 import {
   Briefcase,
   Eye,
@@ -88,7 +87,6 @@ interface Job {
     type_name: string
   }
 }
-
 interface JobStats {
   total: number
   pending: number
@@ -100,7 +98,6 @@ interface JobStats {
 }
 
 const AdminJobs: React.FC = () => {
-  const navigate = useNavigate()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
