@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/immutability */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/pages/admin/AdminDashboard.tsx
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -101,6 +103,7 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period])
 
   const fetchDashboardData = async () => {

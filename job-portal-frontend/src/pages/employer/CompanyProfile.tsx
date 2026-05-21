@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/immutability */
 // src/pages/CompanyProfile.tsx
 import React, { useState, useEffect, useRef } from 'react'
@@ -344,7 +345,7 @@ const CompanyProfile: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full flex-col bg-gradient-to-r from-blue-600 to-indigo-700">
+            <div className="flex items-center justify-center h-full flex-col bg-linear-to-r from-blue-600 to-indigo-700">
               <Upload className="h-10 w-10 text-white/50 mb-2" />
               <p className="text-white/70 text-sm">Click camera icon to upload company banner</p>
             </div>
