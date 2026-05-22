@@ -52,6 +52,14 @@ interface JobStatus {
   status_name: string
 }
 
+interface ManagedCompany {
+  id: string
+  company_name: string
+  logo_url: string | null
+  is_primary: boolean
+  is_verified: boolean
+}
+
 // Fallback data
 const FALLBACK_INDUSTRIES: Industry[] = [
   { id: 1, industry_name: 'Technology / IT' },
@@ -91,6 +99,13 @@ const PostJobPage: React.FC = () => {
   const [requirementInput, setRequirementInput] = useState('')
   const [benefitInput, setBenefitInput] = useState('')
   const [activeTab, setActiveTab] = useState('basic')
+  
+  // Company selection states
+  const [managedCompanies, setManagedCompanies] = useState<ManagedCompany[]>([])
+  const [selectedCompanyId, setSelectedCompanyId] = useState('')
+  const [useCustomCompany, setUseCustomCompany] = useState(false)
+  const [customCompanyName, setCustomCompanyName] = useState('')
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(false)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -106,6 +121,7 @@ const PostJobPage: React.FC = () => {
 
   useEffect(() => {
     fetchFormData()
+    fetchManagedCompanies()
   }, [])
 
   const fetchFormData = async () => {
@@ -119,6 +135,22 @@ const PostJobPage: React.FC = () => {
     } catch (error) {
       console.error('Error fetching form data:', error)
       // Using fallback data already set
+    }
+  }
+
+  const fetchManagedCompanies = async () => {
+    setIsLoadingCompanies(true)
+    try {
+      const response = await api.get('/employer/managed-companies')
+      console.log('Managed companies:', response.data)
+      if (response.data.success && response.data.data) {
+        setManagedCompanies(response.data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching managed companies:', error)
+      // If error, user can still post for their own company
+    } finally {
+      setIsLoadingCompanies(false)
     }
   }
 
@@ -193,7 +225,8 @@ const PostJobPage: React.FC = () => {
     
     const finalStatusId = publishStatus === 'draft' ? '3' : formData.status_id
     
-    const submitData = {
+    // Build submit data
+    const submitData: any = {
       title: formData.title,
       description: formData.description,
       requirements: requirementsList.join('\n'),
@@ -206,26 +239,69 @@ const PostJobPage: React.FC = () => {
       salary_max: formData.salary_max ? parseFloat(formData.salary_max) : null,
       is_remote: formData.is_remote
     }
+    
+    // Add company selection
+    if (useCustomCompany && customCompanyName.trim()) {
+      submitData.custom_company_name = customCompanyName.trim()
+    } else if (selectedCompanyId) {
+      submitData.company_id = selectedCompanyId
+    }
+
+    console.log('Submitting job data:', submitData)
 
     try {
-      await api.post('/jobs', submitData)
+      // ✅ FIXED: Use the correct endpoint '/employer/jobs'
+      const response = await api.post('/employer/jobs', submitData)
+      
+      console.log('Response:', response.data)
+      
       toast({
-        title: "Success",
-        description: publishStatus === 'published' ? "Job posted successfully!" : "Job saved as draft",
+        title: "Success!",
+        description: publishStatus === 'published' 
+          ? `Job posted successfully for ${response.data.data?.company_name || 'your company'}!` 
+          : "Job saved as draft",
       })
-      navigate('/employer/jobs')
+      
+      // Navigate back to jobs list after short delay
+      setTimeout(() => {
+        navigate('/employer/jobs')
+      }, 1500)
+      
     } catch (error: any) {
       console.error('Error posting job:', error)
+      
+      // Better error handling
+      let errorMessage = "Failed to post job"
+      
+      if (error.response) {
+        console.error('Error response:', error.response.data)
+        errorMessage = error.response.data?.message || error.response.data?.error || errorMessage
+        
+        // Specific error messages
+        if (error.response.status === 401) {
+          errorMessage = "Please login again to post a job"
+        } else if (error.response.status === 403) {
+          errorMessage = "You don't have permission to post jobs. Please complete your employer profile."
+        } else if (error.response.status === 404) {
+          errorMessage = "Employer profile not found. Please complete your company profile first."
+        } else if (error.response.status === 400) {
+          errorMessage = error.response.data?.message || "Please check all required fields"
+        }
+      } else if (error.request) {
+        errorMessage = "Cannot connect to server. Please check if backend is running."
+      }
+      
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.response?.data?.message || "Failed to post job",
+        description: errorMessage,
       })
     } finally {
       setIsLoading(false)
     }
   }
 
+  // Check if user is employer
   if (user?.user_type !== 'Employer') {
     return (
       <div className="max-w-4xl mx-auto py-8 px-4 text-center">
@@ -274,6 +350,7 @@ const PostJobPage: React.FC = () => {
                     className="mt-1.5 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
+                
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Job Description *</Label>
                   <Textarea
@@ -287,6 +364,7 @@ const PostJobPage: React.FC = () => {
                     {formData.description.length} / 50+ characters
                   </p>
                 </div>
+                
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Location *</Label>
                   <Input
@@ -296,6 +374,92 @@ const PostJobPage: React.FC = () => {
                     className="mt-1.5 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
+
+                {/* Remote Checkbox */}
+                <div className="flex items-center gap-2 pt-2">
+                  <input
+                    type="checkbox"
+                    id="is_remote"
+                    checked={formData.is_remote}
+                    onChange={(e) => setFormData({ ...formData, is_remote: e.target.checked })}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <Label htmlFor="is_remote" className="text-sm font-medium text-gray-700 cursor-pointer">
+                    This is a remote position
+                  </Label>
+                </div>
+
+                {/* Company Selection Section */}
+<div className="pt-4 border-t border-gray-100">
+  <Label className="text-sm font-medium text-gray-700 mb-2 block">Post Job For</Label>
+  
+  {!useCustomCompany ? (
+    <div className="space-y-2">
+      <Select
+        value={selectedCompanyId}
+        onValueChange={setSelectedCompanyId}
+      >
+        <SelectTrigger className="rounded-lg border-gray-300 bg-white">
+          <SelectValue placeholder="Select company" />
+        </SelectTrigger>
+        <SelectContent className="bg-white border border-gray-200 shadow-lg rounded-lg">
+          <SelectItem value="primary" className="cursor-pointer hover:bg-gray-50">
+            <div className="flex items-center gap-2 py-1">
+              <Building2 className="h-4 w-4 text-blue-500" />
+              <span className="text-gray-700 font-medium">My Company (Primary)</span>
+            </div>
+          </SelectItem>
+          
+          {managedCompanies.filter(c => !c.is_primary).map((company) => (
+            <SelectItem 
+              key={company.id} 
+              value={company.id}
+              className="cursor-pointer hover:bg-gray-50"
+            >
+              <div className="flex items-center gap-2 py-1">
+                <Building2 className="h-4 w-4 text-gray-500" />
+                <span className="text-gray-700">{company.company_name}</span>
+                {company.is_verified && (
+                  <CheckCircle className="h-3 w-3 text-green-500" />
+                )}
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      
+      <button
+        type="button"
+        onClick={() => setUseCustomCompany(true)}
+        className="text-blue-600 text-sm hover:underline flex items-center gap-1 mt-2"
+      >
+        <Plus className="h-3 w-3" />
+        Post for a different company (e.g., Afriwork)
+      </button>
+    </div>
+  ) : (
+    <div className="space-y-2">
+      <Input
+        value={customCompanyName}
+        onChange={(e) => setCustomCompanyName(e.target.value)}
+        placeholder="Enter company name (e.g., Afriwork, Ethio Jobs)"
+        className="rounded-lg border-gray-300"
+      />
+      <button
+        type="button"
+        onClick={() => {
+          setUseCustomCompany(false)
+          setCustomCompanyName('')
+          setSelectedCompanyId('primary')
+        }}
+        className="text-gray-600 text-sm hover:underline flex items-center gap-1 mt-2"
+      >
+        <ArrowLeft className="h-3 w-3" />
+        Post for my company instead
+      </button>
+    </div>
+  )}
+</div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -459,7 +623,9 @@ const PostJobPage: React.FC = () => {
                     ))}
                   </div>
                 </div>
+                
                 <Separator className="bg-gray-100" />
+                
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Benefits</Label>
                   <div className="flex gap-2 mt-1.5">
@@ -509,11 +675,20 @@ const PostJobPage: React.FC = () => {
           <Button variant="outline" onClick={() => navigate('/employer/jobs')} className="border-gray-300">
             Cancel
           </Button>
-          <Button variant="outline" onClick={() => handleSubmit('draft')} disabled={isLoading} className="border-gray-300">
+          <Button 
+            variant="outline" 
+            onClick={() => handleSubmit('draft')} 
+            disabled={isLoading} 
+            className="border-gray-300"
+          >
             {isLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             Save as Draft
           </Button>
-          <Button onClick={() => handleSubmit('published')} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
+          <Button 
+            onClick={() => handleSubmit('published')} 
+            disabled={isLoading} 
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
             {isLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
             Publish Job
           </Button>

@@ -24,6 +24,7 @@ import fs from 'fs'
 import { v2 as cloudinary } from 'cloudinary'
 import { CloudinaryStorage } from 'multer-storage-cloudinary'
 import nodemailer from 'nodemailer'
+import employerRoutes from './routes/employerRoutes';
 
 // Express Request Interface Extension
 declare global {
@@ -48,6 +49,7 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 })
+
 
 // Helper to extract Cloudinary Public ID from an image URL for deletion
 const getPublicIdFromUrl = (url: string): string | null => {
@@ -582,6 +584,7 @@ app.get('/api/employer/profile', authMiddleware, async (req: Request, res: Respo
     res.status(500).json({ success: false, message: error.message })
   }
 })
+app.use('/api/employer', employerRoutes);
 
 app.put('/api/employer/profile', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -663,6 +666,31 @@ app.delete('/api/employer/cover', authMiddleware, async (req: Request, res: Resp
   }
 })
 
+
+// Add these routes after your other routes (around line 500-600)
+
+// ========== LOOKUP TABLES ROUTES ==========
+app.get('/api/industries', async (req: Request, res: Response) => {
+  try {
+    const industries = await prisma.jobIndustry.findMany({
+      orderBy: { industry_name: 'asc' }
+    });
+    res.json({ success: true, data: industries });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get('/api/employment-types', async (req: Request, res: Response) => {
+  try {
+    const employmentTypes = await prisma.employmentType.findMany({
+      orderBy: { type_name: 'asc' }
+    });
+    res.json({ success: true, data: employmentTypes });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 // ========== JOB ROUTES ==========
 app.get('/api/jobs', async (req: Request, res: Response) => {
   try {
@@ -2178,6 +2206,40 @@ app.put('/api/admin/jobs/:jobId/status', authMiddleware, async (req: Request, re
       count: Number(item.count)
     }));
     
+
+    app.get('/api/debug/profile', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { seeker_profile: true }
+    });
+    
+    if (user?.seeker_profile) {
+      // Parse the data
+      let experience = [];
+      let education = [];
+      
+      try {
+        experience = JSON.parse(user.seeker_profile.experience || '[]');
+      } catch(e) { experience = []; }
+      
+      try {
+        education = JSON.parse(user.seeker_profile.education || '[]');
+      } catch(e) { education = []; }
+      
+      res.json({
+        raw_experience: user.seeker_profile.experience,
+        raw_education: user.seeker_profile.education,
+        parsed_experience: experience,
+        parsed_education: education,
+        experience_count: experience.length,
+        education_count: education.length
+      });
+    }
+  } catch (error) {
+    res.json({ error: String(error) });
+  }
+});
     // ========== TOP EMPLOYERS (DIRECT QUERY) ==========
     const topEmployersRaw = await prisma.$queryRaw`
       SELECT ep.company_name, COUNT(j.id) as job_count, COALESCE(SUM(j.views_count), 0) as total_views
@@ -2267,6 +2329,10 @@ app.put('/api/admin/jobs/:jobId/status', authMiddleware, async (req: Request, re
     res.status(500).json({ success: false, message: error.message, stack: error.stack });
   }
 });
+
+
+
+
     // Create notification for employer
     if (reason) {
       await prisma.notification.create({

@@ -20,6 +20,8 @@ import {
   Globe,
   ExternalLink,
   Zap,
+  Gift,
+  ListChecks,
 } from "lucide-react";
 import {
   Card,
@@ -33,10 +35,41 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/common/LoadingSpinner";
 import { toast } from "@/hooks/use-toast";
 import { RootState } from "../../redux/store";
 import api from "../../services/api";
+
+// Helper function to format requirements/benefits as bullet points
+const formatTextToBulletPoints = (text: string | null): string[] => {
+  if (!text) return [];
+  if (text.trim() === "") return [];
+  
+  let items: string[] = [];
+  
+  // Split by new lines (how employers add requirements)
+  if (text.includes("\n")) {
+    items = text.split("\n");
+  }
+  // Split by bullet points
+  else if (text.includes("•") || text.includes("-") || text.includes("*")) {
+    const bulletChar = text.includes("•") ? "•" : (text.includes("-") ? "-" : "*");
+    items = text.split(bulletChar);
+  }
+  // Split by commas
+  else if (text.includes(",")) {
+    items = text.split(",");
+  }
+  // Single item
+  else {
+    items = [text];
+  }
+  
+  // Clean up each item
+  return items
+    .map(item => item.trim())
+    .filter(item => item.length > 0)
+    .map(item => item.replace(/^[•\-*\d+.]\s*/, ""));
+};
 
 interface JobDetails {
   id: string;
@@ -96,7 +129,7 @@ const JobDetails: React.FC = () => {
   useEffect(() => {
     fetchJobDetails();
     checkIfSaved();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchJobDetails = async () => {
@@ -180,18 +213,20 @@ const JobDetails: React.FC = () => {
         variant: "destructive",
       });
       navigate("/login");
-    } else if (user.user_type !== "Job Seeker")
+    } else if (user.user_type !== "Job Seeker") {
       toast({
         title: "Not Allowed",
         description: "Only job seekers can apply",
         variant: "destructive",
       });
-    else if (job?.has_applied)
+    } else if (job?.has_applied) {
       toast({
         title: "Already Applied",
         description: "You have already applied for this position",
       });
-    else navigate(`/apply/${id}`);
+    } else {
+      navigate(`/apply/${id}`);
+    }
   };
 
   const getTimeAgo = (date: string) => {
@@ -205,9 +240,29 @@ const JobDetails: React.FC = () => {
     return `${Math.floor(diff / 30)} months ago`;
   };
 
-  if (isLoading) return <JobDetailsSkeleton />;
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto py-8 px-4">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-32 mb-4"></div>
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="h-16 w-16 bg-gray-200 rounded-xl"></div>
+              <div className="flex-1">
+                <div className="h-8 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-5 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!job) return null;
+
+  const requirementsList = formatTextToBulletPoints(job.requirements);
+  const benefitsList = formatTextToBulletPoints(job.benefits);
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4">
@@ -237,9 +292,6 @@ const JobDetails: React.FC = () => {
                           <Zap className="h-3 w-3 mr-1" />
                           Featured
                         </Badge>
-                      )}
-                      {job.is_premium && (
-                        <Badge variant="premium">Premium</Badge>
                       )}
                     </div>
                     <p className="text-gray-600 flex items-center gap-1 mt-1">
@@ -302,7 +354,7 @@ const JobDetails: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Job Details Tabs */}
+          {/* Job Details Tabs - UPDATED with bullet points */}
           <Card>
             <CardHeader>
               <CardTitle>Job Information</CardTitle>
@@ -314,24 +366,52 @@ const JobDetails: React.FC = () => {
                   <TabsTrigger value="requirements">Requirements</TabsTrigger>
                   <TabsTrigger value="benefits">Benefits</TabsTrigger>
                 </TabsList>
+                
+                {/* Description Tab */}
                 <TabsContent value="description" className="mt-4">
                   <div className="prose max-w-none">
                     <p className="whitespace-pre-wrap">{job.description}</p>
                   </div>
                 </TabsContent>
+                
+                {/* Requirements Tab - FIXED: Bullet points */}
                 <TabsContent value="requirements" className="mt-4">
-                  <div className="prose max-w-none">
-                    <div className="whitespace-pre-wrap">
-                      {job.requirements || "No specific requirements listed."}
+                  {requirementsList.length === 0 ? (
+                    <div className="text-center py-8">
+                      <ListChecks className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-500">No specific requirements listed.</p>
+                      <p className="text-sm text-gray-400">The employer hasn't added requirements yet.</p>
                     </div>
-                  </div>
+                  ) : (
+                    <ul className="space-y-3">
+                      {requirementsList.map((req, index) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+                          <span className="text-gray-700 leading-relaxed">{req}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </TabsContent>
+                
+                {/* Benefits Tab - FIXED: Bullet points */}
                 <TabsContent value="benefits" className="mt-4">
-                  <div className="prose max-w-none">
-                    <div className="whitespace-pre-wrap">
-                      {job.benefits || "No benefits information provided."}
+                  {benefitsList.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Gift className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-500">No benefits information provided.</p>
+                      <p className="text-sm text-gray-400">The employer hasn't added benefits yet.</p>
                     </div>
-                  </div>
+                  ) : (
+                    <ul className="space-y-3">
+                      {benefitsList.map((benefit, index) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <Gift className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
+                          <span className="text-gray-700 leading-relaxed">{benefit}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -371,9 +451,8 @@ const JobDetails: React.FC = () => {
           )}
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar - Apply Card */}
         <div className="space-y-6">
-          {/* Apply Card */}
           <Card className="sticky top-6">
             <CardHeader>
               <CardTitle>Apply for this job</CardTitle>
@@ -474,69 +553,5 @@ const JobDetails: React.FC = () => {
     </div>
   );
 };
-
-const JobDetailsSkeleton: React.FC = () => (
-  <div className="max-w-7xl mx-auto py-8 px-4">
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-6">
-        <Card>
-          <CardHeader>
-            <div className="flex items-start gap-4">
-              <Skeleton className="h-16 w-16 rounded-full" />
-              <div className="flex-1">
-                <Skeleton className="h-8 w-3/4 mb-2" />
-                <Skeleton className="h-5 w-1/2" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Skeleton className="h-5 w-full" />
-              <Skeleton className="h-5 w-3/4" />
-              <div className="flex gap-2">
-                <Skeleton className="h-6 w-20" />
-                <Skeleton className="h-6 w-20" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-40" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-10 w-full" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-40" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  </div>
-);
 
 export default JobDetails;

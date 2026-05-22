@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/immutability */
-// src/pages/CompanyProfile.tsx
+// src/pages/employer/CompanyProfile.tsx
 import React, { useState, useEffect, useRef } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/redux/store'
@@ -16,12 +16,9 @@ import {
   Upload,
   Phone,
   Calendar,
-  Linkedin as LinkedinIcon,
-  Twitter as TwitterIcon,
-  Instagram as InstagramIcon,
-  Facebook as FacebookIcon,
   Link as LinkIcon
 } from 'lucide-react'
+import { FaLinkedin, FaTwitter, FaFacebook, FaInstagram } from 'react-icons/fa'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -61,6 +58,7 @@ interface CompanyProfile {
     id: number
     industry_name: string
   }
+  industry_id?: number
 }
 
 interface SocialLinks {
@@ -117,7 +115,7 @@ const CompanyProfile: React.FC = () => {
   const fetchIndustries = async () => {
     try {
       const response = await api.get('/industries')
-      setIndustries(response.data.data)
+      setIndustries(response.data.data || [])
     } catch (error) {
       console.error('Error fetching industries:', error)
     }
@@ -126,9 +124,11 @@ const CompanyProfile: React.FC = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/employer/profile')
+      const response = await api.get('/employer/company-profile')
       
-      const profileData = response.data.data?.profile || response.data.data
+      console.log('Company profile response:', response.data)
+      
+      const profileData = response.data.data
 
       setProfile(profileData)
       setFormData({
@@ -143,30 +143,31 @@ const CompanyProfile: React.FC = () => {
         industry_id: profileData?.industry_id?.toString() || ''
       })
 
-      setSocialLinks({
-        linkedin: profileData?.social_links?.linkedin || '',
-        twitter: profileData?.social_links?.twitter || '',
-        facebook: profileData?.social_links?.facebook || '',
-        instagram: profileData?.social_links?.instagram || ''
-      })
+      // Handle social links if they exist
+      let socialLinksData = { linkedin: '', twitter: '', facebook: '', instagram: '' }
+      if (profileData?.social_links) {
+        try {
+          socialLinksData = typeof profileData.social_links === 'string' 
+            ? JSON.parse(profileData.social_links) 
+            : profileData.social_links
+        } catch (e) {
+          console.error('Error parsing social links:', e)
+        }
+      }
+      setSocialLinks(socialLinksData)
 
       if (profileData?.cover_image) {
         setCoverPreview(profileData.cover_image)
-      } else {
-        setCoverPreview(null)
       }
-
       if (profileData?.logo_url) {
         setLogoPreview(profileData.logo_url)
-      } else {
-        setLogoPreview(null)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching profile:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load company profile",
+        description: error.response?.data?.message || "Failed to load company profile",
       })
     } finally {
       setLoading(false)
@@ -241,7 +242,6 @@ const CompanyProfile: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      // Prepare the update data
       const updateData = {
         company_name: formData.company_name,
         company_description: formData.company_description,
@@ -255,19 +255,19 @@ const CompanyProfile: React.FC = () => {
         social_links: socialLinks
       }
 
-      await api.put('/employer/profile', updateData)
+      await api.put('/employer/company-profile', updateData)
       setEditing(false)
       await fetchProfile()
       toast({
         title: "Success",
         description: "Profile updated successfully",
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving profile:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to update profile",
+        description: error.response?.data?.message || "Failed to update profile",
       })
     }
   }
@@ -290,6 +290,13 @@ const CompanyProfile: React.FC = () => {
     "501-1000 employees",
     "1000+ employees"
   ]
+
+  // Helper function to get industry name
+  const getIndustryName = (industryId?: number) => {
+    if (!industryId) return 'Not specified'
+    const industry = industries.find(i => i.id === industryId)
+    return industry?.industry_name || 'Technology'
+  }
 
   if (loading) {
     return (
@@ -345,7 +352,7 @@ const CompanyProfile: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full flex-col bg-linear-to-r from-blue-600 to-indigo-700">
+            <div className="flex items-center justify-center h-full flex-col bg-gradient-to-r from-blue-600 to-indigo-700">
               <Upload className="h-10 w-10 text-white/50 mb-2" />
               <p className="text-white/70 text-sm">Click camera icon to upload company banner</p>
             </div>
@@ -390,7 +397,7 @@ const CompanyProfile: React.FC = () => {
               {logoPreview ? (
                 <AvatarImage src={logoPreview} alt="Company Logo" className="h-full w-full object-cover" />
               ) : (
-                <AvatarFallback className="bg-blue-600 text-white text-3xl font-bold rounded-none flex items-center justify-center w-full h-full">
+                <AvatarFallback className="bg-blue-600 text-white text-3xl font-bold rounded-xl flex items-center justify-center w-full h-full">
                   {formData.company_name?.charAt(0).toUpperCase() || 'C'}
                 </AvatarFallback>
               )}
@@ -565,12 +572,12 @@ const CompanyProfile: React.FC = () => {
                 </div>
               </div>
 
-              {/* Social Links Section */}
+              {/* Social Links Section - Using react-icons */}
               <div className="pt-4">
                 <Label className="text-gray-700 font-semibold mb-3 block">Social Media Links</Label>
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <Linkedin className="h-4 w-4 text-blue-600" />
+                    <FaLinkedin className="h-4 w-4 text-blue-600" />
                     <Input
                       placeholder="LinkedIn URL"
                       value={socialLinks.linkedin}
@@ -579,7 +586,7 @@ const CompanyProfile: React.FC = () => {
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <Twitter className="h-4 w-4 text-sky-500" />
+                    <FaTwitter className="h-4 w-4 text-sky-500" />
                     <Input
                       placeholder="Twitter/X URL"
                       value={socialLinks.twitter}
@@ -588,7 +595,7 @@ const CompanyProfile: React.FC = () => {
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <Facebook className="h-4 w-4 text-blue-700" />
+                    <FaFacebook className="h-4 w-4 text-blue-700" />
                     <Input
                       placeholder="Facebook URL"
                       value={socialLinks.facebook}
@@ -597,7 +604,7 @@ const CompanyProfile: React.FC = () => {
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <Instagram className="h-4 w-4 text-pink-600" />
+                    <FaInstagram className="h-4 w-4 text-pink-600" />
                     <Input
                       placeholder="Instagram URL"
                       value={socialLinks.instagram}
@@ -612,99 +619,130 @@ const CompanyProfile: React.FC = () => {
             <div className="space-y-6">
               <div className="flex items-start gap-4">
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-gray-900">{profile?.company_name}</h2>
-                  {profile?.industry && (
-                    <p className="text-sm text-blue-600 font-medium mt-0.5">{profile.industry.industry_name}</p>
-                  )}
+                  <h2 className="text-2xl font-bold text-gray-900">{profile?.company_name || formData.company_name || 'Company Name'}</h2>
+                  <p className="text-sm text-blue-600 font-medium mt-0.5">
+                    {profile?.industry?.industry_name || getIndustryName(profile?.industry_id || parseInt(formData.industry_id))}
+                  </p>
                 </div>
               </div>
               
               <Separator className="bg-gray-100" />
 
               <div className="space-y-4">
-                {profile?.company_description && (
+                {/* Company Description */}
+                {(profile?.company_description || formData.company_description) && (
                   <div>
                     <h3 className="font-semibold text-gray-800 text-sm">About Corporate Brand</h3>
-                    <p className="text-sm text-gray-600 mt-1.5 leading-relaxed whitespace-pre-wrap">{profile.company_description}</p>
+                    <p className="text-sm text-gray-600 mt-1.5 leading-relaxed whitespace-pre-wrap">
+                      {profile?.company_description || formData.company_description}
+                    </p>
                   </div>
                 )}
                 
+                {/* Information Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
-                  {profile?.website && (
+                  {/* Website */}
+                  {(profile?.website || formData.website) && (
                     <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100">
                       <Globe className="h-4 w-4 text-blue-500" />
-                      <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium truncate">
-                        {profile.website.replace(/^https?:\/\//, '')}
+                      <a 
+                        href={profile?.website || formData.website} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-blue-600 hover:underline font-medium truncate"
+                      >
+                        {(profile?.website || formData.website).replace(/^https?:\/\//, '')}
                       </a>
                     </div>
                   )}
-                  {profile?.phone && (
+                  
+                  {/* Phone */}
+                  {(profile?.phone || formData.phone) && (
                     <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100">
                       <Phone className="h-4 w-4 text-green-500" />
-                      <span className="font-medium">{profile.phone}</span>
+                      <span className="font-medium">{profile?.phone || formData.phone}</span>
                     </div>
                   )}
-                  {profile?.location && (
+                  
+                  {/* Location */}
+                  {(profile?.location || formData.location) && (
                     <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100">
                       <MapPin className="h-4 w-4 text-emerald-500" />
-                      <span className="font-medium truncate">{profile.location}</span>
+                      <span className="font-medium truncate">{profile?.location || formData.location}</span>
                     </div>
                   )}
-                  {profile?.company_size && (
+                  
+                  {/* Company Size */}
+                  {(profile?.company_size || formData.company_size) && (
                     <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100">
                       <Users className="h-4 w-4 text-purple-500" />
-                      <span className="font-medium truncate">{profile.company_size}</span>
+                      <span className="font-medium truncate">{profile?.company_size || formData.company_size}</span>
                     </div>
                   )}
-                  {profile?.founded_year && (
+                  
+                  {/* Founded Year */}
+                  {(profile?.founded_year || formData.founded_year) && (
                     <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100">
                       <Calendar className="h-4 w-4 text-orange-500" />
-                      <span className="font-medium">Founded {profile.founded_year}</span>
+                      <span className="font-medium">Founded {profile?.founded_year || formData.founded_year}</span>
                     </div>
                   )}
-                  {profile?.headquarters && (
+                  
+                  {/* Headquarters */}
+                  {(profile?.headquarters || formData.headquarters) && (
                     <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100">
                       <Building2 className="h-4 w-4 text-gray-500" />
-                      <span className="font-medium truncate">{profile.headquarters}</span>
+                      <span className="font-medium truncate">{profile?.headquarters || formData.headquarters}</span>
                     </div>
                   )}
                 </div>
 
-                {/* Social Links Display */}
-                {(profile?.social_links?.linkedin || profile?.social_links?.twitter || 
-                  profile?.social_links?.facebook || profile?.social_links?.instagram) && (
+                {/* Social Links Display - Using react-icons */}
+                {(socialLinks.linkedin || socialLinks.twitter || socialLinks.facebook || socialLinks.instagram) && (
                   <div className="pt-2">
                     <h3 className="font-semibold text-gray-800 text-sm mb-3">Connect With Us</h3>
                     <div className="flex flex-wrap gap-3">
-                      {profile.social_links.linkedin && (
-                        <a href={profile.social_links.linkedin} target="_blank" rel="noopener noreferrer" 
+                      {socialLinks.linkedin && (
+                        <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" 
                            className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition border border-gray-100">
-                          <Linkedin className="h-4 w-4 text-blue-600" />
+                          <FaLinkedin className="h-4 w-4 text-blue-600" />
                           <span className="text-sm text-gray-700">LinkedIn</span>
                         </a>
                       )}
-                      {profile.social_links.twitter && (
-                        <a href={profile.social_links.twitter} target="_blank" rel="noopener noreferrer"
+                      {socialLinks.twitter && (
+                        <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer"
                            className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition border border-gray-100">
-                          <Twitter className="h-4 w-4 text-sky-500" />
+                          <FaTwitter className="h-4 w-4 text-sky-500" />
                           <span className="text-sm text-gray-700">Twitter</span>
                         </a>
                       )}
-                      {profile.social_links.facebook && (
-                        <a href={profile.social_links.facebook} target="_blank" rel="noopener noreferrer"
+                      {socialLinks.facebook && (
+                        <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer"
                            className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition border border-gray-100">
-                          <Facebook className="h-4 w-4 text-blue-700" />
+                          <FaFacebook className="h-4 w-4 text-blue-700" />
                           <span className="text-sm text-gray-700">Facebook</span>
                         </a>
                       )}
-                      {profile.social_links.instagram && (
-                        <a href={profile.social_links.instagram} target="_blank" rel="noopener noreferrer"
+                      {socialLinks.instagram && (
+                        <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer"
                            className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition border border-gray-100">
-                          <Instagram className="h-4 w-4 text-pink-600" />
+                          <FaInstagram className="h-4 w-4 text-pink-600" />
                           <span className="text-sm text-gray-700">Instagram</span>
                         </a>
                       )}
                     </div>
+                  </div>
+                )}
+
+                {/* Show message if no data */}
+                {!profile?.company_description && !profile?.website && !profile?.location && !profile?.company_size && 
+                 !socialLinks.linkedin && !socialLinks.twitter && !socialLinks.facebook && !socialLinks.instagram && (
+                  <div className="text-center py-8">
+                    <Building2 className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">No company information available yet.</p>
+                    <Button variant="outline" onClick={() => setEditing(true)} className="mt-3">
+                      Add Company Information
+                    </Button>
                   </div>
                 )}
               </div>

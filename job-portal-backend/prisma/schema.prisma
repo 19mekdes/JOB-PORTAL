@@ -22,7 +22,7 @@ model User {
   password     String // Hashed
   user_type_id Int
   is_active    Boolean  @default(true)
-  full_name    String?  // ← ADD THIS
+  full_name    String?
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
@@ -73,24 +73,24 @@ model AuditLog {
 // ========== PROFILES ==========
 
 model JobSeekerProfile {
-  id         String   @id @default(uuid())
-  full_name  String
-  phone      String?
-  resume_url String?
-  skills     String[] // Array of skills
-  experience String? // Years of experience
-  education  String? // JSON or text
-  location   String?
+  id           String   @id @default(uuid())
+  full_name    String
+  phone        String?
+  resume_url   String?
+  skills       String[] // Array of skills
+  experience   String? // JSON string of experience array
+  education    String? // JSON string of education array
+  location     String?
   cover_image  String?
-   avatar       String?
-   bio          String?  // ← ADD THIS
-  title        String?  // ← ADD THIS
-  linkedin_url String?  // ← ADD THIS
-  github_url   String?  // ← ADD THIS
-  portfolio_url String? // ← ADD THIS
-  availability String?  // ← ADD THIS
-   preferences  JobSeekerPreference?
-  user_id    String   @unique
+  avatar       String?
+  bio          String?
+  title        String?
+  linkedin_url String?
+  github_url   String?
+  portfolio_url String?
+  availability String?
+  preferences  JobSeekerPreference?
+  user_id      String   @unique
 
   user         User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
   applications JobApplication[]
@@ -98,8 +98,6 @@ model JobSeekerProfile {
 
   @@index([user_id])
 }
-
-
 
 // ========== JOB SEEKER PREFERENCES ==========
 
@@ -126,6 +124,8 @@ model JobSeekerPreference {
 
   @@index([seeker_id])
 }
+
+// ========== EMPLOYER PROFILE (UPDATED) ==========
 model EmployerProfile {
   id                  String  @id @default(uuid())
   company_name        String
@@ -136,17 +136,43 @@ model EmployerProfile {
   company_size        String?
   location            String?
   phone               String?
-  
-  cover_image    String?   // ← Add this
+   founded_year        Int?     // ← ADD THIS FIELD
+  headquarters        String?  // ← ADD THIS FIELD
+  social_links        Json? 
+  cover_image         String?
   user_id             String  @unique
+  created_at          DateTime @default(now())
+  updated_at          DateTime?
 
-  user     User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  industry JobIndustry          @relation(fields: [industry_id], references: [id])
-  jobs     JobPost[]
-  notes    JobApplicationNote[]
+  user              User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  industry          JobIndustry          @relation(fields: [industry_id], references: [id])
+  jobs              JobPost[]
+  notes             JobApplicationNote[]
+  managed_companies ManagedCompany[]     // ← ADDED: Companies this employer can post jobs for
 
   @@index([user_id])
   @@index([industry_id])
+}
+
+// ========== MANAGED COMPANIES (NEW MODEL) ==========
+// Allows employers to post jobs for different companies like Afriwork
+model ManagedCompany {
+  id           String   @id @default(uuid())
+  employer_id  String
+  company_name String
+  logo_url     String?
+  website      String?
+  location     String?
+  description  String?
+  is_verified  Boolean  @default(false)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  employer EmployerProfile @relation(fields: [employer_id], references: [id], onDelete: Cascade)
+  jobs     JobPost[]
+
+  @@index([employer_id])
+  @@index([company_name])
 }
 
 model NotificationPreference {
@@ -192,7 +218,7 @@ model JobApplicationStatus {
   applications JobApplication[]
 }
 
-// ========== CORE BUSINESS TABLES ==========
+// ========== CORE BUSINESS TABLES (UPDATED) ==========
 
 model JobPost {
   id                 String   @id @default(uuid())
@@ -213,6 +239,10 @@ model JobPost {
   applications_count Int      @default(0)
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
+  
+  // ========== NEW FIELDS FOR MULTIPLE COMPANIES ==========
+  company_name       String?  // Custom company name (e.g., "Afriwork")
+  managed_company_id String?  // Reference to managed company
 
   employer        EmployerProfile  @relation(fields: [employer_id], references: [id], onDelete: Cascade)
   industry        JobIndustry      @relation(fields: [industry_id], references: [id])
@@ -220,12 +250,15 @@ model JobPost {
   status          JobPostStatus    @relation(fields: [status_id], references: [id])
   applications    JobApplication[]
   bookmarks       JobBookmark[]
+  managed_company ManagedCompany?  @relation(fields: [managed_company_id], references: [id])
 
   @@index([employer_id])
   @@index([status_id])
   @@index([industry_id])
   @@index([employment_type_id])
   @@index([created_at])
+  @@index([company_name])        // ← ADDED: for searching by company name
+  @@index([managed_company_id])  // ← ADDED: for filtering by managed company
 }
 
 model JobApplication {
