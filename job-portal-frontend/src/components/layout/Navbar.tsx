@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../redux/store";
@@ -27,22 +27,58 @@ import {
   Crown,
   Bookmark,
   Briefcase as BriefcaseIcon,
-  FileText
+  FileText,
+  Building2
 } from "lucide-react";
 
 // Import the NotificationBell component
 import NotificationBell from "@/components/notifications/NotificationBell";
+import api from "@/services/api";
 
-// Removed Separator import since it's not in your shadcn setup
-// If you have it, add: import { Separator } from "@/components/ui/separator";
+// Import logo image (choose one based on where you placed it)
+// Option 1: If logo is in public folder
+// const logoImage = "/logo.png";
+
+// Option 2: If logo is in src/assets folder
+const logoImage = "/images/jlogo.png";
+
+// Company Profile Interface
+interface CompanyProfile {
+  id: string;
+  company_name: string;
+  logo_url: string | null;
+  cover_image: string | null;
+}
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const { user } = useSelector((state: RootState) => state.auth);
-
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
+  const [isLoadingCompany, setIsLoadingCompany] = useState(false);
   const [open, setOpen] = useState(false);
+
+  // Fetch company profile if user is employer
+  useEffect(() => {
+    if (user?.user_type === 'Employer') {
+      fetchCompanyProfile();
+    }
+  }, [user]);
+
+  const fetchCompanyProfile = async () => {
+    setIsLoadingCompany(true);
+    try {
+      const response = await api.get('/employer/company-profile');
+      if (response.data.success) {
+        setCompanyProfile(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching company profile:', error);
+    } finally {
+      setIsLoadingCompany(false);
+    }
+  };
 
   const handleLogout = async () => {
     await dispatch(logout() as any);
@@ -98,15 +134,37 @@ const Navbar: React.FC = () => {
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur shadow-sm">
       <div className="max-w-7xl mx-auto px-4 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
+          {/* Logo with Local PNG Image */}
           <Link
             to="/"
             className="flex items-center gap-2 font-bold text-xl text-slate-900"
           >
-            <div className="p-2 rounded-xl bg-blue-600 text-white">
-              <Briefcase className="h-5 w-5" />
-            </div>
-            <span>JobPortal</span>
+            {/* Use local PNG image logo */}
+            <img 
+              src={logoImage} 
+              alt="JobPortal Logo" 
+              className="h-10 w-auto object-contain"
+              onError={(e) => {
+                // Fallback to briefcase icon if image fails to load
+                (e.target as HTMLImageElement).style.display = 'none';
+                const parent = (e.target as HTMLImageElement).parentElement;
+                if (parent) {
+                  const fallback = document.createElement('div');
+                  fallback.className = 'p-2 rounded-xl bg-blue-600 text-white';
+                  fallback.innerHTML = '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>';
+                  parent.appendChild(fallback);
+                }
+              }}
+            />
+            
+            {/* Company Name or Default Text */}
+            {user?.user_type === 'Employer' && companyProfile?.company_name ? (
+              <span className="hidden sm:inline-block text-lg font-semibold truncate max-w-[150px]">
+                {companyProfile.company_name}
+              </span>
+            ) : (
+              <span className="hidden sm:inline-block">JobPortal</span>
+            )}
           </Link>
 
           {/* Desktop Nav */}
@@ -140,12 +198,27 @@ const Navbar: React.FC = () => {
 
                 {/* User Menu */}
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100">
-                  <div className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
-                    {getUserInitial()}
-                  </div>
+                  {user.user_type === 'Employer' && companyProfile?.logo_url ? (
+                    <img
+                      src={companyProfile.logo_url}
+                      alt="Company Logo"
+                      className="h-8 w-8 rounded-full object-cover border border-gray-200"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '';
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
+                      {getUserInitial()}
+                    </div>
+                  )}
+                  
                   <div className="hidden lg:block">
                     <span className="text-sm font-medium text-slate-700">
-                      {user?.full_name || user?.email?.split("@")[0]}
+                      {user.user_type === 'Employer' && companyProfile?.company_name 
+                        ? companyProfile.company_name 
+                        : (user?.full_name || user?.email?.split("@")[0])}
                     </span>
                     <div className="flex items-center text-xs text-slate-500">
                       {getRoleIcon()}
@@ -191,20 +264,37 @@ const Navbar: React.FC = () => {
                 {/* Mobile Header */}
                 <div className="border-b p-5">
                   <div className="flex items-center gap-2 font-bold text-lg">
-                    <div className="p-2 rounded-xl bg-blue-600 text-white">
-                      <Briefcase className="h-5 w-5" />
-                    </div>
-                    JobPortal
+                    {/* Use local PNG image logo in mobile menu */}
+                    <img 
+                      src={logoImage} 
+                      alt="JobPortal Logo" 
+                      className="h-10 w-auto object-contain"
+                    />
+                    <span>
+                      {user?.user_type === 'Employer' && companyProfile?.company_name 
+                        ? companyProfile.company_name 
+                        : "JobPortal"}
+                    </span>
                   </div>
 
                   {user && (
                     <div className="mt-4 flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
-                        {getUserInitial()}
-                      </div>
+                      {user.user_type === 'Employer' && companyProfile?.logo_url ? (
+                        <img
+                          src={companyProfile.logo_url}
+                          alt="Company Logo"
+                          className="h-10 w-10 rounded-full object-cover border border-gray-200"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
+                          {getUserInitial()}
+                        </div>
+                      )}
                       <div>
                         <p className="text-sm font-medium">
-                          {user?.full_name || user?.email?.split("@")[0]}
+                          {user.user_type === 'Employer' && companyProfile?.company_name 
+                            ? companyProfile.company_name 
+                            : (user?.full_name || user?.email?.split("@")[0])}
                         </p>
                         <div className="flex items-center gap-1 text-xs text-slate-500">
                           {getRoleIcon()}
@@ -264,12 +354,20 @@ const Navbar: React.FC = () => {
                       )}
                       
                       {user.user_type === 'Employer' && (
-                        <Link to="/employer/post-job" onClick={() => setOpen(false)}>
-                          <Button variant="ghost" className="w-full justify-start gap-3">
-                            <BriefcaseIcon className="h-4 w-4" />
-                            Post a Job
-                          </Button>
-                        </Link>
+                        <>
+                          <Link to="/employer/post-job" onClick={() => setOpen(false)}>
+                            <Button variant="ghost" className="w-full justify-start gap-3">
+                              <BriefcaseIcon className="h-4 w-4" />
+                              Post a Job
+                            </Button>
+                          </Link>
+                          <Link to="/employer/company-profile" onClick={() => setOpen(false)}>
+                            <Button variant="ghost" className="w-full justify-start gap-3">
+                              <Building2 className="h-4 w-4" />
+                              Company Profile
+                            </Button>
+                          </Link>
+                        </>
                       )}
                       
                       {(user.user_type === 'Admin' || user.user_type === 'Super Admin') && (

@@ -16,7 +16,8 @@ import {
   Eye,
   Edit,
   Ban,
-  CheckCircle
+  CheckCircle,
+  Crown
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -70,6 +71,8 @@ import { toast } from '@/hooks/use-toast'
 import api from '../../services/api'
 import { Switch } from '../ui/switch'
 import { Separator } from '@radix-ui/react-dropdown-menu'
+import { useSelector } from 'react-redux'
+import { RootState } from '@/redux/store'
 
 interface User {
   id: string
@@ -139,6 +142,9 @@ const UserManagement: React.FC = () => {
   })
   const [suspendReason, setSuspendReason] = useState('')
 
+  // Get current logged-in user from Redux
+  const { user: currentUser } = useSelector((state: RootState) => state.auth)
+
   useEffect(() => {
     fetchUsers()
   }, [filters])
@@ -169,13 +175,84 @@ const UserManagement: React.FC = () => {
     }
   }
 
+  // ========== PERMISSION CHECKS ==========
+  const canEditUser = (targetUser: User): boolean => {
+    const currentRole = currentUser?.user_type
+    const targetRole = targetUser.user_type.type_name
+
+    // Super Admin can edit anyone except themselves
+    if (currentRole === 'Super Admin') {
+      return targetUser.id !== currentUser?.id
+    }
+
+    // Admin cannot edit Super Admin or other Admins
+    if (currentRole === 'Admin') {
+      return targetRole !== 'Super Admin' && targetRole !== 'Admin'
+    }
+
+    return false
+  }
+
+  const canDeleteUser = (targetUser: User): boolean => {
+    const currentRole = currentUser?.user_type
+    const targetRole = targetUser.user_type.type_name
+
+    // Super Admin can delete anyone except themselves
+    if (currentRole === 'Super Admin') {
+      return targetUser.id !== currentUser?.id
+    }
+
+    // Admin cannot delete Super Admin or other Admins
+    if (currentRole === 'Admin') {
+      return targetRole !== 'Super Admin' && targetRole !== 'Admin'
+    }
+
+    return false
+  }
+
+  const canSuspendUser = (targetUser: User): boolean => {
+    const currentRole = currentUser?.user_type
+    const targetRole = targetUser.user_type.type_name
+
+    // Super Admin can suspend anyone except themselves
+    if (currentRole === 'Super Admin') {
+      return targetUser.id !== currentUser?.id
+    }
+
+    // Admin cannot suspend Super Admin or other Admins
+    if (currentRole === 'Admin') {
+      return targetRole !== 'Super Admin' && targetRole !== 'Admin'
+    }
+
+    return false
+  }
+
+  const canViewUser = (targetUser: User): boolean => {
+    // Anyone with access can view user details
+    return true
+  }
+
+  // ========== API CALLS ==========
   const handleSuspend = async () => {
     if (!selectedUser) return
 
-    try {
-      await api.put(`/admin/users/${selectedUser.id}/suspend`)
+    // Check permission
+    if (!canSuspendUser(selectedUser)) {
       toast({
-        variant: "success",
+        variant: "destructive",
+        title: "Permission Denied",
+        description: `You cannot suspend a ${selectedUser.user_type.type_name} user.`,
+      })
+      setIsSuspendDialogOpen(false)
+      return
+    }
+
+    try {
+      await api.put(`/admin/users/${selectedUser.id}/status`, {
+        is_active: false,
+        reason: suspendReason
+      })
+      toast({
         title: "User Suspended",
         description: `${selectedUser.email} has been suspended`,
       })
@@ -183,31 +260,43 @@ const UserManagement: React.FC = () => {
       setIsSuspendDialogOpen(false)
       setSelectedUser(null)
       setSuspendReason('')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error suspending user:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to suspend user",
+        description: error.response?.data?.message || "Failed to suspend user",
       })
     }
   }
 
-  const handleActivate = async (userId: string) => {
-    try {
-      await api.put(`/admin/users/${userId}/activate`)
+  const handleActivate = async (userId: string, targetUser: User) => {
+    // Check permission
+    if (!canEditUser(targetUser)) {
       toast({
-        variant: "success",
+        variant: "destructive",
+        title: "Permission Denied",
+        description: `You cannot activate a ${targetUser.user_type.type_name} user.`,
+      })
+      return
+    }
+
+    try {
+      await api.put(`/admin/users/${userId}/status`, {
+        is_active: true,
+        reason: 'Account reactivated by admin'
+      })
+      toast({
         title: "User Activated",
         description: "User has been activated",
       })
       await fetchUsers()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error activating user:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to activate user",
+        description: error.response?.data?.message || "Failed to activate user",
       })
     }
   }
@@ -215,22 +304,32 @@ const UserManagement: React.FC = () => {
   const handleDelete = async () => {
     if (!selectedUser) return
 
+    // Check permission
+    if (!canDeleteUser(selectedUser)) {
+      toast({
+        variant: "destructive",
+        title: "Permission Denied",
+        description: `You cannot delete a ${selectedUser.user_type.type_name} user.`,
+      })
+      setIsDeleteDialogOpen(false)
+      return
+    }
+
     try {
       await api.delete(`/admin/users/${selectedUser.id}`)
       toast({
-        variant: "success",
         title: "User Deleted",
         description: `${selectedUser.email} has been deleted`,
       })
       await fetchUsers()
       setIsDeleteDialogOpen(false)
       setSelectedUser(null)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting user:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to delete user",
+        description: error.response?.data?.message || "Failed to delete user",
       })
     }
   }
@@ -238,27 +337,45 @@ const UserManagement: React.FC = () => {
   const handleEdit = async () => {
     if (!selectedUser) return
 
+    // Check permission
+    if (!canEditUser(selectedUser)) {
+      toast({
+        variant: "destructive",
+        title: "Permission Denied",
+        description: `You cannot edit a ${selectedUser.user_type.type_name} user.`,
+      })
+      setIsEditDialogOpen(false)
+      return
+    }
+
     try {
       await api.put(`/admin/users/${selectedUser.id}`, editFormData)
       toast({
-        variant: "success",
         title: "User Updated",
         description: "User information has been updated",
       })
       await fetchUsers()
       setIsEditDialogOpen(false)
       setSelectedUser(null)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating user:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to update user",
+        description: error.response?.data?.message || "Failed to update user",
       })
     }
   }
 
   const openEditDialog = (user: User) => {
+    if (!canEditUser(user)) {
+      toast({
+        variant: "destructive",
+        title: "Permission Denied",
+        description: `You cannot edit a ${user.user_type.type_name} user.`,
+      })
+      return
+    }
     setSelectedUser(user)
     setEditFormData({
       email: user.email,
@@ -271,9 +388,9 @@ const UserManagement: React.FC = () => {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'Super Admin':
-        return <Badge variant="destructive" className="bg-purple-600">Super Admin</Badge>
+        return <Badge variant="default" className="bg-purple-600 flex items-center gap-1"><Crown className="h-3 w-3" /> Super Admin</Badge>
       case 'Admin':
-        return <Badge variant="destructive">Admin</Badge>
+        return <Badge variant="destructive" className="bg-red-600">Admin</Badge>
       case 'Employer':
         return <Badge variant="default" className="bg-blue-600">Employer</Badge>
       case 'Job Seeker':
@@ -461,98 +578,108 @@ const UserManagement: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-blue-100 text-blue-600">
-                              {user.email.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">
-                              {user.seeker_profile?.full_name || user.employer_profile?.company_name || user.email}
-                            </p>
-                            <p className="text-sm text-gray-500">{user.email}</p>
+                  {users.map((user) => {
+                    const showActions = canEditUser(user) || canDeleteUser(user) || canSuspendUser(user)
+                    return (
+                      <TableRow key={user.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback className="bg-blue-100 text-blue-600">
+                                {user.email.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">
+                                {user.seeker_profile?.full_name || user.employer_profile?.company_name || user.email}
+                              </p>
+                              <p className="text-sm text-gray-500">{user.email}</p>
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {getRoleBadge(user.user_type.type_name)}
-                      </TableCell>
-                      <TableCell>
-                        {user.is_active ? (
-                          <Badge variant="success">Active</Badge>
-                        ) : (
-                          <Badge variant="destructive">Suspended</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {new Date(user.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-sm">
-                          <span>🔔 {user._count?.notifications || 0}</span>
-                          <span>🔍 {user._count?.search_logs || 0}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => {
-                              setSelectedUser(user)
-                              setIsViewDialogOpen(true)
-                            }}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openEditDialog(user)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit User
-                            </DropdownMenuItem>
-                            {user.is_active ? (
-                              <DropdownMenuItem 
-                                onClick={() => {
+                        </TableCell>
+                        <TableCell>
+                          {getRoleBadge(user.user_type.type_name)}
+                        </TableCell>
+                        <TableCell>
+                          {user.is_active ? (
+                            <Badge variant="default" className="bg-green-600">Active</Badge>
+                          ) : (
+                            <Badge variant="destructive">Suspended</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {new Date(user.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span>🔔 {user._count?.notifications || 0}</span>
+                            <span>🔍 {user._count?.search_logs || 0}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {showActions && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => {
                                   setSelectedUser(user)
-                                  setIsSuspendDialogOpen(true)
-                                }}
-                                className="text-yellow-600"
-                              >
-                                <Ban className="mr-2 h-4 w-4" />
-                                Suspend
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem 
-                                onClick={() => handleActivate(user.id)}
-                                className="text-green-600"
-                              >
-                                <CheckCircle className="mr-2 h-4 w-4" />
-                                Activate
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem 
-                              onClick={() => {
-                                setSelectedUser(user)
-                                setIsDeleteDialogOpen(true)
-                              }}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                                  setIsViewDialogOpen(true)
+                                }}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View Details
+                                </DropdownMenuItem>
+                                {canEditUser(user) && (
+                                  <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit User
+                                  </DropdownMenuItem>
+                                )}
+                                {canSuspendUser(user) && user.is_active && (
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      setSelectedUser(user)
+                                      setIsSuspendDialogOpen(true)
+                                    }}
+                                    className="text-yellow-600"
+                                  >
+                                    <Ban className="mr-2 h-4 w-4" />
+                                    Suspend
+                                  </DropdownMenuItem>
+                                )}
+                                {canEditUser(user) && !user.is_active && (
+                                  <DropdownMenuItem 
+                                    onClick={() => handleActivate(user.id, user)}
+                                    className="text-green-600"
+                                  >
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Activate
+                                  </DropdownMenuItem>
+                                )}
+                                {canDeleteUser(user) && (
+                                  <DropdownMenuItem 
+                                    onClick={() => {
+                                      setSelectedUser(user)
+                                      setIsDeleteDialogOpen(true)
+                                    }}
+                                    className="text-red-600"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
 
@@ -585,7 +712,7 @@ const UserManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* View User Dialog */}
+      {/* View User Dialog - Same as before */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           {selectedUser && (
@@ -611,7 +738,7 @@ const UserManagement: React.FC = () => {
                     <div className="flex gap-2 mt-2">
                       {getRoleBadge(selectedUser.user_type.type_name)}
                       {selectedUser.is_active ? (
-                        <Badge variant="success">Active</Badge>
+                        <Badge variant="default" className="bg-green-600">Active</Badge>
                       ) : (
                         <Badge variant="destructive">Suspended</Badge>
                       )}
@@ -702,7 +829,7 @@ const UserManagement: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit User Dialog */}
+      {/* Edit User Dialog - Rest of the code remains same */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>

@@ -24,7 +24,14 @@ import fs from 'fs'
 import { v2 as cloudinary } from 'cloudinary'
 import { CloudinaryStorage } from 'multer-storage-cloudinary'
 import nodemailer from 'nodemailer'
-import employerRoutes from './routes/employerRoutes';
+import employerRoutes from './routes/employerRoutes'
+import { 
+  testEmailConfig, 
+  sendWelcomeEmail,
+  sendPasswordResetEmail,
+  sendNewApplicationNotification
+} from './services/emailService'
+
 
 // Express Request Interface Extension
 declare global {
@@ -2860,39 +2867,154 @@ app.put('/api/notifications/preferences', authMiddleware, async (req: Request, r
     res.status(500).json({ success: false, message: error.message })
   }
 })
+
+
+
 // ========== APPLICATION ROUTES ==========
 app.post('/api/applications/apply/:jobId', authMiddleware, upload.single('resume'), async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params
     const { coverLetter } = req.body
     
-    const job = await prisma.jobPost.findUnique({ where: { id: jobId }, include: { status: true, employer: true } })
-    if (!job) return res.status(404).json({ success: false, message: 'Job not found' })
-    if (job.status.status_name !== 'Open') return res.status(400).json({ success: false, message: 'Job is no longer accepting applications' })
+    console.log(`📝 ========== NEW APPLICATION ==========`);
+    console.log(`Job ID: ${jobId}`);
+    console.log(`User Email: ${req.user!.email}`);
     
-    let seeker = await prisma.jobSeekerProfile.findFirst({ where: { user_id: req.user!.id } })
+    const job = await prisma.jobPost.findUnique({ 
+      where: { id: jobId }, 
+      include: { status: true, employer: { include: { user: true } } } 
+    });
+    if (!job) return res.status(404).json({ success: false, message: 'Job not found' });
+    if (job.status.status_name !== 'Open') return res.status(400).json({ success: false, message: 'Job is no longer accepting applications' });
+    
+    let seeker = await prisma.jobSeekerProfile.findFirst({ where: { user_id: req.user!.id } });
     if (!seeker) {
-      const user = await prisma.user.findUnique({ where: { id: req.user!.id } })
-      seeker = await prisma.jobSeekerProfile.create({ data: { user_id: req.user!.id, full_name: user?.email?.split('@')[0] || 'User', skills: [] } })
+      const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+      seeker = await prisma.jobSeekerProfile.create({ 
+        data: { user_id: req.user!.id, full_name: user?.full_name || user?.email?.split('@')[0] || 'User', skills: [] } 
+      });
     }
     
-    const existing = await prisma.jobApplication.findFirst({ where: { job_id: jobId, seeker_id: seeker.id } })
-    if (existing) return res.status(400).json({ success: false, message: 'You have already applied for this job' })
+    const existing = await prisma.jobApplication.findFirst({ where: { job_id: jobId, seeker_id: seeker.id } });
+    if (existing) return res.status(400).json({ success: false, message: 'You have already applied for this job' });
     
-    const pendingStatus = await prisma.jobApplicationStatus.findFirst({ where: { status_name: 'Pending' } })
+    const pendingStatus = await prisma.jobApplicationStatus.findFirst({ where: { status_name: 'Pending' } });
     const application = await prisma.jobApplication.create({
-      data: { job_id: jobId, seeker_id: seeker.id, cover_letter: coverLetter || null, resume_url: req.file ? `/uploads/resumes/${req.file.filename}` : null, status_id: pendingStatus!.id, applied_at: new Date() }
-    })
+      data: { 
+        job_id: jobId, 
+        seeker_id: seeker.id, 
+        cover_letter: coverLetter || null, 
+        resume_url: req.file ? `/uploads/resumes/${req.file.filename}` : null, 
+        status_id: pendingStatus!.id, 
+        applied_at: new Date() 
+      }
+    });
     
-    await prisma.jobPost.update({ where: { id: jobId }, data: { applications_count: { increment: 1 } } })
-    await createNotification(job.employer.user_id, 'New Application Received', `${seeker.full_name} applied for ${job.title}`, 'application_update', { job_id: jobId, application_id: application.id })
-    await createNotification(req.user!.id, 'Application Submitted', `Your application for ${job.title} has been submitted successfully`, 'application_update', { job_id: jobId, application_id: application.id })
+    console.log(`✅ Application created: ${application.id}`);
     
-    res.status(201).json({ success: true, data: application, message: 'Application submitted successfully' })
+    await prisma.jobPost.update({ where: { id: jobId }, data: { applications_count: { increment: 1 } } });
+    
+    // ========== SEND EMAIL TO JOB SEEKER ==========
+    try {
+      console.log(`📧 Sending confirmation email to: ${req.user!.email}`);
+      
+      const emailTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+      
+      await emailTransporter.sendMail({
+        from: `"Job Portal" <${process.env.EMAIL_USER}>`,
+        to: req.user!.email,
+        subject: `✅ Application Submitted: ${job.title}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 30px; text-align: center;">
+              <h2>✅ Application Received!</h2>
+            </div>
+            <div style="padding: 30px; background: #f9fafb;">
+              <h3>Hello ${seeker.full_name},</h3>
+              <p>Your application for <strong>${job.title}</strong> at <strong>${job.employer.company_name}</strong> has been submitted successfully.</p>
+              <p>The employer will review your application and update you on the status.</p>
+              <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/applications" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">Track Your Application</a>
+              <p>Best regards,<br><strong>Job Portal Team</strong></p>
+            </div>
+            <div style="text-align: center; padding: 20px; font-size: 12px; color: #6b7280;">
+              <p>© ${new Date().getFullYear()} Job Portal. All rights reserved.</p>
+            </div>
+          </div>
+        `
+      });
+      
+      console.log(`✅ Application confirmation email sent to: ${req.user!.email}`);
+      
+    } catch (emailError) {
+      console.error('❌ Failed to send email to job seeker:', emailError);
+    }
+    
+    // ========== SEND EMAIL TO EMPLOYER ==========
+    try {
+      console.log(`📧 Sending notification email to employer: ${job.employer.user.email}`);
+      
+      const emailTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+      
+      await emailTransporter.sendMail({
+        from: `"Job Portal" <${process.env.EMAIL_USER}>`,
+        to: job.employer.user.email,
+        subject: `🎯 New Application: ${job.title}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 30px; text-align: center;">
+              <h2>🎯 New Application Received!</h2>
+            </div>
+            <div style="padding: 30px; background: #f9fafb;">
+              <h3>Hello ${job.employer.company_name} Team,</h3>
+              <p>A new candidate has applied for <strong>${job.title}</strong>.</p>
+              <div style="background: #e0e7ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>Applicant:</strong> ${seeker.full_name}</p>
+                <p><strong>Email:</strong> ${req.user!.email}</p>
+                ${coverLetter ? `<p><strong>Cover Letter:</strong> ${coverLetter.substring(0, 200)}${coverLetter.length > 200 ? '...' : ''}</p>` : ''}
+              </div>
+              <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/employer/applications" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">View Application</a>
+              <p>Best regards,<br><strong>Job Portal Team</strong></p>
+            </div>
+          </div>
+        `
+      });
+      
+      console.log(`✅ New application notification email sent to employer: ${job.employer.user.email}`);
+      
+    } catch (emailError) {
+      console.error('❌ Failed to send email to employer:', emailError);
+    }
+    
+    // Create notifications
+    await createNotification(job.employer.user_id, 'New Application Received', `${seeker.full_name} applied for ${job.title}`, 'application_update', { job_id: jobId, application_id: application.id });
+    await createNotification(req.user!.id, 'Application Submitted', `Your application for ${job.title} has been submitted successfully`, 'application_update', { job_id: jobId, application_id: application.id });
+    
+    console.log(`✅ Application process completed successfully`);
+    console.log(`=========================================\n`);
+    
+    res.status(201).json({ 
+      success: true, 
+      data: application, 
+      message: 'Application submitted successfully! Check your email for confirmation.' 
+    });
+    
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message })
+    console.error('❌ Application error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
-})
+});
 
 app.get('/api/applications/my-applications', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -2967,22 +3089,6 @@ app.get('/api/applications/:id', authMiddleware, async (req: Request, res: Respo
   }
 })
 
-app.put('/api/applications/:id/status', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params
-    const { statusId } = req.body
-    
-    const application = await prisma.jobApplication.update({
-      where: { id: id },
-      data: { status_id: parseInt(statusId), updated_at: new Date() },
-      include: { status: true }
-    })
-    
-    res.json({ success: true, data: application, message: 'Status updated successfully' })
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message })
-  }
-})
 
 app.post('/api/applications/:id/notes', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -3002,6 +3108,512 @@ app.post('/api/applications/:id/notes', authMiddleware, async (req: Request, res
     res.status(500).json({ success: false, message: error.message })
   }
 })
+
+
+// ========== APPLICATION ROUTES WITH EMAIL ==========
+app.post('/api/applications/apply/:jobId', authMiddleware, upload.single('resume'), async (req: Request, res: Response) => {
+  try {
+    const { jobId } = req.params;
+    const { coverLetter } = req.body;
+    
+    console.log(`📝 ========== NEW APPLICATION ==========`);
+    console.log(`Job ID: ${jobId}`);
+    console.log(`User ID: ${req.user!.id}`);
+    console.log(`User Email: ${req.user!.email}`);
+    
+    // Get job details
+    const job = await prisma.jobPost.findUnique({ 
+      where: { id: jobId }, 
+      include: { 
+        status: true, 
+        employer: { 
+          include: { user: true } 
+        } 
+      } 
+    });
+    
+    if (!job) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+    
+    if (job.status.status_name !== 'Open') {
+      return res.status(400).json({ success: false, message: 'Job is no longer accepting applications' });
+    }
+    
+    // Get or create seeker profile
+    let seeker = await prisma.jobSeekerProfile.findFirst({ 
+      where: { user_id: req.user!.id } 
+    });
+    
+    if (!seeker) {
+      const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+      seeker = await prisma.jobSeekerProfile.create({ 
+        data: { 
+          user_id: req.user!.id, 
+          full_name: user?.full_name || user?.email?.split('@')[0] || 'User', 
+          skills: [] 
+        } 
+      });
+      console.log(`Created new seeker profile for: ${req.user!.email}`);
+    }
+    
+    // Check for duplicate application
+    const existing = await prisma.jobApplication.findFirst({ 
+      where: { job_id: jobId, seeker_id: seeker.id } 
+    });
+    
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'You have already applied for this job' });
+    }
+    
+    // Get pending status
+    const pendingStatus = await prisma.jobApplicationStatus.findFirst({ 
+      where: { status_name: 'Pending' } 
+    });
+    
+    if (!pendingStatus) {
+      return res.status(500).json({ success: false, message: 'Application status configuration missing' });
+    }
+    
+    // Create application
+    const application = await prisma.jobApplication.create({
+      data: { 
+        job_id: jobId, 
+        seeker_id: seeker.id, 
+        cover_letter: coverLetter || null, 
+        resume_url: req.file ? `/uploads/resumes/${req.file.filename}` : null, 
+        status_id: pendingStatus.id, 
+        applied_at: new Date() 
+      }
+    });
+    
+    console.log(`✅ Application created: ${application.id}`);
+    
+    // Update job applications count
+    await prisma.jobPost.update({ 
+      where: { id: jobId }, 
+      data: { applications_count: { increment: 1 } } 
+    });
+    
+    // ========== SEND EMAIL TO JOB SEEKER ==========
+    try {
+      console.log(`📧 Sending confirmation email to job seeker: ${req.user!.email}`);
+      
+      const emailTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+      
+      const seekerEmailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; }
+            .success-icon { font-size: 48px; text-align: center; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2>✅ Application Received!</h2>
+            </div>
+            <div class="content">
+              <div class="success-icon">📝</div>
+              <h3>Hello ${seeker.full_name},</h3>
+              <p>Your application for <strong>${job.title}</strong> at <strong>${job.employer.company_name}</strong> has been submitted successfully.</p>
+              <div style="background: #e0e7ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 0;"><strong>Job Details:</strong></p>
+                <p style="margin: 5px 0;">📍 Location: ${job.location}</p>
+                <p style="margin: 5px 0;">💼 Type: ${job.employment_type_id === 1 ? 'Full-time' : 'Part-time'}</p>
+                ${job.salary_range ? `<p style="margin: 5px 0;">💰 Salary: ${job.salary_range}</p>` : ''}
+              </div>
+              <p>The employer will review your application and update you on the status.</p>
+              <div style="text-align: center;">
+               <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/applications/${application.id}" class="button">View This Application</a>
+              </div>
+              <p>Best regards,<br><strong>Job Portal Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>© ${new Date().getFullYear()} Job Portal. All rights reserved.</p>
+              <p>Connecting Talent with Opportunity</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      await emailTransporter.sendMail({
+        from: `"Job Portal" <${process.env.EMAIL_USER}>`,
+        to: req.user!.email,
+        subject: `✅ Application Submitted: ${job.title}`,
+        html: seekerEmailHtml
+      });
+      
+      console.log(`✅ Application confirmation email sent to job seeker: ${req.user!.email}`);
+      
+    } catch (emailError) {
+      console.error('❌ Failed to send email to job seeker:', emailError);
+      // Don't block application if email fails
+    }
+    
+    // ========== SEND EMAIL TO EMPLOYER ==========
+    try {
+      console.log(`📧 Sending notification email to employer: ${job.employer.user.email}`);
+      
+      const emailTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+      
+      const employerEmailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2>🎯 New Application Received!</h2>
+            </div>
+            <div class="content">
+              <h3>Hello ${job.employer.company_name} Team,</h3>
+              <p>A new candidate has applied for <strong>${job.title}</strong>.</p>
+              <div style="background: #e0e7ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 0;"><strong>Applicant Details:</strong></p>
+                <p style="margin: 5px 0;">👤 Name: ${seeker.full_name}</p>
+                <p style="margin: 5px 0;">📧 Email: ${req.user!.email}</p>
+                ${coverLetter ? `<p style="margin: 5px 0;">📝 Cover Letter: ${coverLetter.substring(0, 200)}${coverLetter.length > 200 ? '...' : ''}</p>` : ''}
+              </div>
+              <div style="text-align: center;">
+                <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/employer/applications" class="button">👁️ View Application</a>
+              </div>
+              <p>Best regards,<br><strong>Job Portal Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>© ${new Date().getFullYear()} Job Portal. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      await emailTransporter.sendMail({
+        from: `"Job Portal" <${process.env.EMAIL_USER}>`,
+        to: job.employer.user.email,
+        subject: `🎯 New Application: ${job.title}`,
+        html: employerEmailHtml
+      });
+      
+      console.log(`✅ New application notification email sent to employer: ${job.employer.user.email}`);
+      
+    } catch (emailError) {
+      console.error('❌ Failed to send email to employer:', emailError);
+      // Don't block application if email fails
+    }
+    
+    // Create notifications
+    await createNotification(
+      job.employer.user_id, 
+      'New Application Received', 
+      `${seeker.full_name} applied for ${job.title}`, 
+      'application_update', 
+      { job_id: jobId, application_id: application.id }
+    );
+    
+    await createNotification(
+      req.user!.id, 
+      'Application Submitted', 
+      `Your application for ${job.title} has been submitted successfully`, 
+      'application_update', 
+      { job_id: jobId, application_id: application.id }
+    );
+    
+    console.log(`✅ Application process completed successfully`);
+    console.log(`=========================================\n`);
+    
+    res.status(201).json({ 
+      success: true, 
+      data: application, 
+      message: 'Application submitted successfully! Check your email for confirmation.' 
+    });
+    
+  } catch (error: any) {
+    console.error('❌ Application error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+// ========== UPDATE APPLICATION STATUS WITH EMAIL ==========
+app.put('/api/applications/:id/status', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { statusId, message } = req.body;
+    
+    console.log(`📝 Updating application ${id} status to: ${statusId}`);
+    
+    // Get the employer
+    const employer = await prisma.employerProfile.findFirst({
+      where: { user_id: req.user!.id }
+    });
+    
+    if (!employer) {
+      return res.status(403).json({ success: false, message: 'Employer not found' });
+    }
+    
+    // Get application with details
+    const application = await prisma.jobApplication.findUnique({
+      where: { id },
+      include: {
+        job: true,
+        seeker: { include: { user: true } },
+        status: true
+      }
+    });
+    
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'Application not found' });
+    }
+    
+    // Check if employer owns this job
+    if (application.job.employer_id !== employer.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+    
+    // Get new status
+    const newStatus = await prisma.jobApplicationStatus.findUnique({
+      where: { id: parseInt(statusId) }
+    });
+    
+    if (!newStatus) {
+      return res.status(404).json({ success: false, message: 'Status not found' });
+    }
+    
+    // Update application
+    const updatedApplication = await prisma.jobApplication.update({
+      where: { id },
+      data: {
+        status_id: parseInt(statusId),
+        updated_at: new Date(),
+        employer_notes: message || null
+      },
+      include: { status: true }
+    });
+    
+    // SEND EMAIL TO JOB SEEKER ABOUT STATUS CHANGE
+    try {
+      console.log(`📧 Sending status update email to job seeker: ${application.seeker.user.email}`);
+      
+      const emailTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+      
+      const statusColors: Record<string, string> = {
+        'Pending': '#f59e0b',
+        'Reviewed': '#3b82f6',
+        'Shortlisted': '#8b5cf6',
+        'Interview': '#06b6d4',
+        'Accepted': '#10b981',
+        'Rejected': '#ef4444'
+      };
+      
+      const statusMessages: Record<string, string> = {
+        'Pending': 'Your application is under review',
+        'Reviewed': 'Your application has been reviewed',
+        'Shortlisted': 'Congratulations! You have been shortlisted',
+        'Interview': 'You have been selected for an interview',
+        'Accepted': 'Congratulations! Your application has been accepted',
+        'Rejected': 'Thank you for your interest'
+      };
+      
+      const emailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+            .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; background: ${statusColors[newStatus.status_name]}; color: white; }
+            .button { background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
+            .message-box { background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2>Application Status Update</h2>
+            </div>
+            <div class="content">
+              <h3>Hello ${application.seeker.full_name},</h3>
+              <p>Your application status for <strong>${application.job.title}</strong> at <strong>${employer.company_name}</strong> has been updated.</p>
+              <p style="text-align: center; margin: 30px 0;">
+                <span class="status">${newStatus.status_name}</span>
+              </p>
+              <p><strong>${statusMessages[newStatus.status_name]}</strong></p>
+              ${message ? `<div class="message-box"><strong>Message from employer:</strong><br>${message}</div>` : ''}
+              <p style="text-align: center;">
+                <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/applications" class="button">View Applications</a>
+              </p>
+            </div>
+            <div class="footer">
+              <p>Job Portal - Connecting Talent with Opportunity</p>
+              <p>© ${new Date().getFullYear()} Job Portal. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      await emailTransporter.sendMail({
+        from: `"Job Portal" <${process.env.EMAIL_USER}>`,
+        to: application.seeker.user.email,
+        subject: `Application Status: ${newStatus.status_name} - ${application.job.title}`,
+        html: emailHtml
+      });
+      
+      console.log(`✅ Status update email sent to job seeker: ${application.seeker.user.email}`);
+      
+    } catch (emailError) {
+      console.error('❌ Failed to send status update email:', emailError);
+    }
+    
+    // Create notification
+    await createNotification(
+      application.seeker.user_id,
+      'Application Status Updated',
+      `Your application for "${application.job.title}" has been ${newStatus.status_name.toLowerCase()}`,
+      'application_update',
+      { application_id: id, status: newStatus.status_name }
+    );
+    
+    res.json({ success: true, data: updatedApplication, message: `Application ${newStatus.status_name.toLowerCase()} successfully` });
+    
+  } catch (error: any) {
+    console.error('Error updating application status:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
+// ========== TEST EMAIL ENDPOINT ==========
+app.post('/api/notifications/test-email', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    
+    // Get user details
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { seeker_profile: true, employer_profile: true }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const userName = user.full_name || user.seeker_profile?.full_name || user.employer_profile?.company_name || 'User';
+    
+    // Send test email
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+          .button { background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }
+          .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>📧 Test Email Notification</h2>
+          </div>
+          <div class="content">
+            <h3>Hello ${userName},</h3>
+            <p>This is a test email from Job Portal to verify that your email notification settings are working correctly.</p>
+            <p>If you received this email, it means:</p>
+            <ul>
+              <li>✅ Your email configuration is working properly</li>
+              <li>✅ You will receive notifications for:</li>
+              <ul>
+                <li>Application status updates</li>
+                <li>New job alerts</li>
+                <li>Password reset requests</li>
+                <li>And more...</li>
+              </ul>
+            </ul>
+            <div style="text-align: center;">
+              <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/notifications" class="button">Manage Notifications</a>
+            </div>
+            <p>Best regards,<br><strong>Job Portal Team</strong></p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Job Portal. All rights reserved.</p>
+            <p>You received this email because you requested a test notification.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    // Use your email transporter
+    const emailTransporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+    
+    await emailTransporter.sendMail({
+      from: `"Job Portal" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: '✅ Test Email Notification - Job Portal',
+      html: html
+    });
+    
+    console.log(`✅ Test email sent to ${user.email}`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Test email sent successfully! Please check your inbox.' 
+    });
+  } catch (error: any) {
+    console.error('Error sending test email:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Failed to send test email' 
+    });
+  }
+});
 
 // ========== BOOKMARK ROUTES ==========
 app.get('/api/bookmarks', authMiddleware, async (req: Request, res: Response) => {
@@ -3087,8 +3699,18 @@ app.get('/api/employment-types', async (req: Request, res: Response) => {
 })
 
 // ========== SERVER INITIALIZATION ==========
-const PORT = process.env.PORT || 5000
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-})
+const PORT = parseInt(process.env.PORT || '5000', 10);
+const HOST = '0.0.0.0'; // Listen on all network interfaces
 
+// Hardcoded IP for display (replace with your actual IP)
+const NETWORK_IP = '172.20.30.232';
+
+app.listen(PORT, HOST, () => {
+  console.log(`\n========================================`);
+  console.log(`🚀 Job Portal Backend Server`);
+  console.log(`========================================`);
+  console.log(`📍 Local:   http://localhost:${PORT}`);
+  console.log(`📍 Network: http://${NETWORK_IP}:${PORT}`);
+  console.log(`📍 Health:  http://localhost:${PORT}/health`);
+  console.log(`========================================\n`);
+});

@@ -87,8 +87,8 @@ interface Application {
     phone: string | null
     location: string | null
     skills: string[]
-    experience?: Experience[]
-    education?: Education[]
+    experience: any // Can be array or JSON string
+    education: any // Can be array or JSON string
     email?: string
   }
   notes: Array<{
@@ -99,6 +99,22 @@ interface Application {
       company_name: string
     }
   }>
+}
+
+// ========== HELPER FUNCTION TO PARSE JSON FIELDS ==========
+const parseJSONArray = (data: any): any[] => {
+  if (!data) return []
+  if (Array.isArray(data)) return data
+  if (typeof data === 'string') {
+    try {
+      const parsed = JSON.parse(data)
+      return Array.isArray(parsed) ? parsed : []
+    } catch (e) {
+      console.error('Error parsing JSON:', e)
+      return []
+    }
+  }
+  return []
 }
 
 const statusOptions = [
@@ -120,6 +136,7 @@ const ApplicationDetails: React.FC = () => {
   const [feedback, setFeedback] = useState('')
   const [showStatusDialog, setShowStatusDialog] = useState(false)
   const [activeTab, setActiveTab] = useState('profile')
+  const [isAddingNote, setIsAddingNote] = useState(false)
 
   useEffect(() => {
     fetchApplicationDetails()
@@ -168,9 +185,6 @@ const ApplicationDetails: React.FC = () => {
     }
   }
 
-  // FIXED: handleAddNote with proper error handling and loading state
-  const [isAddingNote, setIsAddingNote] = useState(false)
-  
   const handleAddNote = async () => {
     if (!newNote.trim()) {
       toast({
@@ -183,7 +197,6 @@ const ApplicationDetails: React.FC = () => {
     
     setIsAddingNote(true)
     try {
-      // Send 'note_text' as the key (matches backend expectation)
       const response = await api.post(`/applications/${id}/notes`, { 
         note_text: newNote 
       })
@@ -198,7 +211,6 @@ const ApplicationDetails: React.FC = () => {
       } else {
         throw new Error(response.data.message || "Failed to add note")
       }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Error adding note:', error)
       toast({
@@ -210,7 +222,6 @@ const ApplicationDetails: React.FC = () => {
       setIsAddingNote(false)
     }
   }
-
 
   const formatFullDate = (dateString: string) => {
     if (!dateString) return 'Present'
@@ -236,6 +247,11 @@ const ApplicationDetails: React.FC = () => {
   const getCandidateEmail = () => {
     return application?.seeker?.email || ''
   }
+
+  // ========== PARSE EXPERIENCE AND EDUCATION ==========
+  const experienceList = parseJSONArray(application?.seeker?.experience)
+  const educationList = parseJSONArray(application?.seeker?.education)
+  const skillsList = application?.seeker?.skills || []
 
   if (isLoading) {
     return (
@@ -268,15 +284,15 @@ const ApplicationDetails: React.FC = () => {
           </Button>
           <div className="flex gap-3">
             {application.resume_url && (
-  <Button
-    variant="outline"
-    onClick={() => window.open(`http://localhost:5000${application.resume_url}`, '_blank')}
-    className="border-gray-300 rounded-lg"
-  >
-    <Download className="h-4 w-4 mr-2" />
-    Download Resume
-  </Button>
-)}
+              <Button
+                variant="outline"
+                onClick={() => window.open(`http://localhost:5000${application.resume_url}`, '_blank')}
+                className="border-gray-300 rounded-lg"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download Resume
+              </Button>
+            )}
             <Button
               onClick={() => setShowStatusDialog(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
@@ -359,9 +375,9 @@ const ApplicationDetails: React.FC = () => {
 
                   {/* Skills Tab */}
                   <TabsContent value="skills">
-                    {application.seeker.skills && application.seeker.skills.length > 0 ? (
+                    {skillsList.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
-                        {application.seeker.skills.map((skill, idx) => (
+                        {skillsList.map((skill, idx) => (
                           <Badge key={idx} className="bg-blue-100 text-blue-700 rounded-full px-3 py-1">
                             {skill}
                           </Badge>
@@ -372,11 +388,11 @@ const ApplicationDetails: React.FC = () => {
                     )}
                   </TabsContent>
 
-                  {/* Experience Tab */}
+                  {/* Experience Tab - FIXED: using parsed experienceList */}
                   <TabsContent value="experience">
-                    {application.seeker.experience && application.seeker.experience.length > 0 ? (
+                    {experienceList.length > 0 ? (
                       <div className="space-y-4">
-                        {application.seeker.experience.map((exp, idx) => (
+                        {experienceList.map((exp: Experience, idx: number) => (
                           <div key={idx} className="border-l-4 border-blue-500 pl-4 py-2 hover:bg-gray-50 rounded-r-lg transition">
                             <div className="flex items-start justify-between">
                               <div>
@@ -407,11 +423,11 @@ const ApplicationDetails: React.FC = () => {
                     )}
                   </TabsContent>
 
-                  {/* Education Tab */}
+                  {/* Education Tab - FIXED: using parsed educationList */}
                   <TabsContent value="education">
-                    {application.seeker.education && application.seeker.education.length > 0 ? (
+                    {educationList.length > 0 ? (
                       <div className="space-y-4">
-                        {application.seeker.education.map((edu, idx) => (
+                        {educationList.map((edu: Education, idx: number) => (
                           <div key={idx} className="border-l-4 border-emerald-500 pl-4 py-2 hover:bg-gray-50 rounded-r-lg transition">
                             <div className="flex items-start justify-between">
                               <div>
@@ -527,7 +543,7 @@ const ApplicationDetails: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Notes Section - FIXED */}
+            {/* Notes Section */}
             <Card className="border border-gray-200 shadow-sm rounded-lg overflow-hidden">
               <CardHeader className="border-b border-gray-100 pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">

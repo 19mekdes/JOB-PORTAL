@@ -9,9 +9,24 @@ export interface ApiError {
 }
 
 // ========== CONFIGURATION ==========
-// Use import.meta.env for Vite instead of process.env
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000', 10)
+// Dynamic API URL that works on both PC and phone
+const getApiUrl = () => {
+  // Check if we're on localhost (PC development)
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    // Use the environment variable or default to localhost
+    return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  }
+  
+  // On phone or network access - use the same hostname but port 5000
+  // This works because the phone accesses via PC's IP address
+  const hostname = window.location.hostname;
+  return `http://${hostname}:5000/api`;
+};
+
+const API_URL = getApiUrl();
+const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000', 10);
+
+console.log('[API] Base URL:', API_URL); // Debug log
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
@@ -22,6 +37,7 @@ const api: AxiosInstance = axios.create({
     'Accept': 'application/json',
   },
 })
+
 // ========== REQUEST INTERCEPTOR ==========
 // Add auth token to every request
 api.interceptors.request.use(

@@ -14,7 +14,21 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,        // ← ADD THIS - allows access from other devices on the network
     port: 5173,
     open: true,
+    strictPort: true,  // ← ADD THIS - ensures it uses port 5173
+    cors: true,        // ← ADD THIS - enables CORS for mobile access
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   },
+  preview: {
+    host: true,
+    port: 5173
+  }
 })
