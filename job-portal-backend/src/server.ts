@@ -2869,7 +2869,6 @@ app.put('/api/notifications/preferences', authMiddleware, async (req: Request, r
 })
 
 
-
 // ========== APPLICATION ROUTES ==========
 app.post('/api/applications/apply/:jobId', authMiddleware, upload.single('resume'), async (req: Request, res: Response) => {
   try {
