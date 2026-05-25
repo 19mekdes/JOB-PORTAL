@@ -70,7 +70,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { toast } from '@/hooks/use-toast'
 import api from '../../services/api'
 import { Switch } from '../ui/switch'
-import { Separator } from '@radix-ui/react-dropdown-menu'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/redux/store'
 
@@ -175,7 +174,10 @@ const UserManagement: React.FC = () => {
     }
   }
 
-  // ========== PERMISSION CHECKS ==========
+  // ========== ROLE-BASED PERMISSION CHECKS ==========
+  // According to SRS: Admin can manage users but cannot delete
+  // Super Admin has full system control
+
   const canEditUser = (targetUser: User): boolean => {
     const currentRole = currentUser?.user_type
     const targetRole = targetUser.user_type.type_name
@@ -185,9 +187,9 @@ const UserManagement: React.FC = () => {
       return targetUser.id !== currentUser?.id
     }
 
-    // Admin cannot edit Super Admin or other Admins
+    // Admin can edit Job Seekers and Employers only (cannot edit Admins or Super Admins)
     if (currentRole === 'Admin') {
-      return targetRole !== 'Super Admin' && targetRole !== 'Admin'
+      return targetRole === 'Job Seeker' || targetRole === 'Employer'
     }
 
     return false
@@ -197,16 +199,12 @@ const UserManagement: React.FC = () => {
     const currentRole = currentUser?.user_type
     const targetRole = targetUser.user_type.type_name
 
-    // Super Admin can delete anyone except themselves
+    // ONLY Super Admin can delete users (per SRS: "Full system control")
     if (currentRole === 'Super Admin') {
       return targetUser.id !== currentUser?.id
     }
 
-    // Admin cannot delete Super Admin or other Admins
-    if (currentRole === 'Admin') {
-      return targetRole !== 'Super Admin' && targetRole !== 'Admin'
-    }
-
+    // Admin CANNOT delete any user (per SRS: Admin manages users but deletion requires higher authority)
     return false
   }
 
@@ -219,24 +217,36 @@ const UserManagement: React.FC = () => {
       return targetUser.id !== currentUser?.id
     }
 
-    // Admin cannot suspend Super Admin or other Admins
+    // Admin can suspend Job Seekers and Employers only
     if (currentRole === 'Admin') {
-      return targetRole !== 'Super Admin' && targetRole !== 'Admin'
+      return targetRole === 'Job Seeker' || targetRole === 'Employer'
     }
 
     return false
   }
 
-  const canViewUser = (targetUser: User): boolean => {
-    // Anyone with access can view user details
-    return true
+  const canChangeRole = (targetUser: User): boolean => {
+    const currentRole = currentUser?.user_type
+    const targetRole = targetUser.user_type.type_name
+
+    // Only Super Admin can change user roles
+    if (currentRole === 'Super Admin') {
+      return targetUser.id !== currentUser?.id
+    }
+
+    return false
+  }
+
+  const canViewUser = (): boolean => {
+    // Both Admin and Super Admin can view users
+    const currentRole = currentUser?.user_type
+    return currentRole === 'Admin' || currentRole === 'Super Admin'
   }
 
   // ========== API CALLS ==========
   const handleSuspend = async () => {
     if (!selectedUser) return
 
-    // Check permission
     if (!canSuspendUser(selectedUser)) {
       toast({
         variant: "destructive",
@@ -271,7 +281,6 @@ const UserManagement: React.FC = () => {
   }
 
   const handleActivate = async (userId: string, targetUser: User) => {
-    // Check permission
     if (!canEditUser(targetUser)) {
       toast({
         variant: "destructive",
@@ -304,12 +313,11 @@ const UserManagement: React.FC = () => {
   const handleDelete = async () => {
     if (!selectedUser) return
 
-    // Check permission
     if (!canDeleteUser(selectedUser)) {
       toast({
         variant: "destructive",
         title: "Permission Denied",
-        description: `You cannot delete a ${selectedUser.user_type.type_name} user.`,
+        description: `Only Super Admin can delete users.`,
       })
       setIsDeleteDialogOpen(false)
       return
@@ -319,7 +327,7 @@ const UserManagement: React.FC = () => {
       await api.delete(`/admin/users/${selectedUser.id}`)
       toast({
         title: "User Deleted",
-        description: `${selectedUser.email} has been deleted`,
+        description: `${selectedUser.email} has been permanently deleted`,
       })
       await fetchUsers()
       setIsDeleteDialogOpen(false)
@@ -337,7 +345,6 @@ const UserManagement: React.FC = () => {
   const handleEdit = async () => {
     if (!selectedUser) return
 
-    // Check permission
     if (!canEditUser(selectedUser)) {
       toast({
         variant: "destructive",
@@ -420,19 +427,32 @@ const UserManagement: React.FC = () => {
     )
   }
 
+  // Check if current user has access to this page
+  if (!canViewUser()) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+          <p className="text-gray-500">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-500 mt-1">Manage and moderate platform users</p>
+          <p className="text-gray-500 mt-1">
+            {currentUser?.user_type === 'Super Admin' 
+              ? 'Full system control - Manage all users' 
+              : 'Manage and moderate platform users'}
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
           <Button variant="outline" onClick={fetchUsers}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -579,7 +599,16 @@ const UserManagement: React.FC = () => {
                 </TableHeader>
                 <TableBody>
                   {users.map((user) => {
-                    const showActions = canEditUser(user) || canDeleteUser(user) || canSuspendUser(user)
+                    const currentRole = currentUser?.user_type
+                    const targetRole = user.user_type.type_name
+                    
+                    // Determine which actions to show based on role
+                    const showEdit = canEditUser(user)
+                    const showSuspend = canSuspendUser(user) && user.is_active
+                    const showActivate = canEditUser(user) && !user.is_active
+                    const showDelete = canDeleteUser(user)
+                    const showActions = showEdit || showSuspend || showActivate || showDelete
+                    
                     return (
                       <TableRow key={user.id}>
                         <TableCell>
@@ -598,7 +627,7 @@ const UserManagement: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {getRoleBadge(user.user_type.type_name)}
+                          {getRoleBadge(targetRole)}
                         </TableCell>
                         <TableCell>
                           {user.is_active ? (
@@ -634,13 +663,15 @@ const UserManagement: React.FC = () => {
                                   <Eye className="mr-2 h-4 w-4" />
                                   View Details
                                 </DropdownMenuItem>
-                                {canEditUser(user) && (
+                                
+                                {showEdit && (
                                   <DropdownMenuItem onClick={() => openEditDialog(user)}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     Edit User
                                   </DropdownMenuItem>
                                 )}
-                                {canSuspendUser(user) && user.is_active && (
+                                
+                                {showSuspend && (
                                   <DropdownMenuItem 
                                     onClick={() => {
                                       setSelectedUser(user)
@@ -652,7 +683,8 @@ const UserManagement: React.FC = () => {
                                     Suspend
                                   </DropdownMenuItem>
                                 )}
-                                {canEditUser(user) && !user.is_active && (
+                                
+                                {showActivate && (
                                   <DropdownMenuItem 
                                     onClick={() => handleActivate(user.id, user)}
                                     className="text-green-600"
@@ -661,7 +693,8 @@ const UserManagement: React.FC = () => {
                                     Activate
                                   </DropdownMenuItem>
                                 )}
-                                {canDeleteUser(user) && (
+                                
+                                {showDelete && (
                                   <DropdownMenuItem 
                                     onClick={() => {
                                       setSelectedUser(user)
@@ -670,7 +703,7 @@ const UserManagement: React.FC = () => {
                                     className="text-red-600"
                                   >
                                     <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
+                                    Permanently Delete
                                   </DropdownMenuItem>
                                 )}
                               </DropdownMenuContent>
@@ -712,7 +745,7 @@ const UserManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* View User Dialog - Same as before */}
+      {/* View User Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           {selectedUser && (
@@ -759,8 +792,7 @@ const UserManagement: React.FC = () => {
 
                 {selectedUser.seeker_profile && (
                   <>
-                    <Separator />
-                    <div>
+                    <div className="border-t pt-4">
                       <h4 className="font-semibold mb-2">Job Seeker Profile</h4>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
@@ -790,8 +822,7 @@ const UserManagement: React.FC = () => {
 
                 {selectedUser.employer_profile && (
                   <>
-                    <Separator />
-                    <div>
+                    <div className="border-t pt-4">
                       <h4 className="font-semibold mb-2">Employer Profile</h4>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
@@ -829,7 +860,7 @@ const UserManagement: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit User Dialog - Rest of the code remains same */}
+      {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -848,23 +879,25 @@ const UserManagement: React.FC = () => {
                 onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-role">User Role</Label>
-              <Select
-                value={editFormData.user_type}
-                onValueChange={(value) => setEditFormData({ ...editFormData, user_type: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Job Seeker">Job Seeker</SelectItem>
-                  <SelectItem value="Employer">Employer</SelectItem>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  <SelectItem value="Super Admin">Super Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {canChangeRole(selectedUser!) && (
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">User Role</Label>
+                <Select
+                  value={editFormData.user_type}
+                  onValueChange={(value) => setEditFormData({ ...editFormData, user_type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Job Seeker">Job Seeker</SelectItem>
+                    <SelectItem value="Employer">Employer</SelectItem>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                    <SelectItem value="Super Admin">Super Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <Label htmlFor="edit-status">Account Status</Label>
               <div className="flex items-center gap-2">
@@ -919,16 +952,34 @@ const UserManagement: React.FC = () => {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete User Account</AlertDialogTitle>
+            <AlertDialogTitle>⚠️ Permanently Delete User</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the user account
-              and all associated data including jobs, applications, and profile information.
+              <div className="space-y-3">
+                <p>This action <strong>cannot be undone</strong>. This will permanently delete:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>The user account completely</li>
+                  <li>All profile information</li>
+                  <li>All jobs posted (if employer)</li>
+                  <li>All applications submitted</li>
+                  <li>All saved bookmarks</li>
+                  <li>All notifications and logs</li>
+                </ul>
+                <p className="font-bold text-red-600 mt-3">
+                  User: {selectedUser?.email}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Role: {selectedUser?.user_type?.type_name}
+                </p>
+                <p className="text-sm text-red-500 font-medium">
+                  ⚠️ Only Super Admin can perform this action
+                </p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
-              Delete User
+              Yes, Delete Permanently
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
