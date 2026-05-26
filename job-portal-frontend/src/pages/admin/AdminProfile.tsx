@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/immutability */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // src/pages/admin/AdminProfile.tsx
 import React, { useState, useEffect, useRef } from 'react'
 import {
@@ -15,13 +18,10 @@ import {
   EyeOff,
   CheckCircle,
   AlertCircle,
-  LogOut,
   Key,
   Smartphone,
-  Globe,
-  Upload,
   X,
-  Image as ImageIcon
+  Upload
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -35,8 +35,6 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
-import { useDispatch } from 'react-redux'
-import { logout } from '@/redux/slices/authSlice'
 
 interface AdminProfileData {
   id: string
@@ -47,19 +45,25 @@ interface AdminProfileData {
   avatar: string
   role: string
   created_at: string
-  last_login: string
-  two_factor_enabled: boolean
+  updated_at: string
+}
+
+interface Preferences {
   email_notifications: boolean
   push_notifications: boolean
   security_alerts: boolean
 }
 
 const AdminProfile: React.FC = () => {
-  const dispatch = useDispatch()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [profile, setProfile] = useState<AdminProfileData | null>(null)
+  const [preferences, setPreferences] = useState<Preferences>({
+    email_notifications: true,
+    push_notifications: true,
+    security_alerts: true
+  })
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -81,16 +85,17 @@ const AdminProfile: React.FC = () => {
 
   useEffect(() => {
     fetchProfile()
+    fetchPreferences()
   }, [])
 
-  // Calculate security score
   useEffect(() => {
     let score = 0
-    if (profile?.two_factor_enabled) score += 50
-    if (profile?.email_notifications) score += 25
-    if (profile?.security_alerts) score += 25
+    if (preferences.security_alerts) score += 50
+    if (preferences.email_notifications) score += 25
+    if (preferences.push_notifications) score += 25
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSecurityScore(score)
-  }, [profile])
+  }, [preferences])
 
   const fetchProfile = async () => {
     try {
@@ -114,15 +119,28 @@ const AdminProfile: React.FC = () => {
     }
   }
 
+  const fetchPreferences = async () => {
+    try {
+      const response = await api.get('/notifications/preferences')
+      if (response.data.success) {
+        setPreferences({
+          email_notifications: response.data.data.email_notifications ?? true,
+          push_notifications: response.data.data.push_notifications ?? true,
+          security_alerts: response.data.data.security_alerts ?? true
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching preferences:', error)
+    }
+  }
+
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         toast({ variant: "destructive", title: "Error", description: "Please upload an image file (JPEG, PNG, or GIF)" })
         return
       }
-      // Validate file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
         toast({ variant: "destructive", title: "Error", description: "Image must be less than 2MB" })
         return
@@ -147,7 +165,6 @@ const AdminProfile: React.FC = () => {
       if (response.data.success) {
         toast({ title: "Success", description: "Profile picture updated successfully!" })
         setAvatarFile(null)
-        // Refresh profile to get new avatar URL
         await fetchProfile()
       } else {
         throw new Error(response.data.message || 'Upload failed')
@@ -247,23 +264,13 @@ const AdminProfile: React.FC = () => {
     }
   }
 
-  const updatePreferences = async (key: string, value: boolean) => {
+  const updatePreference = async (key: keyof Preferences, value: boolean) => {
     try {
       await api.put('/admin/profile/preferences', { [key]: value })
-      setProfile(prev => prev ? { ...prev, [key]: value } : null)
-      toast({ title: "Success", description: "Preferences updated" })
+      setPreferences(prev => ({ ...prev, [key]: value }))
+      toast({ title: "Success", description: "Preference updated" })
     } catch (error) {
-      toast({ variant: "destructive", title: "Error", description: "Failed to update preferences" })
-    }
-  }
-
-  const enableTwoFactor = async () => {
-    try {
-      const response = await api.post('/admin/profile/2fa/enable')
-      toast({ title: "Success", description: "Two-factor authentication enabled" })
-      fetchProfile()
-    } catch (error) {
-      toast({ variant: "destructive", title: "Error", description: "Failed to enable 2FA" })
+      toast({ variant: "destructive", title: "Error", description: "Failed to update preference" })
     }
   }
 
@@ -294,31 +301,7 @@ const AdminProfile: React.FC = () => {
         <Badge className="bg-purple-100 text-purple-700">Administrator</Badge>
       </div>
 
-      {/* Security Score Card */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <p className="text-sm font-medium text-blue-800">Security Score</p>
-              <p className="text-2xl font-bold text-blue-900">{securityScore}%</p>
-              <p className="text-xs text-blue-700 mt-1">Your account security level</p>
-            </div>
-            <div className="flex-1 max-w-md">
-              <Progress value={securityScore} className="h-2 bg-blue-200" />
-              <div className="flex justify-between text-xs text-blue-700 mt-2">
-                <span>⚠️ Weak</span>
-                <span>🟡 Moderate</span>
-                <span>✅ Strong</span>
-              </div>
-            </div>
-            {securityScore < 100 && (
-              <Button variant="outline" size="sm" onClick={() => setActiveTab('security')} className="border-blue-300 text-blue-700">
-                Improve Security
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -346,7 +329,7 @@ const AdminProfile: React.FC = () => {
                     {avatarPreview ? (
                       <AvatarImage src={avatarPreview} alt="Admin Avatar" className="object-cover" />
                     ) : (
-                      <AvatarFallback className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-2xl font-bold">
+                      <AvatarFallback className="bg-linear-to-r from-blue-600 to-indigo-600 text-white text-2xl font-bold">
                         {getInitials(profile?.full_name || 'Admin')}
                       </AvatarFallback>
                     )}
@@ -410,7 +393,7 @@ const AdminProfile: React.FC = () => {
                 <div className="bg-blue-50 rounded-lg p-4">
                   <div className="flex items-center justify-between flex-wrap gap-3">
                     <div className="flex items-center gap-3">
-                      <ImageIcon className="h-5 w-5 text-blue-600" />
+                      <Upload className="h-5 w-5 text-blue-600" />
                       <div>
                         <p className="text-sm font-medium text-blue-800">New Profile Picture Ready</p>
                         <p className="text-xs text-blue-600">{avatarFile.name} ({(avatarFile.size / 1024).toFixed(1)} KB)</p>
@@ -561,47 +544,17 @@ const AdminProfile: React.FC = () => {
 
               <Separator />
 
-              {/* Two-Factor Authentication */}
-              <div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                      <Smartphone className="h-4 w-4" />
-                      Two-Factor Authentication
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-1">Add an extra layer of security to your account</p>
-                  </div>
-                  {profile?.two_factor_enabled ? (
-                    <Badge className="bg-green-100 text-green-700">Enabled</Badge>
-                  ) : (
-                    <Button onClick={enableTwoFactor} variant="outline" size="sm">
-                      Enable 2FA
-                    </Button>
-                  )}
-                </div>
-                {profile?.two_factor_enabled && (
-                  <div className="mt-3 p-3 bg-green-50 rounded-lg">
-                    <p className="text-sm text-green-800 flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4" />
-                      Two-factor authentication is enabled for your account
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
               {/* Session Info */}
               <div>
                 <h3 className="font-semibold text-gray-900 mb-3">Session Information</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Last Login</span>
-                    <span className="text-gray-900">{profile?.last_login ? new Date(profile.last_login).toLocaleString() : 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between">
                     <span className="text-gray-500">Account Created</span>
                     <span className="text-gray-900">{profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Last Updated</span>
+                    <span className="text-gray-900">{profile?.updated_at ? new Date(profile.updated_at).toLocaleDateString() : 'N/A'}</span>
                   </div>
                 </div>
               </div>
@@ -626,8 +579,8 @@ const AdminProfile: React.FC = () => {
                   <p className="text-sm text-gray-500">Receive email updates about platform activity</p>
                 </div>
                 <Switch
-                  checked={profile?.email_notifications || false}
-                  onCheckedChange={(checked) => updatePreferences('email_notifications', checked)}
+                  checked={preferences.email_notifications}
+                  onCheckedChange={(checked) => updatePreference('email_notifications', checked)}
                 />
               </div>
               <Separator />
@@ -637,8 +590,8 @@ const AdminProfile: React.FC = () => {
                   <p className="text-sm text-gray-500">Receive browser push notifications</p>
                 </div>
                 <Switch
-                  checked={profile?.push_notifications || false}
-                  onCheckedChange={(checked) => updatePreferences('push_notifications', checked)}
+                  checked={preferences.push_notifications}
+                  onCheckedChange={(checked) => updatePreference('push_notifications', checked)}
                 />
               </div>
               <Separator />
@@ -648,8 +601,8 @@ const AdminProfile: React.FC = () => {
                   <p className="text-sm text-gray-500">Get alerts about suspicious login attempts</p>
                 </div>
                 <Switch
-                  checked={profile?.security_alerts || false}
-                  onCheckedChange={(checked) => updatePreferences('security_alerts', checked)}
+                  checked={preferences.security_alerts}
+                  onCheckedChange={(checked) => updatePreference('security_alerts', checked)}
                 />
               </div>
             </CardContent>

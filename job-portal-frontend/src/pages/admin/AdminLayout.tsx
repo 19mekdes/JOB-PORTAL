@@ -22,9 +22,10 @@ import {
   Clock as ClockIcon,
   AlertCircle,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  User
 } from 'lucide-react'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -49,6 +50,16 @@ interface Notification {
   metadata?: any
 }
 
+interface AdminProfile {
+  id: string
+  email: string
+  full_name: string
+  avatar: string
+  role: string
+  phone?: string
+  location?: string
+}
+
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -58,6 +69,7 @@ const AdminLayout: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null)
 
   const navItems = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -70,6 +82,7 @@ const AdminLayout: React.FC = () => {
 
   useEffect(() => {
     fetchNotifications()
+    fetchAdminProfile()
     
     // Auto-refresh notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000)
@@ -91,6 +104,17 @@ const AdminLayout: React.FC = () => {
       clearInterval(interval)
     }
   }, [])
+
+  const fetchAdminProfile = async () => {
+    try {
+      const response = await api.get('/admin/profile')
+      if (response.data.success) {
+        setAdminProfile(response.data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching admin profile:', error)
+    }
+  }
 
   const fetchNotifications = async () => {
     try {
@@ -155,9 +179,17 @@ const AdminLayout: React.FC = () => {
   }
 
   const getUserInitial = () => {
+    if (adminProfile?.full_name) return adminProfile.full_name.charAt(0).toUpperCase()
     if (user?.full_name) return user.full_name.charAt(0).toUpperCase()
     if (user?.email) return user.email.charAt(0).toUpperCase()
     return 'A'
+  }
+
+  const getUserName = () => {
+    if (adminProfile?.full_name) return adminProfile.full_name
+    if (user?.full_name) return user.full_name
+    if (user?.email) return user.email.split('@')[0]
+    return 'Admin'
   }
 
   const handleLogout = () => {
@@ -233,13 +265,17 @@ const AdminLayout: React.FC = () => {
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10 bg-blue-100">
-                  <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">
-                    {getUserInitial()}
-                  </AvatarFallback>
+                  {adminProfile?.avatar ? (
+                    <AvatarImage src={adminProfile.avatar} alt="Admin Avatar" />
+                  ) : (
+                    <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">
+                      {getUserInitial()}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{user?.full_name || 'Admin'}</p>
-                  <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                  <p className="font-medium text-gray-900 truncate">{getUserName()}</p>
+                  <p className="text-xs text-gray-500 truncate">{adminProfile?.email || user?.email}</p>
                   <Badge className="mt-1 bg-blue-100 text-blue-700 text-xs">Admin</Badge>
                 </div>
               </div>
@@ -247,9 +283,13 @@ const AdminLayout: React.FC = () => {
           ) : (
             <div className="py-4 border-b border-gray-200 flex justify-center">
               <Avatar className="h-10 w-10 bg-blue-100">
-                <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">
-                  {getUserInitial()}
-                </AvatarFallback>
+                {adminProfile?.avatar ? (
+                  <AvatarImage src={adminProfile.avatar} alt="Admin Avatar" />
+                ) : (
+                  <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">
+                    {getUserInitial()}
+                  </AvatarFallback>
+                )}
               </Avatar>
             </div>
           )}
@@ -315,13 +355,17 @@ const AdminLayout: React.FC = () => {
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 bg-blue-100">
-                <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">
-                  {getUserInitial()}
-                </AvatarFallback>
+                {adminProfile?.avatar ? (
+                  <AvatarImage src={adminProfile.avatar} alt="Admin Avatar" />
+                ) : (
+                  <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">
+                    {getUserInitial()}
+                  </AvatarFallback>
+                )}
               </Avatar>
               <div>
-                <p className="font-medium text-gray-900">{user?.full_name || 'Admin'}</p>
-                <p className="text-xs text-gray-500">{user?.email}</p>
+                <p className="font-medium text-gray-900">{getUserName()}</p>
+                <p className="text-xs text-gray-500">{adminProfile?.email || user?.email}</p>
                 <Badge className="mt-1 bg-blue-100 text-blue-700 text-xs">Admin</Badge>
               </div>
             </div>
@@ -359,8 +403,7 @@ const AdminLayout: React.FC = () => {
             </button>
           </div>
         </div>
-        </div>
-      
+      </div>
       
       {/* Main Content Area - Margin adjusts with sidebar state */}
       <div className={`transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'}`}>
@@ -460,16 +503,29 @@ const AdminLayout: React.FC = () => {
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 focus:outline-none ml-2 hover:bg-gray-100 rounded-lg px-2 py-1 transition">
                     <Avatar className="h-8 w-8 bg-blue-100">
-                      <AvatarFallback className="bg-blue-100 text-blue-600 text-sm font-semibold">
-                        {getUserInitial()}
-                      </AvatarFallback>
+                      {adminProfile?.avatar ? (
+                        <AvatarImage src={adminProfile.avatar} alt="Admin Avatar" />
+                      ) : (
+                        <AvatarFallback className="bg-blue-100 text-blue-600 text-sm font-semibold">
+                          {getUserInitial()}
+                        </AvatarFallback>
+                      )}
                     </Avatar>
                     <ChevronDown className="h-4 w-4 text-gray-600 hidden sm:block" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 shadow-lg">
-                  <DropdownMenuLabel className="text-gray-900 font-semibold">My Account</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-gray-900 font-semibold">
+                    <div>
+                      <p>{getUserName()}</p>
+                      <p className="text-xs text-gray-500 font-normal">{adminProfile?.email || user?.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-gray-100" />
+                  <DropdownMenuItem onClick={() => navigate('/admin/profile')} className="cursor-pointer hover:bg-gray-100">
+                    <User className="mr-2 h-4 w-4 text-gray-600" />
+                    <span className="text-gray-700">My Profile</span>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/admin/settings')} className="cursor-pointer hover:bg-gray-100">
                     <Settings className="mr-2 h-4 w-4 text-gray-600" />
                     <span className="text-gray-700">Settings</span>

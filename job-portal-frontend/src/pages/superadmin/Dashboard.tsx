@@ -8,104 +8,125 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   Users, Shield, Activity, TrendingUp, Clock, Server,
   Briefcase, FileCheck, AlertCircle,
-  Download, RefreshCw, ArrowUpRight,
-  Smartphone, Laptop, Tablet,
-  Building, Database, Settings
+  RefreshCw, Building, Database
 } from 'lucide-react'
 import {
   BarChart, Bar, PieChart as RePieChart, Pie, Cell,
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer
 } from 'recharts'
+import { toast } from '@/hooks/use-toast'
+import api from '@/services/api'
+
+interface DashboardStats {
+  totalUsers: number
+  totalJobSeekers: number
+  totalEmployers: number
+  totalAdmins: number
+  activeUsers: number
+  newUsersThisMonth: number
+  userGrowth: number
+  totalJobs: number
+  activeJobs: number
+  closedJobs: number
+  pendingJobs: number
+  newJobsThisMonth: number
+  jobGrowth: number
+  totalApplications: number
+  pendingApplications: number
+  reviewedApplications: number
+  shortlistedApplications: number
+  interviewApplications: number
+  acceptedApplications: number
+  rejectedApplications: number
+  totalViews: number
+  averageViewsPerJob: number
+  averageApplicationsPerJob: number
+  conversionRate: number
+  jobsByIndustry: Array<{ industry: string; count: number }>
+  jobsByType: Array<{ type: string; count: number }>
+  topEmployers: Array<{ name: string; jobCount: number; views: number }>
+  topSkills: Array<{ skill: string; count: number }>
+}
 
 const SuperAdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState('week')
-  const [stats] = useState({
-    totalAdmins: 12,
-    activeAdmins: 9,
-    totalUsers: 28457,
-    activeUsers: 18762,
-    totalEmployers: 3421,
-    totalJobs: 4321,
-    activeJobs: 2894,
-    pendingJobs: 527,
-    totalApplications: 45678,
-    pendingApplications: 1234,
-    reviewedApplications: 2345,
-    acceptedApplications: 3456,
-    rejectedApplications: 5678,
-    dailyApplications: 1892,
-    dailyNewUsers: 347,
-    dailyNewJobs: 89,
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [systemHealth] = useState({
     systemUptime: 99.95,
     serverLoad: 42,
     apiResponseTime: 234,
     databaseSize: '2.4 GB',
-    storageUsed: 45,
-    pendingVerifications: 156
+    storageUsed: 45
   })
 
-  // Chart data
-  const userGrowthData = [
-    { name: 'Jan', users: 18500, jobs: 2100, applications: 12500 },
-    { name: 'Feb', users: 19200, jobs: 2350, applications: 14200 },
-    { name: 'Mar', users: 21100, jobs: 2680, applications: 16800 },
-    { name: 'Apr', users: 23200, jobs: 2950, applications: 19500 },
-    { name: 'May', users: 25400, jobs: 3210, applications: 22800 },
-    { name: 'Jun', users: 28457, jobs: 3421, applications: 26700 },
-  ]
-
-  const applicationStatusData = [
-    { name: 'Pending', value: 1234, color: '#f59e0b' },
-    { name: 'Reviewed', value: 2345, color: '#3b82f6' },
-    { name: 'Shortlisted', value: 3456, color: '#8b5cf6' },
-    { name: 'Accepted', value: 5678, color: '#10b981' },
-    { name: 'Rejected', value: 3456, color: '#ef4444' },
-  ]
-
-  const jobByIndustryData = [
-    { industry: 'Technology', jobs: 1245, growth: 15 },
-    { industry: 'Healthcare', jobs: 892, growth: 8 },
-    { industry: 'Finance', jobs: 745, growth: 12 },
-    { industry: 'Education', jobs: 634, growth: 5 },
-    { industry: 'Retail', jobs: 523, growth: 3 },
-    { industry: 'Manufacturing', jobs: 432, growth: 7 },
-  ]
-
-  const trafficByDeviceData = [
-    { name: 'Desktop', value: 65, icon: Laptop },
-    { name: 'Mobile', value: 28, icon: Smartphone },
-    { name: 'Tablet', value: 7, icon: Tablet },
-  ]
-
-  const recentActivities = [
-    { user: 'John Doe', action: 'Posted new job', target: 'Senior Developer', time: '2 minutes ago', type: 'job', icon: Briefcase },
-    { user: 'Sarah Smith', action: 'Applied for job', target: 'UI/UX Designer', time: '5 minutes ago', type: 'application', icon: FileCheck },
-    { user: 'Admin User', action: 'Approved company', target: 'Tech Corp', time: '15 minutes ago', type: 'admin', icon: Shield },
-    { user: 'Mike Johnson', action: 'Registered new account', target: 'employer@company.com', time: '1 hour ago', type: 'user', icon: Users },
-    { user: 'Super Admin', action: 'Updated system settings', target: 'Email configuration', time: '2 hours ago', type: 'system', icon: Settings },
-  ]
-
-  const topPerformingJobs = [
-    { title: 'Senior React Developer', company: 'Tech Corp', applications: 234, views: 1234, matchRate: 85 },
-    { title: 'Product Manager', company: 'Innovate Inc', applications: 189, views: 987, matchRate: 78 },
-    { title: 'UX Designer', company: 'Creative Studio', applications: 156, views: 876, matchRate: 82 },
-    { title: 'Data Scientist', company: 'Analytics Pro', applications: 145, views: 765, matchRate: 79 },
-  ]
-
-  const systemMetrics = [
-    { name: 'CPU Usage', value: stats.serverLoad, unit: '%', status: 'good', color: '#10b981' },
-    { name: 'Memory Usage', value: 68, unit: '%', status: 'warning', color: '#f59e0b' },
-    { name: 'Disk Space', value: stats.storageUsed, unit: '%', status: 'good', color: '#3b82f6' },
-    { name: 'API Response', value: stats.apiResponseTime, unit: 'ms', status: 'good', color: '#8b5cf6' },
-  ]
-
   useEffect(() => {
-    setTimeout(() => setLoading(false), 1000)
-  }, [])
+    fetchDashboardData()
+  }, [selectedPeriod])
 
-  if (loading) {
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      const response = await api.get(`/admin/analytics?period=${selectedPeriod === 'week' ? '7d' : selectedPeriod === 'month' ? '30d' : '90d'}`)
+      
+      if (response.data.success) {
+        const data = response.data.data
+        setStats({
+          totalUsers: data.totalUsers || 0,
+          totalJobSeekers: data.totalJobSeekers || 0,
+          totalEmployers: data.totalEmployers || 0,
+          totalAdmins: data.totalAdmins || 0,
+          activeUsers: data.activeUsers || 0,
+          newUsersThisMonth: data.newUsersThisMonth || 0,
+          userGrowth: data.userGrowth || 0,
+          totalJobs: data.totalJobs || 0,
+          activeJobs: data.activeJobs || 0,
+          closedJobs: data.closedJobs || 0,
+          pendingJobs: data.pendingJobs || 0,
+          newJobsThisMonth: data.newJobsThisMonth || 0,
+          jobGrowth: data.jobGrowth || 0,
+          totalApplications: data.totalApplications || 0,
+          pendingApplications: data.pendingApplications || 0,
+          reviewedApplications: data.reviewedApplications || 0,
+          shortlistedApplications: data.shortlistedApplications || 0,
+          interviewApplications: data.interviewApplications || 0,
+          acceptedApplications: data.acceptedApplications || 0,
+          rejectedApplications: data.rejectedApplications || 0,
+          totalViews: data.totalViews || 0,
+          averageViewsPerJob: data.averageViewsPerJob || 0,
+          averageApplicationsPerJob: data.averageApplicationsPerJob || 0,
+          conversionRate: data.conversionRate || 0,
+          jobsByIndustry: data.jobsByIndustry || [],
+          jobsByType: data.jobsByType || [],
+          topEmployers: data.topEmployers || [],
+          topSkills: data.topSkills || []
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+      toast({ variant: "destructive", title: "Error", description: "Failed to load dashboard data" })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
+    return num.toString()
+  }
+
+  const applicationStatusData = stats ? [
+    { name: 'Pending', value: stats.pendingApplications, color: '#f59e0b' },
+    { name: 'Reviewed', value: stats.reviewedApplications, color: '#3b82f6' },
+    { name: 'Shortlisted', value: stats.shortlistedApplications, color: '#8b5cf6' },
+    { name: 'Interview', value: stats.interviewApplications, color: '#06b6d4' },
+    { name: 'Accepted', value: stats.acceptedApplications, color: '#10b981' },
+    { name: 'Rejected', value: stats.rejectedApplications, color: '#ef4444' }
+  ].filter(s => s.value > 0) : []
+
+  if (loading || !stats) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
@@ -118,15 +139,15 @@ const SuperAdminDashboard: React.FC = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header with period selector - Responsive */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm sm:text-base text-gray-500 mt-1">Welcome back! Here's what's happening with your platform.</p>
+          <p className="text-sm sm:text-base text-gray-500 mt-1">Platform overview and key metrics</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <div className="flex bg-gray-100 rounded-lg p-1">
-            {['day', 'week', 'month', 'year'].map((period) => (
+            {['week', 'month', 'year'].map((period) => (
               <button
                 key={period}
                 onClick={() => setSelectedPeriod(period)}
@@ -138,410 +159,316 @@ const SuperAdminDashboard: React.FC = () => {
               </button>
             ))}
           </div>
-          <Button variant="outline" size="sm" className="h-8 sm:h-9">
-            <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-            <span className="text-xs sm:text-sm">Export</span>
-          </Button>
-          <Button variant="outline" size="sm" className="h-8 sm:h-9">
+          <Button variant="outline" size="sm" onClick={() => fetchDashboardData()} className="border-gray-300">
             <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
         </div>
       </div>
 
-      {/* Stats Cards Row 1 - Responsive Grid */}
+      {/* Stats Cards Row 1 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="hover:shadow-md transition-shadow border border-gray-200">
+        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow rounded-xl bg-white">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-gray-500">Total Users</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{stats.totalUsers.toLocaleString()}</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{formatNumber(stats.totalUsers)}</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="h-3 w-3 text-green-600" />
-                  <span className="text-xs text-green-600">+12.5%</span>
-                  <span className="text-xs text-gray-400 hidden sm:inline">vs last month</span>
+                  <span className="text-xs text-green-600">+{stats.userGrowth}%</span>
                 </div>
               </div>
-              <div className="p-2 sm:p-3 rounded-full bg-blue-50">
+              <div className="p-2 sm:p-3 rounded-full bg-blue-100">
                 <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
               </div>
             </div>
-            <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-gray-100">
+            <div className="mt-3 pt-2 border-t border-gray-100">
               <div className="flex justify-between text-xs">
-                <span className="text-gray-500">New today: +{stats.dailyNewUsers}</span>
-                <span className="text-gray-500">Active: {Math.round((stats.activeUsers / stats.totalUsers) * 100)}%</span>
+                <span className="text-gray-500">New: +{stats.newUsersThisMonth}</span>
+                <span className="text-gray-500">Active: {stats.totalUsers > 0 ? Math.round((stats.activeUsers / stats.totalUsers) * 100) : 0}%</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow border border-gray-200">
+        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow rounded-xl bg-white">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-gray-500">Total Jobs</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{stats.totalJobs.toLocaleString()}</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{formatNumber(stats.totalJobs)}</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="h-3 w-3 text-green-600" />
-                  <span className="text-xs text-green-600">+8.3%</span>
-                  <span className="text-xs text-gray-400 hidden sm:inline">vs last month</span>
+                  <span className="text-xs text-green-600">+{stats.jobGrowth}%</span>
                 </div>
               </div>
-              <div className="p-2 sm:p-3 rounded-full bg-purple-50">
+              <div className="p-2 sm:p-3 rounded-full bg-purple-100">
                 <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
               </div>
             </div>
-            <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-gray-100">
+            <div className="mt-3 pt-2 border-t border-gray-100">
               <div className="flex justify-between text-xs">
                 <span className="text-gray-500">Open: {stats.activeJobs}</span>
-                <span className="text-gray-500">Pending: {stats.pendingJobs}</span>
+                <span className="text-gray-500">New: +{stats.newJobsThisMonth}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow border border-gray-200">
+        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow rounded-xl bg-white">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-gray-500">Applications</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{stats.totalApplications.toLocaleString()}</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{formatNumber(stats.totalApplications)}</p>
                 <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="h-3 w-3 text-green-600" />
-                  <span className="text-xs text-green-600">+23.7%</span>
-                  <span className="text-xs text-gray-400 hidden sm:inline">vs last month</span>
+                  <span className="text-xs text-green-600">{stats.conversionRate}% acceptance</span>
                 </div>
               </div>
-              <div className="p-2 sm:p-3 rounded-full bg-green-50">
+              <div className="p-2 sm:p-3 rounded-full bg-green-100">
                 <FileCheck className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
               </div>
             </div>
-            <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-gray-100">
+            <div className="mt-3 pt-2 border-t border-gray-100">
               <div className="flex justify-between text-xs">
-                <span className="text-gray-500">Today: +{stats.dailyApplications}</span>
-                <span className="text-gray-500">Acceptance: 24%</span>
+                <span className="text-gray-500">Avg {stats.averageApplicationsPerJob}/job</span>
+                <span className="text-gray-500">{stats.averageViewsPerJob} views/job</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow border border-gray-200">
+        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow rounded-xl bg-white">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-gray-500">System Health</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{stats.systemUptime}%</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{systemHealth.systemUptime}%</p>
                 <div className="flex items-center gap-1 mt-2">
                   <Activity className="h-3 w-3 text-green-600" />
                   <span className="text-xs text-green-600">Operational</span>
                 </div>
               </div>
-              <div className="p-2 sm:p-3 rounded-full bg-orange-50">
+              <div className="p-2 sm:p-3 rounded-full bg-orange-100">
                 <Server className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
               </div>
             </div>
-            <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-gray-100">
-              <Progress value={stats.serverLoad} className="h-1" />
-              <p className="text-xs text-gray-500 mt-2">Server Load: {stats.serverLoad}%</p>
+            <div className="mt-3 pt-2 border-t border-gray-100">
+              <Progress value={systemHealth.serverLoad} className="h-1" />
+              <p className="text-xs text-gray-500 mt-2">Server Load: {systemHealth.serverLoad}%</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Stats Cards Row 2 - Responsive Grid */}
+      {/* Stats Cards Row 2 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-        <Card className="border border-gray-200">
+        <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500">Job Seekers</p>
+                <p className="text-lg sm:text-xl font-bold text-gray-900">{stats.totalJobSeekers}</p>
+              </div>
+              <Users className="h-4 w-4 text-gray-400" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500">Employers</p>
+                <p className="text-lg sm:text-xl font-bold text-gray-900">{stats.totalEmployers}</p>
+              </div>
+              <Building className="h-4 w-4 text-gray-400" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-500">Admins</p>
                 <p className="text-lg sm:text-xl font-bold text-gray-900">{stats.totalAdmins}</p>
               </div>
-              <div className="p-1.5 sm:p-2 rounded-full bg-gray-100">
-                <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
-              </div>
+              <Shield className="h-4 w-4 text-gray-400" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border border-gray-200">
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500">Employers</p>
-                <p className="text-lg sm:text-xl font-bold text-gray-900">{stats.totalEmployers.toLocaleString()}</p>
-              </div>
-              <div className="p-1.5 sm:p-2 rounded-full bg-gray-100">
-                <Building className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border border-gray-200">
+        <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-500">Pending Jobs</p>
                 <p className="text-lg sm:text-xl font-bold text-yellow-600">{stats.pendingJobs}</p>
               </div>
-              <div className="p-1.5 sm:p-2 rounded-full bg-yellow-50">
-                <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
-              </div>
+              <Clock className="h-4 w-4 text-yellow-500" />
             </div>
           </CardContent>
         </Card>
-        <Card className="border border-gray-200">
+        <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-500">Verifications</p>
-                <p className="text-lg sm:text-xl font-bold text-orange-600">{stats.pendingVerifications}</p>
+                <p className="text-xs text-gray-500">Conversion Rate</p>
+                <p className="text-lg sm:text-xl font-bold text-green-600">{stats.conversionRate}%</p>
               </div>
-              <div className="p-1.5 sm:p-2 rounded-full bg-orange-50">
-                <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border border-gray-200">
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500">Database</p>
-                <p className="text-lg sm:text-xl font-bold text-gray-900">{stats.databaseSize}</p>
-              </div>
-              <div className="p-1.5 sm:p-2 rounded-full bg-gray-100">
-                <Database className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
-              </div>
+              <TrendingUp className="h-4 w-4 text-green-500" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts Section - Responsive */}
-      <Tabs defaultValue="growth" className="space-y-4">
-        <TabsList className="bg-gray-100 w-full flex flex-wrap h-auto">
-          <TabsTrigger value="growth" className="flex-1 text-xs sm:text-sm">Growth Trends</TabsTrigger>
-          <TabsTrigger value="applications" className="flex-1 text-xs sm:text-sm">Applications</TabsTrigger>
-          <TabsTrigger value="industry" className="flex-1 text-xs sm:text-sm">Industry Analysis</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="growth">
-          <Card className="border border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-base sm:text-lg text-gray-900">Platform Growth</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="w-full overflow-x-auto">
-                <div className="min-w-75">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={userGrowthData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="name" stroke="#6b7280" tick={{ fontSize: 12 }} />
-                      <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} />
-                      <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', fontSize: 12 }} />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Area type="monotone" dataKey="users" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} name="Users" />
-                      <Area type="monotone" dataKey="jobs" stackId="2" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.1} name="Jobs" />
-                      <Area type="monotone" dataKey="applications" stackId="3" stroke="#10b981" fill="#10b981" fillOpacity={0.1} name="Applications" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="applications">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            <Card className="border border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-base sm:text-lg text-gray-900">Application Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="w-full overflow-x-auto">
-                  <div className="min-w-62.5">
-                    <ResponsiveContainer width="100%" height={300}>
-                      <RePieChart>
-                        <Pie
-                          data={applicationStatusData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {applicationStatusData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </RePieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-4">
-                  {applicationStatusData.map((status) => (
-                    <div key={status.name} className="flex items-center gap-1 sm:gap-2">
-                      <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full" style={{ backgroundColor: status.color }} />
-                      <span className="text-xs sm:text-sm text-gray-600">{status.name}</span>
-                      <span className="text-xs sm:text-sm font-semibold text-gray-900">{status.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-base sm:text-lg text-gray-900">Traffic by Device</CardTitle>
-              </CardHeader>
-              <CardContent>
+      {/* Application Status & Top Skills */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+          <CardHeader className="border-b border-gray-100 pb-3">
+            <CardTitle className="text-base sm:text-lg text-gray-900">Application Status</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {applicationStatusData.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No application data available</div>
+            ) : (
+              <>
                 <ResponsiveContainer width="100%" height={250}>
                   <RePieChart>
                     <Pie
-                      data={trafficByDeviceData}
+                      data={applicationStatusData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
                       outerRadius={80}
-                      fill="#8884d8"
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
-                      <Cell fill="#3b82f6" />
-                      <Cell fill="#10b981" />
-                      <Cell fill="#8b5cf6" />
+                      {applicationStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
                     </Pie>
                     <Tooltip />
                   </RePieChart>
                 </ResponsiveContainer>
-                <div className="flex justify-center gap-4 sm:gap-6 mt-4">
-                  {trafficByDeviceData.map((device) => {
-                    const Icon = device.icon
-                    return (
-                      <div key={device.name} className="text-center">
-                        <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 mx-auto" />
-                        <p className="text-xs sm:text-sm font-semibold text-gray-900 mt-1">{device.name}</p>
-                        <p className="text-xs text-gray-500">{device.value}%</p>
-                      </div>
-                    )
-                  })}
+                <div className="flex flex-wrap justify-center gap-3 mt-4">
+                  {applicationStatusData.map((status) => (
+                    <div key={status.name} className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: status.color }} />
+                      <span className="text-xs text-gray-600">{status.name}</span>
+                      <span className="text-xs font-semibold text-gray-900">{status.value}</span>
+                    </div>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="industry">
-          <Card className="border border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-base sm:text-lg text-gray-900">Jobs by Industry</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="w-full overflow-x-auto">
-                <div className="min-w-75">
-                  <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={jobByIndustryData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="industry" stroke="#6b7280" tick={{ fontSize: 12 }} />
-                      <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} />
-                      <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', fontSize: 12 }} />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Bar dataKey="jobs" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Number of Jobs" />
-                      <Bar dataKey="growth" fill="#10b981" radius={[4, 4, 0, 0]} name="Growth (%)" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* System Health and Top Jobs - Responsive */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <Card className="border border-gray-200">
-          <CardHeader>
-            <CardTitle className="text-base sm:text-lg text-gray-900">System Health Metrics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 sm:space-y-4">
-              {systemMetrics.map((metric) => (
-                <div key={metric.name}>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-xs sm:text-sm text-gray-600">{metric.name}</span>
-                    <span className="text-xs sm:text-sm font-semibold text-gray-900">{metric.value}{metric.unit}</span>
-                  </div>
-                  <Progress value={metric.value} className="h-1.5 sm:h-2" />
-                </div>
-              ))}
-            </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
-        <Card className="border border-gray-200">
-          <CardHeader>
-            <CardTitle className="text-base sm:text-lg text-gray-900">Top Performing Jobs</CardTitle>
+        <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+          <CardHeader className="border-b border-gray-100 pb-3">
+            <CardTitle className="text-base sm:text-lg text-gray-900">Top Skills in Demand</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3 sm:space-y-4">
-              {topPerformingJobs.map((job, index) => (
-                <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 rounded-lg gap-2">
-                  <div>
-                    <p className="font-medium text-sm sm:text-base text-gray-900">{job.title}</p>
-                    <p className="text-xs sm:text-sm text-gray-500">{job.company}</p>
+          <CardContent className="pt-4">
+            {stats.topSkills.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No skill data available</div>
+            ) : (
+              <div className="space-y-3">
+                {stats.topSkills.slice(0, 5).map((skill, index) => (
+                  <div key={index}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-700">{skill.skill}</span>
+                      <span className="text-gray-500">{skill.count} jobs</span>
+                    </div>
+                    <Progress value={(skill.count / (stats.topSkills[0]?.count || 1)) * 100} className="h-2" />
                   </div>
-                  <div className="text-left sm:text-right">
-                    <p className="text-sm font-semibold text-gray-900">{job.applications} apps</p>
-                    <p className="text-xs text-green-600">{job.matchRate}% match</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Activity - Responsive */}
-      <Card className="border border-gray-200">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <CardTitle className="text-base sm:text-lg text-gray-900">Recent Activity</CardTitle>
-            <Button variant="ghost" size="sm" className="text-gray-600">
-              View All
-              <ArrowUpRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
+      {/* Jobs by Industry */}
+      <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+        <CardHeader className="border-b border-gray-100 pb-3">
+          <CardTitle className="text-base sm:text-lg text-gray-900">Jobs by Industry</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3 sm:space-y-4">
-            {recentActivities.map((activity, index) => {
-              const Icon = activity.icon
-              return (
-                <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors gap-2">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-gray-100 shrink-0">
-                      <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs sm:text-sm text-gray-900">
-                        <span className="font-medium">{activity.user}</span> {activity.action}
-                        <span className="font-medium text-gray-900"> {activity.target}</span>
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="text-xs text-gray-500 font-normal w-fit">
-                    {activity.type}
-                  </Badge>
-                </div>
-              )
-            })}
-          </div>
+        <CardContent className="pt-4">
+          {stats.jobsByIndustry.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">No industry data available</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={stats.jobsByIndustry}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="industry" stroke="#6b7280" tick={{ fontSize: 12 }} />
+                <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Number of Jobs" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </CardContent>
       </Card>
+
+      {/* System Health Metrics & Top Employers */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+          <CardHeader className="border-b border-gray-100 pb-3">
+            <CardTitle className="text-base sm:text-lg text-gray-900">System Health Metrics</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-3">
+            <div>
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-gray-600">CPU Usage</span>
+                <span className="text-sm font-semibold text-gray-900">{systemHealth.serverLoad}%</span>
+              </div>
+              <Progress value={systemHealth.serverLoad} className="h-2" />
+            </div>
+            <div>
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-gray-600">API Response</span>
+                <span className="text-sm font-semibold text-gray-900">{systemHealth.apiResponseTime}ms</span>
+              </div>
+              <Progress value={Math.min((systemHealth.apiResponseTime / 500) * 100, 100)} className="h-2" />
+            </div>
+            <div>
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-gray-600">Disk Space</span>
+                <span className="text-sm font-semibold text-gray-900">{systemHealth.storageUsed}%</span>
+              </div>
+              <Progress value={systemHealth.storageUsed} className="h-2" />
+            </div>
+            <div>
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-gray-600">Database Size</span>
+                <span className="text-sm font-semibold text-gray-900">{systemHealth.databaseSize}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+          <CardHeader className="border-b border-gray-100 pb-3">
+            <CardTitle className="text-base sm:text-lg text-gray-900">Top Performing Employers</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {stats.topEmployers.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">No employer data available</div>
+            ) : (
+              <div className="space-y-3">
+                {stats.topEmployers.slice(0, 5).map((employer, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                    <div>
+                      <p className="font-medium text-gray-900">{employer.name}</p>
+                      <p className="text-xs text-gray-500">{employer.jobCount} jobs • {employer.views.toLocaleString()} views</p>
+                    </div>
+                    <Badge variant="secondary" className="bg-gray-100 text-gray-600">#{index + 1}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

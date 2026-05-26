@@ -23,6 +23,7 @@ import path from 'path'
 import fs from 'fs'
 import { v2 as cloudinary } from 'cloudinary'
 import { CloudinaryStorage } from 'multer-storage-cloudinary'
+import adminRoutes from './routes/adminRoutes';
 import nodemailer from 'nodemailer'
 import employerRoutes from './routes/employerRoutes'
 import { 
@@ -118,7 +119,7 @@ const uploadImage = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 })
 
-
+app.use('/api/admin', adminRoutes);
 
 // Configure email transporter (use your email service)
 const emailTransporter = nodemailer.createTransport({
@@ -265,10 +266,75 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction) =
   }
 }
 
+// Check if user is Super Admin only
 const superAdminMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: req.user!.id }, include: { user_type: true } })
-    if (user?.user_type?.type_name !== 'Super Admin') return res.status(403).json({ success: false, message: 'Access denied. Super Admin only.' })
+    if (user?.user_type?.type_name !== 'Super Admin') {
+      return res.status(403).json({ success: false, message: 'Access denied. Super Admin only.' })
+    }
+    next()
+  } catch (error) {
+    res.status(403).json({ success: false, message: 'Access denied' })
+  }
+}
+
+// ========== ADD THIS isAdmin MIDDLEWARE ==========
+// Check if user is Admin (includes Super Admin)
+const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    const role = user?.user_type?.type_name
+    if (role !== 'Admin' && role !== 'Super Admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied. Admin or Super Admin role required.' 
+      })
+    }
+    next()
+  } catch (error) {
+    res.status(403).json({ success: false, message: 'Access denied' })
+  }
+}
+
+// Check if user is Employer
+const isEmployer = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    if (user?.user_type?.type_name !== 'Employer') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied. Employer role required.' 
+      })
+    }
+    next()
+  } catch (error) {
+    res.status(403).json({ success: false, message: 'Access denied' })
+  }
+}
+
+// Check if user is Job Seeker
+const isJobSeeker = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    })
+    
+    if (user?.user_type?.type_name !== 'Job Seeker') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied. Job Seeker role required.' 
+      })
+    }
     next()
   } catch (error) {
     res.status(403).json({ success: false, message: 'Access denied' })
@@ -678,7 +744,489 @@ app.delete('/api/employer/cover', authMiddleware, async (req: Request, res: Resp
 })
 
 
-// Add these routes after your other routes (around line 500-600)
+// ========== SUPER ADMIN - FULL ADMIN MANAGEMENT ENDPOINTS ==========
+// Add these after your existing routes but BEFORE app.listen()
+
+// 1. UPDATE ADMIN - Edit admin details
+app.put('/api/admin/users/:userId', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { full_name, phone, role } = req.body;
+    
+    console.log(`🔄 UPDATE ADMIN called for: ${userId}`);
+    console.log(`   Data:`, { full_name, phone, role });
+    
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { user_type: true, seeker_profile: true }
+    });
+    
+    if (!existingUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    // Prepare update data
+    const updateData: any = {
+      updated_at: new Date()
+    };
+    
+    if (full_name) {
+      updateData.full_name = full_name;
+      console.log(`   Updating name: ${existingUser.full_name} -> ${full_name}`);
+    }
+    
+    // Update role if provided
+    if (role && role !== existingUser.user_type?.type_name) {
+      const userType = await prisma.userType.findFirst({
+        where: { type_name: role }
+      });
+      if (userType) {
+        updateData.user_type_id = userType.id;
+        console.log(`   Updating role: ${existingUser.user_type?.type_name} -> ${role}`);
+      }
+    }
+    
+    // Update user
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      include: { user_type: true }
+    });
+    
+    // Update phone in seeker profile if exists
+    if (existingUser.seeker_profile && phone !== undefined) {
+      await prisma.jobSeekerProfile.update({
+        where: { id: existingUser.seeker_profile.id },
+        data: { phone: phone || null }
+      });
+    }
+    
+    console.log(`✅ Admin updated: ${updatedUser.email}`);
+    
+    const { password, ...userWithoutPassword } = updatedUser;
+    res.json({ 
+      success: true, 
+      data: userWithoutPassword, 
+      message: 'Admin updated successfully' 
+    });
+  } catch (error: any) {
+    console.error('❌ Update error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 2. RESET PASSWORD - Reset admin password
+app.post('/api/admin/users/:userId/reset-password', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { password } = req.body;
+    
+    console.log(`🔑 RESET PASSWORD for: ${userId}`);
+    
+    if (!password || password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Password must be at least 6 characters' 
+      });
+    }
+    
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+    
+    if (!existingUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedPassword,
+        updated_at: new Date()
+      }
+    });
+    
+    // Create notification
+    await prisma.notification.create({
+      data: {
+        user_id: userId,
+        title: 'Password Reset',
+        message: 'An administrator has reset your password. Please login with your new password.',
+        type: 'security',
+        created_at: new Date()
+      }
+    });
+    
+    console.log(`✅ Password reset for: ${existingUser.email}`);
+    
+    res.json({ 
+      success: true, 
+      message: `Password reset successfully for ${existingUser.email}` 
+    });
+  } catch (error: any) {
+    console.error('❌ Reset password error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 3. DELETE ADMIN - Permanently delete admin
+app.delete('/api/admin/users/:userId', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    
+    console.log(`🗑️ DELETE ADMIN: ${userId}`);
+    
+    // Prevent self-deletion
+    if (userId === req.user!.id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot delete your own account' 
+      });
+    }
+    
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { 
+        user_type: true,
+        seeker_profile: true,
+        employer_profile: true
+      }
+    });
+    
+    if (!existingUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const userEmail = existingUser.email;
+    const userName = existingUser.full_name || userEmail;
+    
+    // Delete related records
+    if (existingUser.seeker_profile) {
+      await prisma.jobApplication.deleteMany({
+        where: { seeker_id: existingUser.seeker_profile.id }
+      });
+      await prisma.jobBookmark.deleteMany({
+        where: { seeker_id: existingUser.seeker_profile.id }
+      });
+      await prisma.jobSeekerProfile.delete({
+        where: { id: existingUser.seeker_profile.id }
+      });
+    }
+    
+    if (existingUser.employer_profile) {
+      const jobs = await prisma.jobPost.findMany({
+        where: { employer_id: existingUser.employer_profile.id }
+      });
+      for (const job of jobs) {
+        await prisma.jobApplication.deleteMany({
+          where: { job_id: job.id }
+        });
+      }
+      await prisma.jobPost.deleteMany({
+        where: { employer_id: existingUser.employer_profile.id }
+      });
+      await prisma.employerProfile.delete({
+        where: { id: existingUser.employer_profile.id }
+      });
+    }
+    
+    // Delete notifications
+    await prisma.notification.deleteMany({
+      where: { user_id: userId }
+    });
+    
+    await prisma.notificationPreference.deleteMany({
+      where: { user_id: userId }
+    });
+    
+    // Delete the user
+    await prisma.user.delete({
+      where: { id: userId }
+    });
+    
+    console.log(`✅ User deleted: ${userEmail}`);
+    
+    res.json({ 
+      success: true, 
+      message: `User ${userName} deleted successfully` 
+    });
+  } catch (error: any) {
+    console.error('❌ Delete error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 4. GET SINGLE USER - Get admin by ID
+app.get('/api/admin/users/:userId', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        user_type: true,
+        seeker_profile: true,
+        employer_profile: true
+      }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const { password, ...userWithoutPassword } = user;
+    res.json({ success: true, data: userWithoutPassword });
+  } catch (error: any) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ========== SUPER ADMIN - FULL ADMIN MANAGEMENT ENDPOINTS ==========
+// Add these BEFORE app.listen()
+
+// 1. UPDATE ADMIN - Edit admin details
+app.put('/api/admin/users/:userId', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { full_name, phone, role } = req.body;
+    
+    console.log(`🔄 UPDATE ADMIN: ${userId}`);
+    console.log(`   Data:`, { full_name, phone, role });
+    
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { user_type: true, seeker_profile: true }
+    });
+    
+    if (!existingUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    // Prepare update data
+    const updateData: any = {
+      updated_at: new Date()
+    };
+    
+    if (full_name) {
+      updateData.full_name = full_name;
+    }
+    
+    // Update role if provided
+    if (role && role !== existingUser.user_type?.type_name) {
+      const userType = await prisma.userType.findFirst({
+        where: { type_name: role }
+      });
+      if (userType) {
+        updateData.user_type_id = userType.id;
+        console.log(`   Updating role: ${existingUser.user_type?.type_name} -> ${role}`);
+      }
+    }
+    
+    // Update user
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      include: { user_type: true }
+    });
+    
+    // Update phone in seeker profile if exists
+    if (existingUser.seeker_profile && phone !== undefined) {
+      await prisma.jobSeekerProfile.update({
+        where: { id: existingUser.seeker_profile.id },
+        data: { phone: phone || null }
+      });
+    }
+    
+    console.log(`✅ Admin updated: ${updatedUser.email}`);
+    
+    const { password, ...userWithoutPassword } = updatedUser;
+    res.json({ 
+      success: true, 
+      data: userWithoutPassword, 
+      message: 'Admin updated successfully' 
+    });
+  } catch (error: any) {
+    console.error('❌ Update error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 2. RESET PASSWORD - Reset admin password
+app.post('/api/admin/users/:userId/reset-password', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { password } = req.body;
+    
+    console.log(`🔑 RESET PASSWORD for: ${userId}`);
+    
+    if (!password || password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Password must be at least 6 characters' 
+      });
+    }
+    
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+    
+    if (!existingUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedPassword,
+        updated_at: new Date()
+      }
+    });
+    
+    // Create notification
+    await prisma.notification.create({
+      data: {
+        user_id: userId,
+        title: 'Password Reset',
+        message: 'An administrator has reset your password. Please login with your new password.',
+        type: 'security',
+        created_at: new Date()
+      }
+    });
+    
+    console.log(`✅ Password reset for: ${existingUser.email}`);
+    
+    res.json({ 
+      success: true, 
+      message: `Password reset successfully for ${existingUser.email}` 
+    });
+  } catch (error: any) {
+    console.error('❌ Reset password error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 3. DELETE ADMIN - Permanently delete admin
+app.delete('/api/admin/users/:userId', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    
+    console.log(`🗑️ DELETE ADMIN: ${userId}`);
+    
+    // Prevent self-deletion
+    if (userId === req.user!.id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot delete your own account' 
+      });
+    }
+    
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { 
+        user_type: true,
+        seeker_profile: true,
+        employer_profile: true
+      }
+    });
+    
+    if (!existingUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const userEmail = existingUser.email;
+    const userName = existingUser.full_name || userEmail;
+    
+    // Delete related records
+    if (existingUser.seeker_profile) {
+      await prisma.jobApplication.deleteMany({
+        where: { seeker_id: existingUser.seeker_profile.id }
+      });
+      await prisma.jobBookmark.deleteMany({
+        where: { seeker_id: existingUser.seeker_profile.id }
+      });
+      await prisma.jobSeekerProfile.delete({
+        where: { id: existingUser.seeker_profile.id }
+      });
+      console.log(`   Deleted seeker profile for ${userEmail}`);
+    }
+    
+    if (existingUser.employer_profile) {
+      const jobs = await prisma.jobPost.findMany({
+        where: { employer_id: existingUser.employer_profile.id }
+      });
+      for (const job of jobs) {
+        await prisma.jobApplication.deleteMany({
+          where: { job_id: job.id }
+        });
+      }
+      await prisma.jobPost.deleteMany({
+        where: { employer_id: existingUser.employer_profile.id }
+      });
+      await prisma.employerProfile.delete({
+        where: { id: existingUser.employer_profile.id }
+      });
+      console.log(`   Deleted employer profile and ${jobs.length} jobs for ${userEmail}`);
+    }
+    
+    // Delete notifications
+    await prisma.notification.deleteMany({
+      where: { user_id: userId }
+    });
+    
+    await prisma.notificationPreference.deleteMany({
+      where: { user_id: userId }
+    });
+    
+    // Delete the user
+    await prisma.user.delete({
+      where: { id: userId }
+    });
+    
+    console.log(`✅ User deleted: ${userEmail}`);
+    
+    res.json({ 
+      success: true, 
+      message: `User ${userName} deleted successfully` 
+    });
+  } catch (error: any) {
+    console.error('❌ Delete error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 4. GET SINGLE USER - Get admin by ID
+app.get('/api/admin/users/:userId', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        user_type: true,
+        seeker_profile: true,
+        employer_profile: true
+      }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const { password, ...userWithoutPassword } = user;
+    res.json({ success: true, data: userWithoutPassword });
+  } catch (error: any) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 
 // ========== LOOKUP TABLES ROUTES ==========
 app.get('/api/industries', async (req: Request, res: Response) => {
@@ -1875,6 +2423,8 @@ app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) 
     res.status(500).json({ success: false, message: error.message })
   }
 })
+
+
 // ========== ADMIN JOB MANAGEMENT ==========
 app.get('/api/admin/jobs', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -2272,6 +2822,326 @@ app.put('/api/admin/jobs/:jobId/status', authMiddleware, async (req: Request, re
       jobCount: Number(item.job_count),
       views: Number(item.total_views)
     }));
+
+
+
+    // ========== SUPER ADMIN - ADMIN MANAGEMENT ENDPOINTS ==========
+
+// Get all admins (Super Admin only)
+app.get('/api/super-admin/admins', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    // Get all users with Admin or Super Admin role
+    const admins = await prisma.user.findMany({
+      where: {
+        user_type: {
+          type_name: { in: ['Admin', 'Super Admin'] }
+        }
+      },
+      include: {
+        user_type: true,
+        seeker_profile: true,
+        employer_profile: true
+      },
+      orderBy: { created_at: 'desc' }
+    })
+    
+    // Format admin data
+    const formattedAdmins = admins.map(admin => ({
+      id: admin.id,
+      full_name: admin.full_name || admin.email?.split('@')[0] || 'Admin',
+      email: admin.email,
+      phone: admin.seeker_profile?.phone || admin.employer_profile?.phone || null,
+      avatar: admin.avatar || null,
+      role: admin.user_type?.type_name,
+      is_active: admin.is_active,
+      last_login: admin.updated_at,
+      created_at: admin.created_at
+    }))
+    
+    res.json({
+      success: true,
+      data: formattedAdmins
+    })
+  } catch (error: any) {
+    console.error('Error fetching admins:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Create new admin (Super Admin only)
+app.post('/api/super-admin/admins', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { full_name, email, password, phone, role } = req.body
+    
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    })
+    
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'User with this email already exists' })
+    }
+    
+    // Get user type ID
+    const userType = await prisma.userType.findFirst({
+      where: { type_name: role || 'Admin' }
+    })
+    
+    if (!userType) {
+      return res.status(400).json({ success: false, message: 'Invalid user type' })
+    }
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10)
+    
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        full_name,
+        user_type_id: userType.id,
+        is_active: true,
+        created_at: new Date(),
+        updated_at: new Date()
+      }
+    })
+    
+    // Create profile based on role (for admin, create seeker profile or employer profile?)
+    // Admins typically don't need job seeker or employer profiles, but we'll create a basic one
+    await prisma.jobSeekerProfile.create({
+      data: {
+        user_id: user.id,
+        full_name: full_name,
+        phone: phone || null,
+        skills: []
+      }
+    })
+    
+    res.status(201).json({
+      success: true,
+      message: 'Admin created successfully',
+      data: {
+        id: user.id,
+        full_name: user.full_name,
+        email: user.email,
+        role: userType.type_name
+      }
+    })
+  } catch (error: any) {
+    console.error('Error creating admin:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Update admin (Super Admin only)
+app.put('/api/super-admin/admins/:adminId', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { adminId } = req.params
+    const { full_name, phone, role, is_active } = req.body
+    
+    // Get user type ID if role is changing
+    let userTypeId;
+    if (role) {
+      const userType = await prisma.userType.findFirst({
+        where: { type_name: role }
+      })
+      if (!userType) {
+        return res.status(400).json({ success: false, message: 'Invalid user type' })
+      }
+      userTypeId = userType.id
+    }
+    
+    // Update user
+    const updatedUser = await prisma.user.update({
+      where: { id: adminId },
+      data: {
+        full_name: full_name,
+        user_type_id: userTypeId,
+        is_active: is_active !== undefined ? is_active : undefined,
+        updated_at: new Date()
+      }
+    })
+    
+    // Update seeker profile if exists
+    const seekerProfile = await prisma.jobSeekerProfile.findFirst({
+      where: { user_id: adminId }
+    })
+    
+    if (seekerProfile && phone !== undefined) {
+      await prisma.jobSeekerProfile.update({
+        where: { id: seekerProfile.id },
+        data: { phone, full_name }
+      })
+    }
+    
+    res.json({
+      success: true,
+      message: 'Admin updated successfully',
+      data: {
+        id: updatedUser.id,
+        full_name: updatedUser.full_name,
+        email: updatedUser.email,
+        is_active: updatedUser.is_active
+      }
+    })
+  } catch (error: any) {
+    console.error('Error updating admin:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Reset admin password (Super Admin only)
+app.post('/api/super-admin/admins/:adminId/reset-password', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { adminId } = req.params
+    const { newPassword } = req.body
+    
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' })
+    }
+    
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+    
+    await prisma.user.update({
+      where: { id: adminId },
+      data: {
+        password: hashedPassword,
+        updated_at: new Date()
+      }
+    })
+    
+    res.json({
+      success: true,
+      message: 'Password reset successfully'
+    })
+  } catch (error: any) {
+    console.error('Error resetting password:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Suspend admin (Super Admin only)
+app.put('/api/super-admin/admins/:adminId/suspend', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { adminId } = req.params
+    
+    // Don't allow suspending yourself
+    if (adminId === req.user!.id) {
+      return res.status(400).json({ success: false, message: 'Cannot suspend your own account' })
+    }
+    
+    const updatedAdmin = await prisma.user.update({
+      where: { id: adminId },
+      data: {
+        is_active: false,
+        updated_at: new Date()
+      }
+    })
+    
+    res.json({
+      success: true,
+      message: 'Admin suspended successfully',
+      data: { is_active: updatedAdmin.is_active }
+    })
+  } catch (error: any) {
+    console.error('Error suspending admin:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Activate admin (Super Admin only)
+app.put('/api/super-admin/admins/:adminId/activate', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { adminId } = req.params
+    
+    const updatedAdmin = await prisma.user.update({
+      where: { id: adminId },
+      data: {
+        is_active: true,
+        updated_at: new Date()
+      }
+    })
+    
+    res.json({
+      success: true,
+      message: 'Admin activated successfully',
+      data: { is_active: updatedAdmin.is_active }
+    })
+  } catch (error: any) {
+    console.error('Error activating admin:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Delete admin (Super Admin only)
+app.delete('/api/super-admin/admins/:adminId', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { adminId } = req.params
+    
+    // Don't allow deleting yourself
+    if (adminId === req.user!.id) {
+      return res.status(400).json({ success: false, message: 'Cannot delete your own account' })
+    }
+    
+    // Get admin details before deletion
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+      include: { seeker_profile: true, employer_profile: true }
+    })
+    
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'Admin not found' })
+    }
+    
+    // Delete related data
+    if (admin.seeker_profile) {
+      await prisma.jobApplication.deleteMany({
+        where: { seeker_id: admin.seeker_profile.id }
+      })
+      await prisma.jobBookmark.deleteMany({
+        where: { seeker_id: admin.seeker_profile.id }
+      })
+      await prisma.jobSeekerProfile.delete({
+        where: { id: admin.seeker_profile.id }
+      })
+    }
+    
+    if (admin.employer_profile) {
+      const jobs = await prisma.jobPost.findMany({
+        where: { employer_id: admin.employer_profile.id }
+      })
+      for (const job of jobs) {
+        await prisma.jobApplication.deleteMany({
+          where: { job_id: job.id }
+        })
+      }
+      await prisma.jobPost.deleteMany({
+        where: { employer_id: admin.employer_profile.id }
+      })
+      await prisma.employerProfile.delete({
+        where: { id: admin.employer_profile.id }
+      })
+    }
+    
+    await prisma.notification.deleteMany({
+      where: { user_id: adminId }
+    })
+    
+    // Delete the user
+    await prisma.user.delete({
+      where: { id: adminId }
+    })
+    
+    res.json({
+      success: true,
+      message: 'Admin deleted successfully'
+    })
+  } catch (error: any) {
+    console.error('Error deleting admin:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
     
     // ========== TOP SKILLS ==========
     const allSkills = await prisma.jobSeekerProfile.findMany({

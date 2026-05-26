@@ -22,7 +22,9 @@ model User {
   password     String // Hashed
   user_type_id Int
   is_active    Boolean  @default(true)
+  last_login    DateTime? 
   full_name    String?
+  avatar       String?
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 

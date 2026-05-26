@@ -58,9 +58,11 @@ import AdminApplications from '@/pages/admin/Applications'
 import AdminAnalytics from '@/pages/admin/Analytics'
 import AdminSettings from '@/pages/admin/Settings'
 import AdminLayout from './pages/admin/AdminLayout'
+import AdminProfile from '@/pages/admin/AdminProfile'
 
 // Super Admin
 import SuperAdminLayout from '@/pages/superadmin/SuperAdminLayout'
+import SuperAdminProfile from '@/pages/superadmin/Profile'
 
 // Route Guards
 import PrivateRoute, {
@@ -163,12 +165,14 @@ function App() {
               <Route path="/admin/applications" element={<AdminApplications />} />
               <Route path="/admin/analytics" element={<AdminAnalytics />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
+              <Route path="/admin/profile" element={<AdminProfile />} />
             </Route>
           </Route>
 
           {/* ========== SUPER ADMIN ONLY ROUTES ========== */}
           <Route element={<SuperAdminRoute />}>
             <Route path="/super-admin/*" element={<SuperAdminLayout />} />
+            <Route path="/super-admin/profile" element={<SuperAdminProfile />} />
           </Route>
 
           {/* ========== 404 NOT FOUND ========== */}
