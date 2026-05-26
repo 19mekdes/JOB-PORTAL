@@ -5,8 +5,6 @@ import {
   Edit, 
   Trash2, 
   Search, 
-  X, 
-  Check,
   Building2,
   Briefcase,
   TrendingUp,

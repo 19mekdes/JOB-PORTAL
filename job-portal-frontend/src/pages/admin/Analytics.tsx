@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 /* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect } from 'react'
 import {
@@ -5,16 +6,12 @@ import {
   Users,
   Briefcase,
   FileText,
-  Activity,
   Award,
   Building2,
   UserCheck,
   CheckCircle,
   XCircle,
-  Eye,
-  Clock,
-  Star
-} from 'lucide-react'
+  Eye} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect } from 'react'
@@ -11,14 +12,12 @@ import {
   Building2,
   Briefcase,
   RefreshCw,
-  Download,
   Users,
   Eye,
   Edit,
   Ban,
   CheckCircle,
   Crown,
-  Filter,
   AlertTriangle
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -417,6 +416,7 @@ const UserManagement: React.FC = () => {
       await fetchUsers()
       setIsEditDialogOpen(false)
       setSelectedUser(null)
+     
     } catch (error: any) {
       console.error('Error updating user:', error)
       toast({

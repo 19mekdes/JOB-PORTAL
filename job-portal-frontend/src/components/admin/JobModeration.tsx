@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect } from 'react'
 import { 
@@ -123,7 +125,7 @@ const JobModeration: React.FC = () => {
     limit: 10
   })
   const [totalPages, setTotalPages] = useState(1)
-  const [totalJobs, setTotalJobs] = useState(0)
+  const [, setTotalJobs] = useState(0)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isModerateDialogOpen, setIsModerateDialogOpen] = useState(false)

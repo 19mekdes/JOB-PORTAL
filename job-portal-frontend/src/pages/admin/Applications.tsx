@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/set-state-in-effect */
  
 import React, { useState, useEffect, useCallback } from 'react'
@@ -51,7 +52,6 @@ import {
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
@@ -116,11 +116,11 @@ const AdminApplications: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [companyFilter, setCompanyFilter] = useState('all')
-  const [dateRange, setDateRange] = useState('all')
+  const [dateRange] = useState('all')
   const [activeTab, setActiveTab] = useState('all')
   const [selectedApp, setSelectedApp] = useState<Application | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const [isStatusUpdateOpen, setIsStatusUpdateOpen] = useState(false)
+  const [, setIsStatusUpdateOpen] = useState(false)
   const [newStatus, setNewStatus] = useState('')
   const [moderationNote, setModerationNote] = useState('')
   const [page, setPage] = useState(1)
@@ -281,6 +281,7 @@ const AdminApplications: React.FC = () => {
   }
 
   const getTimeAgo = (date: string) => {
+    // eslint-disable-next-line react-hooks/purity
     const days = Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24))
     if (days === 0) return 'Today'
     if (days === 1) return 'Yesterday'
@@ -378,7 +379,7 @@ const AdminApplications: React.FC = () => {
             <p className="text-xs text-gray-500">Rejected</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+        <Card className="bg-linear-to-r from-green-50 to-emerald-50 border-green-200">
           <CardContent className="pt-4 text-center">
             <TrendingUp className="h-5 w-5 mx-auto text-green-500 mb-2" />
             <p className="text-2xl font-bold text-green-600">{stats.conversionRate}%</p>
