@@ -10,7 +10,11 @@ import {
   Building2,
   UserCheck,
   CheckCircle,
-  XCircle} from 'lucide-react'
+  XCircle,
+  Eye,
+  Clock,
+  Star
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -64,8 +68,42 @@ interface AnalyticsData {
   topSkills: Array<{ skill: string; count: number }>
 }
 
+const defaultData: AnalyticsData = {
+  totalUsers: 0,
+  totalJobSeekers: 0,
+  totalEmployers: 0,
+  totalAdmins: 0,
+  newUsersThisMonth: 0,
+  userGrowth: 0,
+  activeUsers: 0,
+  totalJobs: 0,
+  activeJobs: 0,
+  closedJobs: 0,
+  newJobsThisMonth: 0,
+  jobGrowth: 0,
+  jobsByIndustry: [],
+  jobsByType: [],
+  totalApplications: 0,
+  pendingApplications: 0,
+  reviewedApplications: 0,
+  shortlistedApplications: 0,
+  interviewApplications: 0,
+  acceptedApplications: 0,
+  rejectedApplications: 0,
+  totalViews: 0,
+  averageViewsPerJob: 0,
+  averageApplicationsPerJob: 0,
+  conversionRate: 0,
+  jobsByMonth: [],
+  applicationsByMonth: [],
+  viewsByMonth: [],
+  topIndustries: [],
+  topEmployers: [],
+  topSkills: []
+}
+
 const AdminAnalytics: React.FC = () => {
-  const [data, setData] = useState<AnalyticsData | null>(null)
+  const [data, setData] = useState<AnalyticsData>(defaultData)
   const [loading, setLoading] = useState(true)
   const [period] = useState('30d')
   const [activeTab, setActiveTab] = useState('overview')
@@ -79,9 +117,22 @@ const AdminAnalytics: React.FC = () => {
     try {
       setLoading(true)
       const response = await api.get(`/admin/analytics?period=${period}`)
-      const analyticsData = response.data.data
       
-      // Safely handle arrays with fallbacks
+      console.log('Analytics API Response:', response.data)
+      
+      // Check if response has data property
+      let analyticsData = response.data.data || response.data || {}
+      
+      // Safely extract arrays with fallbacks
+      const jobsByIndustry = Array.isArray(analyticsData.jobsByIndustry) ? analyticsData.jobsByIndustry : []
+      const jobsByType = Array.isArray(analyticsData.jobsByType) ? analyticsData.jobsByType : []
+      const jobsByMonth = Array.isArray(analyticsData.jobsByMonth) ? analyticsData.jobsByMonth : []
+      const applicationsByMonth = Array.isArray(analyticsData.applicationsByMonth) ? analyticsData.applicationsByMonth : []
+      const viewsByMonth = Array.isArray(analyticsData.viewsByMonth) ? analyticsData.viewsByMonth : []
+      const topIndustries = Array.isArray(analyticsData.topIndustries) ? analyticsData.topIndustries : []
+      const topEmployers = Array.isArray(analyticsData.topEmployers) ? analyticsData.topEmployers : []
+      const topSkills = Array.isArray(analyticsData.topSkills) ? analyticsData.topSkills : []
+      
       setData({
         totalUsers: analyticsData.totalUsers || 0,
         totalJobSeekers: analyticsData.totalJobSeekers || 0,
@@ -95,8 +146,8 @@ const AdminAnalytics: React.FC = () => {
         closedJobs: analyticsData.closedJobs || 0,
         newJobsThisMonth: analyticsData.newJobsThisMonth || 0,
         jobGrowth: analyticsData.jobGrowth || 0,
-        jobsByIndustry: Array.isArray(analyticsData.jobsByIndustry) ? analyticsData.jobsByIndustry : [],
-        jobsByType: Array.isArray(analyticsData.jobsByType) ? analyticsData.jobsByType : [],
+        jobsByIndustry,
+        jobsByType,
         totalApplications: analyticsData.totalApplications || 0,
         pendingApplications: analyticsData.pendingApplications || 0,
         reviewedApplications: analyticsData.reviewedApplications || 0,
@@ -108,12 +159,12 @@ const AdminAnalytics: React.FC = () => {
         averageViewsPerJob: analyticsData.averageViewsPerJob || 0,
         averageApplicationsPerJob: analyticsData.averageApplicationsPerJob || 0,
         conversionRate: analyticsData.conversionRate || 0,
-        jobsByMonth: Array.isArray(analyticsData.jobsByMonth) ? analyticsData.jobsByMonth : [],
-        applicationsByMonth: Array.isArray(analyticsData.applicationsByMonth) ? analyticsData.applicationsByMonth : [],
-        viewsByMonth: Array.isArray(analyticsData.viewsByMonth) ? analyticsData.viewsByMonth : [],
-        topIndustries: Array.isArray(analyticsData.topIndustries) ? analyticsData.topIndustries : [],
-        topEmployers: Array.isArray(analyticsData.topEmployers) ? analyticsData.topEmployers : [],
-        topSkills: Array.isArray(analyticsData.topSkills) ? analyticsData.topSkills : []
+        jobsByMonth,
+        applicationsByMonth,
+        viewsByMonth,
+        topIndustries,
+        topEmployers,
+        topSkills
       })
     } catch (error) {
       console.error('Error fetching analytics:', error)
@@ -127,8 +178,7 @@ const AdminAnalytics: React.FC = () => {
     }
   }
 
-
-  if (loading || !data) {
+  if (loading) {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
@@ -149,7 +199,7 @@ const AdminAnalytics: React.FC = () => {
       title: 'Total Users',
       value: data.totalUsers.toLocaleString(),
       icon: Users,
-      change: `+${data.newUsersThisMonth} this month`,
+      change: `${data.newUsersThisMonth} new this month`,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
       trend: `${data.userGrowth > 0 ? '+' : ''}${data.userGrowth}%`
@@ -167,19 +217,19 @@ const AdminAnalytics: React.FC = () => {
       title: 'Applications',
       value: data.totalApplications.toLocaleString(),
       icon: FileText,
-      change: `${data.pendingApplications} pending review`,
+      change: `${data.pendingApplications} pending`,
       color: 'text-purple-600',
       bg: 'bg-purple-50',
       trend: `${data.acceptedApplications} accepted`
     },
     {
-      title: 'Engagement',
-      value: `${data.conversionRate}%`,
-      icon: Activity,
-      change: `${data.averageApplicationsPerJob} avg per job`,
+      title: 'Views',
+      value: data.totalViews.toLocaleString(),
+      icon: Eye,
+      change: `${data.averageViewsPerJob} avg per job`,
       color: 'text-orange-600',
       bg: 'bg-orange-50',
-      trend: `${data.totalViews.toLocaleString()} total views`
+      trend: `${data.conversionRate}% conversion`
     }
   ]
 
@@ -200,7 +250,6 @@ const AdminAnalytics: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Analytics & Reports</h1>
           <p className="text-gray-500 mt-1">Platform performance metrics and insights</p>
         </div>
-        
       </div>
 
       {/* Stats Cards */}
@@ -253,7 +302,7 @@ const AdminAnalytics: React.FC = () => {
                       <span>{stat.label}</span>
                       <span className="font-medium">{stat.count} ({Math.round(stat.percentage)}%)</span>
                     </div>
-                    <Progress value={stat.percentage} className={`h-2`} />
+                    <Progress value={stat.percentage} className={`h-2 ${stat.color}`} />
                   </div>
                 ))}
               </div>
@@ -366,7 +415,7 @@ const AdminAnalytics: React.FC = () => {
                 <div className="text-center py-8 text-gray-500">No skill data available</div>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  {data.topSkills.map((skill, i) => (
+                  {data.topSkills.slice(0, 10).map((skill, i) => (
                     <Badge key={i} variant="secondary" className="text-sm py-1.5">
                       {skill.skill} ({skill.count})
                     </Badge>
@@ -476,7 +525,11 @@ const AdminAnalytics: React.FC = () => {
                   <div key={i}>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${stat.color}`} />
+                        <span className={`w-2 h-2 rounded-full ${stat.color.replace('bg-', '') === 'yellow-500' ? 'bg-yellow-500' : 
+                          stat.color.replace('bg-', '') === 'blue-500' ? 'bg-blue-500' :
+                          stat.color.replace('bg-', '') === 'purple-500' ? 'bg-purple-500' :
+                          stat.color.replace('bg-', '') === 'indigo-500' ? 'bg-indigo-500' :
+                          stat.color.replace('bg-', '') === 'green-500' ? 'bg-green-500' : 'bg-red-500'}`} />
                         {stat.label}
                       </span>
                       <span className="font-medium">{stat.count}</span>
@@ -509,7 +562,7 @@ const AdminAnalytics: React.FC = () => {
             <Card>
               <CardContent className="pt-4 text-center">
                 <p className="text-2xl font-bold text-gray-600">{data.totalAdmins}</p>
-                <p className="text-xs text-gray-500">Admins</p>
+                <p className="text-xs text-gray-500">Administrators</p>
               </CardContent>
             </Card>
             <Card>
@@ -534,6 +587,14 @@ const AdminAnalytics: React.FC = () => {
                   </div>
                   <Progress value={data.totalUsers > 0 ? (data.activeUsers / data.totalUsers) * 100 : 0} className="h-2" />
                   <p className="text-xs text-gray-500 mt-1">{data.activeUsers.toLocaleString()} out of {data.totalUsers.toLocaleString()} users active</p>
+                </div>
+                <Separator />
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>New Users (This Month)</span>
+                    <span>{data.newUsersThisMonth.toLocaleString()}</span>
+                  </div>
+                  <Progress value={data.totalUsers > 0 ? (data.newUsersThisMonth / data.totalUsers) * 100 : 0} className="h-2" />
                 </div>
               </div>
             </CardContent>

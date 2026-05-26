@@ -13,7 +13,15 @@ import {
   XCircle,
   Clock,
   Star,
-  MessageSquare
+  MessageSquare,
+  Download,
+  Filter,
+  Calendar,
+  Building2,
+  Mail,
+  User,
+  TrendingUp,
+  AlertCircle
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -39,9 +47,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Progress } from '@/components/ui/progress'
+import { Separator } from '@/components/ui/separator'
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
@@ -55,9 +66,12 @@ interface Application {
     id: string
     title: string
     location: string
+    is_remote: boolean
+    salary_range: string
     employer: {
       id: string
       company_name: string
+      logo_url: string
       user: {
         email: string
         full_name: string
@@ -70,6 +84,9 @@ interface Application {
     phone: string
     location: string
     skills: string[]
+    experience: string
+    education: string
+    bio: string
     user: {
       email: string
       full_name: string
@@ -79,6 +96,7 @@ interface Application {
     id: number
     status_name: string
   }
+  employer_notes?: string
 }
 
 interface ApplicationStats {
@@ -89,6 +107,7 @@ interface ApplicationStats {
   interview: number
   accepted: number
   rejected: number
+  conversionRate: number
 }
 
 const AdminApplications: React.FC = () => {
@@ -96,13 +115,17 @@ const AdminApplications: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [companyFilter, setCompanyFilter] = useState('all')
+  const [dateRange, setDateRange] = useState('all')
   const [activeTab, setActiveTab] = useState('all')
   const [selectedApp, setSelectedApp] = useState<Application | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const [, setIsStatusUpdateOpen] = useState(false)
+  const [isStatusUpdateOpen, setIsStatusUpdateOpen] = useState(false)
   const [newStatus, setNewStatus] = useState('')
+  const [moderationNote, setModerationNote] = useState('')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [companies, setCompanies] = useState<string[]>([])
   const [stats, setStats] = useState<ApplicationStats>({
     total: 0,
     pending: 0,
@@ -110,19 +133,41 @@ const AdminApplications: React.FC = () => {
     shortlisted: 0,
     interview: 0,
     accepted: 0,
-    rejected: 0
+    rejected: 0,
+    conversionRate: 0
   })
 
   const fetchApplications = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await api.get(`/admin/applications?page=${page}&limit=20&search=${searchTerm}&status=${statusFilter}`)
+      const params = new URLSearchParams()
+      params.append('page', page.toString())
+      params.append('limit', '20')
+      if (searchTerm) params.append('search', searchTerm)
+      if (statusFilter !== 'all') params.append('status', statusFilter)
+      if (companyFilter !== 'all') params.append('company', companyFilter)
+      if (dateRange !== 'all') params.append('date_range', dateRange)
+      
+      const response = await api.get(`/admin/applications?${params.toString()}`)
       setApplications(response.data.data || [])
       setTotalPages(response.data.pagination?.pages || 1)
       
       if (response.data.stats) {
-        setStats(response.data.stats)
+        const totalProcessed = response.data.stats.reviewed + response.data.stats.shortlisted + 
+                               response.data.stats.interview + response.data.stats.accepted + 
+                               response.data.stats.rejected
+        const conversionRate = totalProcessed > 0 
+          ? Math.round((response.data.stats.accepted / totalProcessed) * 100) 
+          : 0
+        setStats({
+          ...response.data.stats,
+          conversionRate
+        })
       }
+      
+      // Extract unique companies for filter
+      const uniqueCompanies = [...new Set(response.data.data.map((app: Application) => app.job?.employer?.company_name).filter(Boolean))]
+      setCompanies(uniqueCompanies as string[])
     } catch (error) {
       console.error('Error fetching applications:', error)
       toast({
@@ -133,15 +178,18 @@ const AdminApplications: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }, [page, searchTerm, statusFilter])
+  }, [page, searchTerm, statusFilter, companyFilter, dateRange])
 
   useEffect(() => {
     fetchApplications()
   }, [fetchApplications])
 
-  const updateApplicationStatus = async (applicationId: string, status: string) => {
+  const updateApplicationStatus = async (applicationId: string, status: string, note?: string) => {
     try {
-      await api.put(`/admin/applications/${applicationId}/status`, { status })
+      await api.put(`/admin/applications/${applicationId}/status`, { 
+        status, 
+        note 
+      })
       toast({
         title: "Success",
         description: `Application ${status.toLowerCase()} successfully`,
@@ -149,14 +197,42 @@ const AdminApplications: React.FC = () => {
       fetchApplications()
       setIsDetailOpen(false)
       setIsStatusUpdateOpen(false)
-    } catch (error) {
+      setNewStatus('')
+      setModerationNote('')
+    } catch (error: any) {
       console.error('Error updating status:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to update application status",
+        description: error.response?.data?.message || "Failed to update application status",
       })
     }
+  }
+
+  const exportToCSV = () => {
+    const headers = ['Applicant Name', 'Email', 'Job Title', 'Company', 'Applied Date', 'Status']
+    const csvData = applications.map(app => [
+      app.seeker?.full_name,
+      app.seeker?.user?.email,
+      app.job?.title,
+      app.job?.employer?.company_name,
+      formatDate(app.applied_at),
+      app.status?.status_name
+    ])
+    
+    const csvContent = [headers, ...csvData].map(row => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `applications_${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    
+    toast({
+      title: "Export Started",
+      description: "Applications exported to CSV",
+    })
   }
 
   const getStatusBadge = (status: string) => {
@@ -167,11 +243,20 @@ const AdminApplications: React.FC = () => {
           Pending
         </Badge>
       case 'reviewed':
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Reviewed</Badge>
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200 flex items-center gap-1">
+          <Eye className="h-3 w-3" />
+          Reviewed
+        </Badge>
       case 'shortlisted':
-        return <Badge className="bg-purple-100 text-purple-800 border-purple-200">Shortlisted</Badge>
+        return <Badge className="bg-purple-100 text-purple-800 border-purple-200 flex items-center gap-1">
+          <Star className="h-3 w-3" />
+          Shortlisted
+        </Badge>
       case 'interview':
-        return <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200">Interview</Badge>
+        return <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 flex items-center gap-1">
+          <Calendar className="h-3 w-3" />
+          Interview
+        </Badge>
       case 'accepted':
         return <Badge className="bg-green-100 text-green-800 border-green-200 flex items-center gap-1">
           <CheckCircle className="h-3 w-3" />
@@ -195,14 +280,22 @@ const AdminApplications: React.FC = () => {
     })
   }
 
+  const getTimeAgo = (date: string) => {
+    const days = Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24))
+    if (days === 0) return 'Today'
+    if (days === 1) return 'Yesterday'
+    return `${days} days ago`
+  }
+
   const filteredApplications = applications.filter(app => {
     const matchesSearch = 
       app.job?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       app.seeker?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       app.job?.employer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || app.status?.status_name === statusFilter
+    const matchesCompany = companyFilter === 'all' || app.job?.employer?.company_name === companyFilter
     const matchesTab = activeTab === 'all' || app.status?.status_name.toLowerCase() === activeTab
-    return matchesSearch && matchesStatus && matchesTab
+    return matchesSearch && matchesStatus && matchesCompany && matchesTab
   })
 
   if (loading) {
@@ -217,59 +310,79 @@ const AdminApplications: React.FC = () => {
   return (
     <div className="space-y-6 bg-white min-h-screen p-6 rounded-xl">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Applications</h1>
-          <p className="text-gray-500 mt-1">Manage and review all job applications</p>
+          <h1 className="text-2xl font-bold text-gray-900">Applications Management</h1>
+          <p className="text-gray-500 mt-1">Monitor and moderate all job applications across the platform</p>
         </div>
-        <Button variant="outline" onClick={() => fetchApplications()} className="bg-white border-gray-300">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportToCSV} className="bg-white border-gray-300">
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button variant="outline" onClick={() => fetchApplications()} className="bg-white border-gray-300">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        <Card className="cursor-pointer hover:shadow-md transition bg-white border border-gray-200" onClick={() => { setActiveTab('all'); setStatusFilter('all') }}>
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+        <Card className="cursor-pointer hover:shadow-md transition bg-white border border-gray-200" onClick={() => { setActiveTab('all'); setStatusFilter('all'); setCompanyFilter('all') }}>
           <CardContent className="pt-4 text-center">
+            <FileText className="h-5 w-5 mx-auto text-gray-500 mb-2" />
             <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             <p className="text-xs text-gray-500">Total</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition border-yellow-200 bg-white" onClick={() => { setActiveTab('pending'); setStatusFilter('Pending') }}>
           <CardContent className="pt-4 text-center">
+            <Clock className="h-5 w-5 mx-auto text-yellow-500 mb-2" />
             <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
             <p className="text-xs text-gray-500">Pending</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition border-blue-200 bg-white" onClick={() => { setActiveTab('reviewed'); setStatusFilter('Reviewed') }}>
           <CardContent className="pt-4 text-center">
+            <Eye className="h-5 w-5 mx-auto text-blue-500 mb-2" />
             <p className="text-2xl font-bold text-blue-600">{stats.reviewed}</p>
             <p className="text-xs text-gray-500">Reviewed</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition border-purple-200 bg-white" onClick={() => { setActiveTab('shortlisted'); setStatusFilter('Shortlisted') }}>
           <CardContent className="pt-4 text-center">
+            <Star className="h-5 w-5 mx-auto text-purple-500 mb-2" />
             <p className="text-2xl font-bold text-purple-600">{stats.shortlisted}</p>
             <p className="text-xs text-gray-500">Shortlisted</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition border-indigo-200 bg-white" onClick={() => { setActiveTab('interview'); setStatusFilter('Interview') }}>
           <CardContent className="pt-4 text-center">
+            <Calendar className="h-5 w-5 mx-auto text-indigo-500 mb-2" />
             <p className="text-2xl font-bold text-indigo-600">{stats.interview}</p>
             <p className="text-xs text-gray-500">Interview</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition border-green-200 bg-white" onClick={() => { setActiveTab('accepted'); setStatusFilter('Accepted') }}>
           <CardContent className="pt-4 text-center">
+            <CheckCircle className="h-5 w-5 mx-auto text-green-500 mb-2" />
             <p className="text-2xl font-bold text-green-600">{stats.accepted}</p>
             <p className="text-xs text-gray-500">Accepted</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition border-red-200 bg-white" onClick={() => { setActiveTab('rejected'); setStatusFilter('Rejected') }}>
           <CardContent className="pt-4 text-center">
+            <XCircle className="h-5 w-5 mx-auto text-red-500 mb-2" />
             <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
             <p className="text-xs text-gray-500">Rejected</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+          <CardContent className="pt-4 text-center">
+            <TrendingUp className="h-5 w-5 mx-auto text-green-500 mb-2" />
+            <p className="text-2xl font-bold text-green-600">{stats.conversionRate}%</p>
+            <p className="text-xs text-gray-500">Acceptance Rate</p>
           </CardContent>
         </Card>
       </div>
@@ -291,7 +404,8 @@ const AdminApplications: React.FC = () => {
           <Card className="bg-white border border-gray-200 shadow-sm">
             <CardHeader className="pb-3">
               <div className="flex justify-between items-center flex-wrap gap-4">
-                <CardTitle className="text-gray-900">
+                <CardTitle className="text-gray-900 flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
                   {activeTab === 'all' ? 'All Applications' : 
                    activeTab === 'pending' ? 'Pending Applications' :
                    activeTab === 'reviewed' ? 'Reviewed Applications' :
@@ -324,6 +438,19 @@ const AdminApplications: React.FC = () => {
                       <SelectItem value="Rejected">Rejected</SelectItem>
                     </SelectContent>
                   </Select>
+                  {companies.length > 0 && (
+                    <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                      <SelectTrigger className="w-48 bg-white border-gray-300">
+                        <SelectValue placeholder="Filter by company" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200">
+                        <SelectItem value="all">All Companies</SelectItem>
+                        {companies.map(company => (
+                          <SelectItem key={company} value={company}>{company}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -370,11 +497,16 @@ const AdminApplications: React.FC = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Briefcase className="h-4 w-4 text-gray-400" />
+                              <Building2 className="h-4 w-4 text-gray-400" />
                               <span className="text-sm text-gray-700">{app.job?.employer?.company_name}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-gray-500 text-sm">{formatDate(app.applied_at)}</TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="text-sm text-gray-700">{formatDate(app.applied_at)}</p>
+                              <p className="text-xs text-gray-400">{getTimeAgo(app.applied_at)}</p>
+                            </div>
+                          </TableCell>
                           <TableCell>{getStatusBadge(app.status?.status_name)}</TableCell>
                           <TableCell className="text-right">
                             <Button 
@@ -429,7 +561,7 @@ const AdminApplications: React.FC = () => {
 
       {/* Application Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto bg-white">
           {selectedApp && (
             <>
               <DialogHeader>
@@ -437,45 +569,117 @@ const AdminApplications: React.FC = () => {
                   <FileText className="h-5 w-5" />
                   Application Details
                 </DialogTitle>
+                <DialogDescription>
+                  Review complete application information and update status
+                </DialogDescription>
               </DialogHeader>
               
               <div className="space-y-6">
-                {/* Applicant Info */}
-                <div className="bg-linear-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-16 w-16 bg-blue-200">
-                      <AvatarFallback className="bg-blue-200 text-blue-700 text-xl">
-                        {selectedApp.seeker?.full_name?.charAt(0) || 'A'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900">{selectedApp.seeker?.full_name}</h2>
-                      <p className="text-gray-600">{selectedApp.seeker?.user?.email}</p>
-                      {selectedApp.seeker?.phone && (
-                        <div className="flex items-center gap-1 mt-1 text-sm text-gray-500">
-                          <Phone className="h-3 w-3" />
-                          {selectedApp.seeker.phone}
-                        </div>
-                      )}
-                      {selectedApp.seeker?.location && (
-                        <div className="flex items-center gap-1 text-sm text-gray-500">
-                          <MapPin className="h-3 w-3" />
-                          {selectedApp.seeker.location}
-                        </div>
-                      )}
+                {/* Status Banner */}
+                <div className={`p-4 rounded-lg ${
+                  selectedApp.status?.status_name === 'Pending' ? 'bg-yellow-50 border border-yellow-200' :
+                  selectedApp.status?.status_name === 'Accepted' ? 'bg-green-50 border border-green-200' :
+                  selectedApp.status?.status_name === 'Rejected' ? 'bg-red-50 border border-red-200' :
+                  'bg-blue-50 border border-blue-200'
+                }`}>
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${
+                        selectedApp.status?.status_name === 'Pending' ? 'bg-yellow-100' :
+                        selectedApp.status?.status_name === 'Accepted' ? 'bg-green-100' :
+                        selectedApp.status?.status_name === 'Rejected' ? 'bg-red-100' :
+                        'bg-blue-100'
+                      }`}>
+                        {selectedApp.status?.status_name === 'Pending' && <Clock className="h-5 w-5 text-yellow-600" />}
+                        {selectedApp.status?.status_name === 'Reviewed' && <Eye className="h-5 w-5 text-blue-600" />}
+                        {selectedApp.status?.status_name === 'Shortlisted' && <Star className="h-5 w-5 text-purple-600" />}
+                        {selectedApp.status?.status_name === 'Interview' && <Calendar className="h-5 w-5 text-indigo-600" />}
+                        {selectedApp.status?.status_name === 'Accepted' && <CheckCircle className="h-5 w-5 text-green-600" />}
+                        {selectedApp.status?.status_name === 'Rejected' && <XCircle className="h-5 w-5 text-red-600" />}
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Current Status</p>
+                        <p className="font-semibold text-gray-900">{selectedApp.status?.status_name}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">Last Updated</p>
+                      <p className="text-sm text-gray-700">{formatDate(selectedApp.updated_at)}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Job Info */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <Briefcase className="h-4 w-4" />
-                    Job Information
-                  </h3>
-                  <p className="font-medium text-gray-900">{selectedApp.job?.title}</p>
-                  <p className="text-gray-600">{selectedApp.job?.employer?.company_name}</p>
-                  <p className="text-gray-500 text-sm mt-1">{selectedApp.job?.location}</p>
+                {/* Two Column Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Applicant Info */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Applicant Information
+                    </h3>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-gray-500">Full Name</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedApp.seeker?.full_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Email</p>
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-3 w-3 text-gray-400" />
+                          <p className="text-sm text-gray-700">{selectedApp.seeker?.user?.email}</p>
+                        </div>
+                      </div>
+                      {selectedApp.seeker?.phone && (
+                        <div>
+                          <p className="text-xs text-gray-500">Phone</p>
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-3 w-3 text-gray-400" />
+                            <p className="text-sm text-gray-700">{selectedApp.seeker.phone}</p>
+                          </div>
+                        </div>
+                      )}
+                      {selectedApp.seeker?.location && (
+                        <div>
+                          <p className="text-xs text-gray-500">Location</p>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-3 w-3 text-gray-400" />
+                            <p className="text-sm text-gray-700">{selectedApp.seeker.location}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Job Info */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <Briefcase className="h-4 w-4" />
+                      Job Information
+                    </h3>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-gray-500">Position</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedApp.job?.title}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Company</p>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-3 w-3 text-gray-400" />
+                          <p className="text-sm text-gray-700">{selectedApp.job?.employer?.company_name}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Location</p>
+                        <p className="text-sm text-gray-700">{selectedApp.job?.location}</p>
+                      </div>
+                      {selectedApp.job?.salary_range && (
+                        <div>
+                          <p className="text-xs text-gray-500">Salary Range</p>
+                          <p className="text-sm text-gray-700">{selectedApp.job.salary_range}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Skills */}
@@ -506,20 +710,37 @@ const AdminApplications: React.FC = () => {
                   </div>
                 )}
 
-                {/* Current Status */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 mb-3">Current Status</h3>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(selectedApp.status?.status_name)}
-                    <span className="text-sm text-gray-500">
-                      Updated: {formatDate(selectedApp.updated_at)}
-                    </span>
+                {/* Resume Link */}
+                {selectedApp.resume_url && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-900 mb-2">Resume</h3>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => window.open(selectedApp.resume_url, '_blank')}
+                      className="w-full"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Resume
+                    </Button>
                   </div>
-                </div>
+                )}
 
-                {/* Update Status */}
-                <div className="border-t pt-4 border-gray-200">
-                  <h3 className="font-semibold text-gray-900 mb-3">Update Status</h3>
+                {/* Admin Note (if exists) */}
+                {selectedApp.employer_notes && (
+                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      Admin Note
+                    </h3>
+                    <p className="text-sm text-gray-700">{selectedApp.employer_notes}</p>
+                  </div>
+                )}
+
+                <Separator />
+
+                {/* Update Status Section */}
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3">Update Application Status</h3>
                   <div className="flex gap-3 flex-wrap">
                     <Select value={newStatus} onValueChange={setNewStatus}>
                       <SelectTrigger className="w-48">
@@ -534,14 +755,23 @@ const AdminApplications: React.FC = () => {
                         <SelectItem value="Rejected">Rejected</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Input
+                      placeholder="Add a note (optional)"
+                      value={moderationNote}
+                      onChange={(e) => setModerationNote(e.target.value)}
+                      className="flex-1"
+                    />
                     <Button 
-                      onClick={() => updateApplicationStatus(selectedApp.id, newStatus)}
+                      onClick={() => updateApplicationStatus(selectedApp.id, newStatus, moderationNote)}
                       disabled={!newStatus || newStatus === selectedApp.status?.status_name}
                       className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       Update Status
                     </Button>
                   </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Note: The applicant will be notified via email when you update the status.
+                  </p>
                 </div>
               </div>
             </>

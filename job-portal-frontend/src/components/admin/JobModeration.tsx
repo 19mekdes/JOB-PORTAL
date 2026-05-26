@@ -10,7 +10,11 @@ import {
   Building2,
   MapPin,
   DollarSign,
-  Briefcase} from 'lucide-react'
+  Briefcase,
+  Clock,
+  TrendingUp,
+  Users
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -62,11 +66,11 @@ import { toast } from '@/hooks/use-toast'
 import api from '../../services/api'
 
 interface Job {
-  requirements: import("react/jsx-runtime").JSX.Element
-  benefits: import("react/jsx-runtime").JSX.Element
   id: string
   title: string
   description: string
+  requirements: string
+  benefits: string
   location: string
   salary_range: string
   created_at: string
@@ -119,6 +123,7 @@ const JobModeration: React.FC = () => {
     limit: 10
   })
   const [totalPages, setTotalPages] = useState(1)
+  const [totalJobs, setTotalJobs] = useState(0)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isModerateDialogOpen, setIsModerateDialogOpen] = useState(false)
@@ -128,7 +133,6 @@ const JobModeration: React.FC = () => {
 
   useEffect(() => {
     fetchJobs()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters])
 
   const fetchJobs = async () => {
@@ -142,14 +146,15 @@ const JobModeration: React.FC = () => {
       params.append('limit', filters.limit.toString())
 
       const response = await api.get(`/admin/jobs?${params.toString()}`)
-      setJobs(response.data.data)
-      setTotalPages(response.data.pagination.pages)
-    } catch (error) {
+      setJobs(response.data.data || [])
+      setTotalPages(response.data.pagination?.pages || 1)
+      setTotalJobs(response.data.pagination?.total || 0)
+    } catch (error: any) {
       console.error('Error fetching jobs:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load jobs. Please try again.",
+        description: error.response?.data?.message || "Failed to load jobs. Please try again.",
       })
     } finally {
       setIsLoading(false)
@@ -160,12 +165,13 @@ const JobModeration: React.FC = () => {
     if (!selectedJob || !selectedStatus) return
 
     try {
-      await api.put(`/admin/jobs/${selectedJob.id}/moderate`, {
+      // ✅ FIXED: Use the correct endpoint
+      await api.put(`/admin/jobs/${selectedJob.id}/status`, {
         status: selectedStatus,
-        moderation_note: moderationNote
+        reason: moderationNote
       })
+      
       toast({
-        variant: "success",
         title: "Success",
         description: `Job ${selectedStatus.toLowerCase()} successfully`,
       })
@@ -174,12 +180,12 @@ const JobModeration: React.FC = () => {
       setSelectedJob(null)
       setModerationNote('')
       setSelectedStatus('')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error moderating job:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to moderate job. Please try again.",
+        description: error.response?.data?.message || "Failed to moderate job. Please try again.",
       })
     }
   }
@@ -190,19 +196,18 @@ const JobModeration: React.FC = () => {
     try {
       await api.delete(`/admin/jobs/${selectedJob.id}`)
       toast({
-        variant: "success",
         title: "Success",
         description: "Job deleted successfully",
       })
       await fetchJobs()
       setIsDeleteDialogOpen(false)
       setSelectedJob(null)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting job:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to delete job. Please try again.",
+        description: error.response?.data?.message || "Failed to delete job. Please try again.",
       })
     }
   }
@@ -210,26 +215,68 @@ const JobModeration: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Open':
-        return <Badge variant="success">Open</Badge>
+        return <Badge className="bg-green-100 text-green-800">Open</Badge>
       case 'Closed':
-        return <Badge variant="secondary">Closed</Badge>
+        return <Badge className="bg-gray-100 text-gray-800">Closed</Badge>
       case 'Draft':
-        return <Badge variant="warning">Draft</Badge>
+        return <Badge className="bg-yellow-100 text-yellow-800">Draft</Badge>
       case 'Archived':
-        return <Badge variant="outline">Archived</Badge>
+        return <Badge className="bg-gray-100 text-gray-800">Archived</Badge>
+      case 'Pending':
+        return <Badge className="bg-orange-100 text-orange-800">Pending</Badge>
+      case 'Rejected':
+        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>
       default:
-        return <Badge>{status}</Badge>
+        return <Badge variant="outline">{status}</Badge>
     }
   }
 
-  const stats = {
+  // Calculate statistics from all jobs (not just current page)
+  const [allJobsStats, setAllJobsStats] = useState({
+    total: 0,
+    open: 0,
+    closed: 0,
+    draft: 0,
+    pending: 0,
+    totalViews: 0,
+    totalApplications: 0
+  })
+
+  // Fetch stats separately or calculate from API response
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/admin/jobs?limit=1')
+        if (response.data.stats) {
+          setAllJobsStats({
+            total: response.data.stats.total || 0,
+            open: response.data.stats.approved || 0,
+            closed: response.data.stats.closed || 0,
+            draft: response.data.stats.draft || 0,
+            pending: response.data.stats.pending || 0,
+            totalViews: 0,
+            totalApplications: 0
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error)
+      }
+    }
+    fetchStats()
+  }, [])
+
+  // Calculate stats from current jobs (fallback)
+  const currentStats = {
     total: jobs.length,
-    open: jobs.filter(j => j.status.status_name === 'Open').length,
-    closed: jobs.filter(j => j.status.status_name === 'Closed').length,
-    draft: jobs.filter(j => j.status.status_name === 'Draft').length,
-    totalViews: jobs.reduce((sum, j) => sum + j.views_count, 0),
-    totalApplications: jobs.reduce((sum, j) => sum + j.applications_count, 0)
+    open: jobs.filter(j => j.status?.status_name === 'Open').length,
+    closed: jobs.filter(j => j.status?.status_name === 'Closed').length,
+    draft: jobs.filter(j => j.status?.status_name === 'Draft').length,
+    pending: jobs.filter(j => j.status?.status_name === 'Pending').length,
+    totalViews: jobs.reduce((sum, j) => sum + (j.views_count || 0), 0),
+    totalApplications: jobs.reduce((sum, j) => sum + (j.applications_count || 0), 0)
   }
+
+  const displayStats = allJobsStats.total > 0 ? allJobsStats : currentStats
 
   if (isLoading) {
     return (
@@ -248,7 +295,7 @@ const JobModeration: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Job Moderation</h1>
-          <p className="text-gray-500 mt-1">Review and manage job postings</p>
+          <p className="text-gray-500 mt-1">Review and manage job postings across all companies</p>
         </div>
         <Button variant="outline" onClick={fetchJobs}>
           <RefreshCw className="h-4 w-4 mr-2" />
@@ -257,11 +304,12 @@ const JobModeration: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-2xl font-bold">{stats.total}</p>
+              <Briefcase className="h-5 w-5 mx-auto text-blue-500 mb-2" />
+              <p className="text-2xl font-bold">{displayStats.total}</p>
               <p className="text-xs text-gray-500">Total Jobs</p>
             </div>
           </CardContent>
@@ -269,15 +317,26 @@ const JobModeration: React.FC = () => {
         <Card className="border-green-200 bg-green-50">
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">{stats.open}</p>
+              <CheckCircle className="h-5 w-5 mx-auto text-green-500 mb-2" />
+              <p className="text-2xl font-bold text-green-600">{displayStats.open}</p>
               <p className="text-xs text-gray-500">Open</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <Clock className="h-5 w-5 mx-auto text-orange-500 mb-2" />
+              <p className="text-2xl font-bold text-orange-600">{displayStats.pending || 0}</p>
+              <p className="text-xs text-gray-500">Pending</p>
             </div>
           </CardContent>
         </Card>
         <Card className="border-gray-200">
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-600">{stats.closed}</p>
+              <XCircle className="h-5 w-5 mx-auto text-gray-500 mb-2" />
+              <p className="text-2xl font-bold text-gray-600">{displayStats.closed}</p>
               <p className="text-xs text-gray-500">Closed</p>
             </div>
           </CardContent>
@@ -285,7 +344,8 @@ const JobModeration: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</p>
+              <Eye className="h-5 w-5 mx-auto text-purple-500 mb-2" />
+              <p className="text-2xl font-bold">{displayStats.totalViews.toLocaleString()}</p>
               <p className="text-xs text-gray-500">Total Views</p>
             </div>
           </CardContent>
@@ -293,8 +353,22 @@ const JobModeration: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-2xl font-bold">{stats.totalApplications.toLocaleString()}</p>
+              <Users className="h-5 w-5 mx-auto text-indigo-500 mb-2" />
+              <p className="text-2xl font-bold">{displayStats.totalApplications.toLocaleString()}</p>
               <p className="text-xs text-gray-500">Applications</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <TrendingUp className="h-5 w-5 mx-auto text-emerald-500 mb-2" />
+              <p className="text-2xl font-bold">
+                {displayStats.totalJobs > 0 
+                  ? Math.round((displayStats.open / displayStats.total) * 100) 
+                  : 0}%
+              </p>
+              <p className="text-xs text-gray-500">Open Rate</p>
             </div>
           </CardContent>
         </Card>
@@ -311,7 +385,7 @@ const JobModeration: React.FC = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search by title or description..."
+                placeholder="Search by title, description, or company..."
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
                 className="pl-10"
@@ -329,7 +403,8 @@ const JobModeration: React.FC = () => {
                 <SelectItem value="Open">Open</SelectItem>
                 <SelectItem value="Closed">Closed</SelectItem>
                 <SelectItem value="Draft">Draft</SelectItem>
-                <SelectItem value="Archived">Archived</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
             <Input
@@ -345,7 +420,7 @@ const JobModeration: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle>Job Postings</CardTitle>
-          <CardDescription>Review and moderate job listings</CardDescription>
+          <CardDescription>Review and moderate job listings from all companies</CardDescription>
         </CardHeader>
         <CardContent>
           {jobs.length === 0 ? (
@@ -372,24 +447,24 @@ const JobModeration: React.FC = () => {
                     <TableRow key={job.id}>
                       <TableCell className="font-medium">
                         <div>
-                          <p>{job.title}</p>
-                          <p className="text-xs text-gray-500">{job.employment_type.type_name}</p>
+                          <p className="font-semibold">{job.title}</p>
+                          <p className="text-xs text-gray-500">{job.employment_type?.type_name || 'N/A'}</p>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
                             <AvatarFallback>
-                              {job.employer.company_name.charAt(0).toUpperCase()}
+                              {job.employer?.company_name?.charAt(0).toUpperCase() || 'C'}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-sm">{job.employer.company_name}</span>
+                          <span className="text-sm">{job.employer?.company_name || 'Unknown'}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
                           <MapPin className="h-3 w-3" />
-                          {job.location}
+                          {job.location || 'Not specified'}
                           {job.is_remote && <Badge variant="outline" className="ml-1">Remote</Badge>}
                         </div>
                       </TableCell>
@@ -398,12 +473,12 @@ const JobModeration: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2 text-sm">
-                          <Eye className="h-3 w-3" /> {job.views_count}
-                          <Briefcase className="h-3 w-3 ml-1" /> {job.applications_count}
+                          <Eye className="h-3 w-3" /> {job.views_count || 0}
+                          <Briefcase className="h-3 w-3 ml-1" /> {job.applications_count || 0}
                         </div>
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(job.status.status_name)}
+                        {getStatusBadge(job.status?.status_name || 'Unknown')}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
@@ -486,21 +561,21 @@ const JobModeration: React.FC = () => {
               <DialogHeader>
                 <DialogTitle className="text-2xl">{selectedJob.title}</DialogTitle>
                 <DialogDescription>
-                  {selectedJob.employer.company_name} • Posted {new Date(selectedJob.created_at).toLocaleDateString()}
+                  {selectedJob.employer?.company_name || 'Unknown Company'} • Posted {new Date(selectedJob.created_at).toLocaleDateString()}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2">
-                  <Badge>{selectedJob.employment_type.type_name}</Badge>
+                  <Badge>{selectedJob.employment_type?.type_name || 'N/A'}</Badge>
                   {selectedJob.is_remote && <Badge variant="secondary">Remote</Badge>}
-                  <Badge variant="outline">{selectedJob.industry.industry_name}</Badge>
-                  {getStatusBadge(selectedJob.status.status_name)}
+                  <Badge variant="outline">{selectedJob.industry?.industry_name || 'N/A'}</Badge>
+                  {getStatusBadge(selectedJob.status?.status_name || 'Unknown')}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-gray-400" />
-                    {selectedJob.location}
+                    {selectedJob.location || 'Not specified'}
                   </div>
                   {selectedJob.salary_range && (
                     <div className="flex items-center gap-2">
@@ -510,18 +585,18 @@ const JobModeration: React.FC = () => {
                   )}
                   <div className="flex items-center gap-2">
                     <Eye className="h-4 w-4 text-gray-400" />
-                    {selectedJob.views_count} views
+                    {selectedJob.views_count || 0} views
                   </div>
                   <div className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-gray-400" />
-                    {selectedJob.applications_count} applications
+                    {selectedJob.applications_count || 0} applications
                   </div>
                 </div>
 
                 <div>
                   <h4 className="font-semibold mb-2">Job Description</h4>
                   <p className="text-sm text-gray-600 whitespace-pre-wrap">
-                    {selectedJob.description}
+                    {selectedJob.description || 'No description provided'}
                   </p>
                 </div>
 
@@ -547,10 +622,10 @@ const JobModeration: React.FC = () => {
                   <h4 className="font-semibold mb-2">About the Employer</h4>
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm">{selectedJob.employer.company_name}</span>
+                    <span className="text-sm">{selectedJob.employer?.company_name || 'Unknown'}</span>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
-                    Contact: {selectedJob.employer.user.email}
+                    Contact: {selectedJob.employer?.user?.email || 'No email available'}
                   </p>
                 </div>
               </div>
@@ -566,7 +641,7 @@ const JobModeration: React.FC = () => {
 
       {/* Moderate Job Dialog */}
       <Dialog open={isModerateDialogOpen} onOpenChange={setIsModerateDialogOpen}>
-        <DialogContent className="sm:max-w-106.25">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Moderate Job Posting</DialogTitle>
             <DialogDescription>
@@ -580,7 +655,7 @@ const JobModeration: React.FC = () => {
             </div>
             <div className="grid gap-2">
               <label className="text-sm font-medium">Current Status</label>
-              <div>{selectedJob && getStatusBadge(selectedJob.status.status_name)}</div>
+              <div>{selectedJob && getStatusBadge(selectedJob.status?.status_name || 'Unknown')}</div>
             </div>
             <div className="grid gap-2">
               <label className="text-sm font-medium">New Status</label>
@@ -589,10 +664,10 @@ const JobModeration: React.FC = () => {
                   <SelectValue placeholder="Select new status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Open">Open</SelectItem>
+                  <SelectItem value="Open">Open (Approve)</SelectItem>
                   <SelectItem value="Closed">Closed</SelectItem>
                   <SelectItem value="Draft">Draft</SelectItem>
-                  <SelectItem value="Archived">Archived</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -604,6 +679,7 @@ const JobModeration: React.FC = () => {
                 onChange={(e) => setModerationNote(e.target.value)}
                 rows={3}
               />
+              <p className="text-xs text-gray-500">This note will be shared with the employer.</p>
             </div>
           </div>
           <DialogFooter>
@@ -621,17 +697,18 @@ const JobModeration: React.FC = () => {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the job posting
-              "{selectedJob?.title}" from {selectedJob?.employer.company_name}.
-              All applications associated with this job will also be deleted.
+              "<strong>{selectedJob?.title}</strong>" from <strong>{selectedJob?.employer?.company_name}</strong>.
+              <br /><br />
+              All applications associated with this job will also be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
-              Delete
+              Yes, Delete Job
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
