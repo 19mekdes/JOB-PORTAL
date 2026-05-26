@@ -17,7 +17,9 @@ import {
   Edit,
   Ban,
   CheckCircle,
-  Crown
+  Crown,
+  Filter,
+  AlertTriangle
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -117,6 +119,14 @@ interface UserFilters {
   limit: number
 }
 
+// Role definitions for better readability
+const ROLES = {
+  JOB_SEEKER: 'Job Seeker',
+  EMPLOYER: 'Employer',
+  ADMIN: 'Admin',
+  SUPER_ADMIN: 'Super Admin'
+} as const
+
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -175,72 +185,115 @@ const UserManagement: React.FC = () => {
   }
 
   // ========== ROLE-BASED PERMISSION CHECKS ==========
-  // According to SRS: Admin can manage users but cannot delete
-  // Super Admin has full system control
+  
+  /**
+   * Check if current user can view a user's details
+   * Both Admin and Super Admin can view all users
+   */
+  const canViewUser = (): boolean => {
+    const currentRole = currentUser?.user_type
+    return currentRole === ROLES.ADMIN || currentRole === ROLES.SUPER_ADMIN
+  }
 
+  /**
+   * Check if current user can edit a target user
+   * - Super Admin: Can edit anyone except themselves
+   * - Admin: Can only edit Job Seekers and Employers
+   */
   const canEditUser = (targetUser: User): boolean => {
     const currentRole = currentUser?.user_type
     const targetRole = targetUser.user_type.type_name
 
     // Super Admin can edit anyone except themselves
-    if (currentRole === 'Super Admin') {
+    if (currentRole === ROLES.SUPER_ADMIN) {
       return targetUser.id !== currentUser?.id
     }
 
-    // Admin can edit Job Seekers and Employers only (cannot edit Admins or Super Admins)
-    if (currentRole === 'Admin') {
-      return targetRole === 'Job Seeker' || targetRole === 'Employer'
+    // Admin can edit Job Seekers and Employers only
+    if (currentRole === ROLES.ADMIN) {
+      return targetRole === ROLES.JOB_SEEKER || targetRole === ROLES.EMPLOYER
     }
 
     return false
   }
 
+  /**
+   * Check if current user can delete a target user
+   * - Super Admin: Can delete anyone except themselves
+   * - Admin: CANNOT delete any user (security restriction)
+   */
   const canDeleteUser = (targetUser: User): boolean => {
     const currentRole = currentUser?.user_type
-    const targetRole = targetUser.user_type.type_name
 
-    // ONLY Super Admin can delete users (per SRS: "Full system control")
-    if (currentRole === 'Super Admin') {
+    // ONLY Super Admin can delete users
+    if (currentRole === ROLES.SUPER_ADMIN) {
       return targetUser.id !== currentUser?.id
     }
 
-    // Admin CANNOT delete any user (per SRS: Admin manages users but deletion requires higher authority)
+    // Admin cannot delete any user
     return false
   }
 
+  /**
+   * Check if current user can suspend a target user
+   * - Super Admin: Can suspend anyone except themselves
+   * - Admin: Can only suspend Job Seekers and Employers
+   */
   const canSuspendUser = (targetUser: User): boolean => {
     const currentRole = currentUser?.user_type
     const targetRole = targetUser.user_type.type_name
 
     // Super Admin can suspend anyone except themselves
-    if (currentRole === 'Super Admin') {
+    if (currentRole === ROLES.SUPER_ADMIN) {
       return targetUser.id !== currentUser?.id
     }
 
     // Admin can suspend Job Seekers and Employers only
-    if (currentRole === 'Admin') {
-      return targetRole === 'Job Seeker' || targetRole === 'Employer'
+    if (currentRole === ROLES.ADMIN) {
+      return targetRole === ROLES.JOB_SEEKER || targetRole === ROLES.EMPLOYER
     }
 
     return false
   }
 
+  /**
+   * Check if current user can change user roles
+   * - Super Admin: Can change roles (except themselves)
+   * - Admin: CANNOT change roles
+   */
   const canChangeRole = (targetUser: User): boolean => {
     const currentRole = currentUser?.user_type
-    const targetRole = targetUser.user_type.type_name
 
     // Only Super Admin can change user roles
-    if (currentRole === 'Super Admin') {
+    if (currentRole === ROLES.SUPER_ADMIN) {
       return targetUser.id !== currentUser?.id
     }
 
     return false
   }
 
-  const canViewUser = (): boolean => {
-    // Both Admin and Super Admin can view users
+  /**
+   * Get role-based action message for tooltips
+   */
+  const getPermissionMessage = (action: string, targetUser: User): string => {
     const currentRole = currentUser?.user_type
-    return currentRole === 'Admin' || currentRole === 'Super Admin'
+    const targetRole = targetUser.user_type.type_name
+
+    if (currentRole === ROLES.ADMIN) {
+      if (targetRole === ROLES.ADMIN || targetRole === ROLES.SUPER_ADMIN) {
+        return `${action} is not allowed. Admin cannot ${action.toLowerCase()} ${targetRole} accounts.`
+      }
+      return `You can ${action.toLowerCase()} Job Seekers and Employers only.`
+    }
+
+    if (currentRole === ROLES.SUPER_ADMIN) {
+      if (targetUser.id === currentUser?.id) {
+        return `You cannot ${action.toLowerCase()} your own account.`
+      }
+      return `You have permission to ${action.toLowerCase()} this user.`
+    }
+
+    return `You don't have permission to ${action.toLowerCase()} users.`
   }
 
   // ========== API CALLS ==========
@@ -251,7 +304,7 @@ const UserManagement: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Permission Denied",
-        description: `You cannot suspend a ${selectedUser.user_type.type_name} user.`,
+        description: getPermissionMessage('Suspend', selectedUser),
       })
       setIsSuspendDialogOpen(false)
       return
@@ -285,7 +338,7 @@ const UserManagement: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Permission Denied",
-        description: `You cannot activate a ${targetUser.user_type.type_name} user.`,
+        description: getPermissionMessage('Activate', targetUser),
       })
       return
     }
@@ -317,7 +370,7 @@ const UserManagement: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Permission Denied",
-        description: `Only Super Admin can delete users.`,
+        description: getPermissionMessage('Delete', selectedUser),
       })
       setIsDeleteDialogOpen(false)
       return
@@ -349,7 +402,7 @@ const UserManagement: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Permission Denied",
-        description: `You cannot edit a ${selectedUser.user_type.type_name} user.`,
+        description: getPermissionMessage('Edit', selectedUser),
       })
       setIsEditDialogOpen(false)
       return
@@ -379,7 +432,7 @@ const UserManagement: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Permission Denied",
-        description: `You cannot edit a ${user.user_type.type_name} user.`,
+        description: getPermissionMessage('Edit', user),
       })
       return
     }
@@ -394,13 +447,13 @@ const UserManagement: React.FC = () => {
 
   const getRoleBadge = (role: string) => {
     switch (role) {
-      case 'Super Admin':
+      case ROLES.SUPER_ADMIN:
         return <Badge variant="default" className="bg-purple-600 flex items-center gap-1"><Crown className="h-3 w-3" /> Super Admin</Badge>
-      case 'Admin':
+      case ROLES.ADMIN:
         return <Badge variant="destructive" className="bg-red-600">Admin</Badge>
-      case 'Employer':
+      case ROLES.EMPLOYER:
         return <Badge variant="default" className="bg-blue-600">Employer</Badge>
-      case 'Job Seeker':
+      case ROLES.JOB_SEEKER:
         return <Badge variant="secondary">Job Seeker</Badge>
       default:
         return <Badge variant="outline">{role}</Badge>
@@ -411,9 +464,9 @@ const UserManagement: React.FC = () => {
     total: totalUsers,
     active: users.filter(u => u.is_active).length,
     suspended: users.filter(u => !u.is_active).length,
-    employers: users.filter(u => u.user_type.type_name === 'Employer').length,
-    jobSeekers: users.filter(u => u.user_type.type_name === 'Job Seeker').length,
-    admins: users.filter(u => ['Admin', 'Super Admin'].includes(u.user_type.type_name)).length
+    employers: users.filter(u => u.user_type.type_name === ROLES.EMPLOYER).length,
+    jobSeekers: users.filter(u => u.user_type.type_name === ROLES.JOB_SEEKER).length,
+    admins: users.filter(u => [ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(u.user_type.type_name)).length
   }
 
   if (isLoading) {
@@ -447,9 +500,9 @@ const UserManagement: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-500 mt-1">
-            {currentUser?.user_type === 'Super Admin' 
-              ? 'Full system control - Manage all users' 
-              : 'Manage and moderate platform users'}
+            {currentUser?.user_type === ROLES.SUPER_ADMIN 
+              ? '👑 Full system control - Manage all users' 
+              : '🛡️ Manage and moderate platform users'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -512,10 +565,23 @@ const UserManagement: React.FC = () => {
             <div className="text-center">
               <Shield className="h-5 w-5 mx-auto text-purple-500 mb-2" />
               <p className="text-2xl font-bold">{stats.admins}</p>
-              <p className="text-xs text-gray-500">Admins</p>
+              <p className="text-xs text-gray-500">Administrators</p>
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Role Description Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <div className="flex items-center gap-2 text-sm text-blue-700">
+          <Shield className="h-4 w-4" />
+          <span className="font-medium">Your Permissions:</span>
+          <span>
+            {currentUser?.user_type === ROLES.SUPER_ADMIN 
+              ? '👑 You have full system control. You can edit, suspend, and delete any user (except yourself).'
+              : '🛡️ You can view all users, edit and suspend Job Seekers and Employers. You cannot modify Admin or Super Admin accounts.'}
+          </span>
+        </div>
       </div>
 
       {/* Filters */}
@@ -544,10 +610,10 @@ const UserManagement: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="Job Seeker">Job Seekers</SelectItem>
-                <SelectItem value="Employer">Employers</SelectItem>
-                <SelectItem value="Admin">Admins</SelectItem>
-                <SelectItem value="Super Admin">Super Admins</SelectItem>
+                <SelectItem value={ROLES.JOB_SEEKER}>Job Seekers</SelectItem>
+                <SelectItem value={ROLES.EMPLOYER}>Employers</SelectItem>
+                <SelectItem value={ROLES.ADMIN}>Admins</SelectItem>
+                <SelectItem value={ROLES.SUPER_ADMIN}>Super Admins</SelectItem>
               </SelectContent>
             </Select>
             <Select
@@ -599,10 +665,7 @@ const UserManagement: React.FC = () => {
                 </TableHeader>
                 <TableBody>
                   {users.map((user) => {
-                    const currentRole = currentUser?.user_type
                     const targetRole = user.user_type.type_name
-                    
-                    // Determine which actions to show based on role
                     const showEdit = canEditUser(user)
                     const showSuspend = canSuspendUser(user) && user.is_active
                     const showActivate = canEditUser(user) && !user.is_active
@@ -890,10 +953,10 @@ const UserManagement: React.FC = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Job Seeker">Job Seeker</SelectItem>
-                    <SelectItem value="Employer">Employer</SelectItem>
-                    <SelectItem value="Admin">Admin</SelectItem>
-                    <SelectItem value="Super Admin">Super Admin</SelectItem>
+                    <SelectItem value={ROLES.JOB_SEEKER}>Job Seeker</SelectItem>
+                    <SelectItem value={ROLES.EMPLOYER}>Employer</SelectItem>
+                    <SelectItem value={ROLES.ADMIN}>Admin</SelectItem>
+                    <SelectItem value={ROLES.SUPER_ADMIN}>Super Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -938,6 +1001,9 @@ const UserManagement: React.FC = () => {
               onChange={(e) => setSuspendReason(e.target.value)}
               rows={3}
             />
+            <p className="text-xs text-gray-500 mt-2">
+              This reason will be sent to the user via email notification.
+            </p>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -952,11 +1018,14 @@ const UserManagement: React.FC = () => {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>⚠️ Permanently Delete User</AlertDialogTitle>
+            <AlertDialogTitle className="text-red-600 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              ⚠️ Permanently Delete User
+            </AlertDialogTitle>
             <AlertDialogDescription>
               <div className="space-y-3">
-                <p>This action <strong>cannot be undone</strong>. This will permanently delete:</p>
-                <ul className="list-disc pl-5 space-y-1">
+                <p>This action <strong className="text-red-600">cannot be undone</strong>. This will permanently delete:</p>
+                <ul className="list-disc pl-5 space-y-1 text-gray-700">
                   <li>The user account completely</li>
                   <li>All profile information</li>
                   <li>All jobs posted (if employer)</li>
@@ -964,14 +1033,17 @@ const UserManagement: React.FC = () => {
                   <li>All saved bookmarks</li>
                   <li>All notifications and logs</li>
                 </ul>
-                <p className="font-bold text-red-600 mt-3">
-                  User: {selectedUser?.email}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Role: {selectedUser?.user_type?.type_name}
-                </p>
-                <p className="text-sm text-red-500 font-medium">
-                  ⚠️ Only Super Admin can perform this action
+                <div className="bg-red-50 p-3 rounded-lg mt-3">
+                  <p className="font-bold text-red-600">
+                    User: {selectedUser?.email}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Role: {selectedUser?.user_type?.type_name}
+                  </p>
+                </div>
+                <p className="text-sm text-red-600 font-medium flex items-center gap-1">
+                  <Shield className="h-4 w-4" />
+                  Only Super Admin can perform this action
                 </p>
               </div>
             </AlertDialogDescription>

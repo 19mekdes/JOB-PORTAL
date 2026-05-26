@@ -74,6 +74,10 @@ const getPublicIdFromUrl = (url: string): string | null => {
   }
 }
 
+
+
+
+
 // ========== MULTER CONFIGURATION ==========
 // 1. Keep Local Engine for Resumes
 const storage = multer.diskStorage({
@@ -1832,22 +1836,28 @@ app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) 
       }
     })
     
-    // Calculate jobs count and applications count for each user
+    // ========== FIXED: Calculate jobs count and applications count correctly ==========
     for (const user of formattedUsers) {
       if (user.employer_profile) {
-        user.employer_profile.jobs_count = await prisma.jobPost.count({ 
-          where: { employer_id: user.id } 
+        // ✅ FIXED: Use employer_profile.id instead of user.id
+        const jobsCount = await prisma.jobPost.count({ 
+          where: { employer_id: user.employer_profile.id } 
         })
-        user.stats.jobs_count = user.employer_profile.jobs_count
+        user.employer_profile.jobs_count = jobsCount
+        user.stats.jobs_count = jobsCount
+        console.log(`📊 ${user.email} (Employer) has ${jobsCount} job(s)`)
       }
       if (user.seeker_profile) {
-        user.stats.applications_count = await prisma.jobApplication.count({ 
-          where: { seeker_id: user.id } 
+        // ✅ FIXED: Use seeker_profile.id instead of user.id
+        const appsCount = await prisma.jobApplication.count({ 
+          where: { seeker_id: user.seeker_profile.id } 
         })
+        user.stats.applications_count = appsCount
+        console.log(`📊 ${user.email} (Job Seeker) has ${appsCount} application(s)`)
       }
     }
     
-    console.log(`Found ${formattedUsers.length} users, Total: ${total}`)
+    console.log(`✅ Found ${formattedUsers.length} users, Total: ${total}`)
     
     res.json({
       success: true,
@@ -2447,31 +2457,93 @@ app.put('/api/admin/users/:userId/status', authMiddleware, async (req: Request, 
     const { userId } = req.params
     const { is_active, reason } = req.body
     
-    // Check admin permission
+    // Get current user with their role
     const currentUser = await prisma.user.findUnique({
       where: { id: req.user!.id },
       include: { user_type: true }
     })
     
-    if (currentUser?.user_type?.type_name !== 'Admin' && currentUser?.user_type?.type_name !== 'Super Admin') {
-      return res.status(403).json({ success: false, message: 'Access denied' })
+    if (!currentUser) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' })
+    }
+    
+    const currentRole = currentUser.user_type?.type_name
+    
+    // Check if user has permission to modify status
+    if (currentRole !== 'Admin' && currentRole !== 'Super Admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied. Only Admin or Super Admin can update user status.' 
+      })
     }
     
     // Don't allow modifying own status
     if (userId === req.user!.id) {
-      return res.status(400).json({ success: false, message: 'Cannot modify your own status' })
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot modify your own account status' 
+      })
     }
     
-    // Check if user exists
+    // Get target user with their role
     const targetUser = await prisma.user.findUnique({
-      where: { id: userId }
+      where: { id: userId },
+      include: { user_type: true, seeker_profile: true, employer_profile: true }
     })
     
     if (!targetUser) {
       return res.status(404).json({ success: false, message: 'User not found' })
     }
     
-    const user = await prisma.user.update({
+    const targetRole = targetUser.user_type?.type_name
+    
+    // ========== ROLE-BASED PERMISSION CHECKS ==========
+    
+    // Super Admin can suspend/activate anyone except themselves (already checked)
+    if (currentRole === 'Super Admin') {
+      // Super Admin can do anything, continue
+    }
+    // Admin can ONLY suspend/activate Job Seekers and Employers
+    else if (currentRole === 'Admin') {
+      if (targetRole !== 'Job Seeker' && targetRole !== 'Employer') {
+        return res.status(403).json({ 
+          success: false, 
+          message: `Admin cannot ${is_active ? 'activate' : 'suspend'} ${targetRole} accounts. Only Job Seekers and Employers can be managed.`,
+          allowed_roles: ['Job Seeker', 'Employer'],
+          your_role: currentRole,
+          target_role: targetRole
+        })
+      }
+    }
+    
+    // Prevent suspending the last Super Admin
+    if (targetRole === 'Super Admin' && !is_active) {
+      const superAdminCount = await prisma.user.count({
+        where: { 
+          user_type: { type_name: 'Super Admin' }, 
+          is_active: true 
+        }
+      })
+      
+      if (superAdminCount <= 1) {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Cannot suspend the last active Super Admin account. This would lock out all administrators.' 
+        })
+      }
+    }
+    
+    // Check if trying to suspend already suspended user or activate already active user
+    if (targetUser.is_active === is_active) {
+      const statusText = is_active ? 'active' : 'suspended'
+      return res.status(400).json({ 
+        success: false, 
+        message: `User is already ${statusText}. No changes made.` 
+      })
+    }
+    
+    // ========== UPDATE USER STATUS ==========
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { 
         is_active: is_active,
@@ -2479,31 +2551,147 @@ app.put('/api/admin/users/:userId/status', authMiddleware, async (req: Request, 
       }
     })
     
-    // Create notification for user
-    if (reason) {
-      await prisma.notification.create({
-        data: {
-          user_id: userId,
-          title: is_active ? 'Account Activated' : 'Account Suspended',
-          message: is_active 
-            ? 'Your account has been reactivated. You can now log in again.'
-            : `Your account has been suspended. Reason: ${reason}`,
-          type: 'account_status',
-          created_at: new Date()
+    // ========== SEND EMAIL NOTIFICATION ==========
+    try {
+      const userName = targetUser.full_name || 
+                      targetUser.seeker_profile?.full_name || 
+                      targetUser.employer_profile?.company_name || 
+                      targetUser.email?.split('@')[0] || 
+                      'User'
+      
+      const statusText = is_active ? 'activated' : 'suspended'
+      const statusColor = is_active ? '#10b981' : '#ef4444'
+      const statusBgColor = is_active ? '#059669' : '#dc2626'
+      
+      const emailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Account ${is_active ? 'Activated' : 'Suspended'}</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, ${statusColor}, ${statusBgColor}); color: white; padding: 40px 30px; text-align: center; border-radius: 16px 16px 0 0; }
+            .content { background: #ffffff; padding: 30px; border-radius: 0 0 16px 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+            .reason-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 8px; }
+            .button { background: ${statusColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 20px 0; }
+            .button:hover { background: ${statusBgColor}; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; margin-top: 20px; }
+            .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: ${statusColor}20; color: ${statusColor}; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="margin: 0; font-size: 28px;">Account ${is_active ? 'Activated' : 'Suspended'}</h1>
+            </div>
+            <div class="content">
+              <div style="text-align: center; margin-bottom: 20px;">
+                <span class="status-badge">${statusText.toUpperCase()}</span>
+              </div>
+              <h3 style="color: #1f2937; margin-top: 0;">Hello ${userName},</h3>
+              <p>Your Job Portal account has been <strong>${statusText}</strong> by an administrator.</p>
+              ${reason ? `
+                <div class="reason-box">
+                  <strong style="color: #92400e;">📝 Reason Provided:</strong>
+                  <p style="margin: 8px 0 0 0; color: #78350f;">${reason}</p>
+                </div>
+              ` : ''}
+              <p>${is_active 
+                ? 'You can now log in and continue using the platform. Click the button below to access your account.' 
+                : 'If you believe this is an error or would like to appeal this decision, please contact our support team.'}
+              </p>
+              ${is_active ? `
+                <div style="text-align: center;">
+                  <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/login" class="button">Login to Your Account</a>
+                </div>
+              ` : `
+                <div style="text-align: center; margin-top: 20px;">
+                  <p style="color: #6b7280; font-size: 14px;">Contact us at: <a href="mailto:${process.env.EMAIL_USER}" style="color: ${statusColor};">${process.env.EMAIL_USER}</a></p>
+                </div>
+              `}
+              <p style="margin-top: 30px;">Best regards,<br><strong>Job Portal Support Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>© ${new Date().getFullYear()} Job Portal. All rights reserved.</p>
+              <p style="margin-top: 10px;">
+                <small>This is an automated message from Job Portal. Please do not reply to this email.</small>
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+      
+      const emailTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
         }
       })
+      
+      await emailTransporter.sendMail({
+        from: `"Job Portal Support" <${process.env.EMAIL_USER}>`,
+        to: targetUser.email,
+        subject: `🔔 Account ${is_active ? 'Activated' : 'Suspended'} - Job Portal`,
+        html: emailHtml
+      })
+      
+      console.log(`✅ ${is_active ? 'Activation' : 'Suspension'} email sent to ${targetUser.email}`)
+    } catch (emailError) {
+      console.error('Failed to send status email:', emailError)
+      // Don't block the status update if email fails
     }
     
-    console.log(`✅ User ${userId} status updated to ${is_active ? 'active' : 'suspended'}`)
+    // ========== CREATE IN-APP NOTIFICATION ==========
+    await prisma.notification.create({
+      data: {
+        user_id: userId,
+        title: is_active ? '✅ Account Activated' : '⚠️ Account Suspended',
+        message: is_active 
+          ? 'Your account has been reactivated. You can now log in and access all features.'
+          : `Your account has been suspended.${reason ? ` Reason: ${reason}` : ''} Please contact support for assistance.`,
+        type: 'account_status',
+        metadata: { 
+          reason, 
+          action_by: currentUser.email,
+          action_by_role: currentRole,
+          action_date: new Date().toISOString()
+        },
+        created_at: new Date()
+      }
+    })
     
-    res.json({ success: true, message: `User ${is_active ? 'activated' : 'suspended'} successfully` })
+    // ========== LOG ACTION FOR AUDIT ==========
+    console.log(`📝 AUDIT: ${currentRole} (${currentUser.email}) ${is_active ? 'activated' : 'suspended'} user ${targetUser.email} (${targetRole})`)
+    if (reason) {
+      console.log(`📝 Reason: ${reason}`)
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `User ${is_active ? 'activated' : 'suspended'} successfully`,
+      data: {
+        user_id: userId,
+        email: targetUser.email,
+        role: targetRole,
+        is_active: updatedUser.is_active,
+        updated_at: updatedUser.updated_at
+      }
+    })
+    
   } catch (error: any) {
     console.error('Error updating user status:', error)
-    res.status(500).json({ success: false, message: error.message })
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'An error occurred while updating user status' 
+    })
   }
 })
-
-// ========== DELETE USER (Soft Delete) ==========
+// ========== DELETE USER (Permanent Hard Delete) ==========
 app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params
@@ -2513,39 +2701,239 @@ app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res:
       include: { user_type: true }
     })
     
-    if (currentUser?.user_type?.type_name !== 'Admin' && currentUser?.user_type?.type_name !== 'Super Admin') {
-      return res.status(403).json({ success: false, message: 'Access denied' })
+    if (!currentUser) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' })
+    }
+    
+    const currentRole = currentUser.user_type?.type_name
+    
+    // Check if user has permission to delete
+    if (currentRole !== 'Admin' && currentRole !== 'Super Admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied. Only Admin or Super Admin can delete users.',
+        your_role: currentRole,
+        required_roles: ['Admin', 'Super Admin']
+      })
     }
     
     // Don't allow deleting own account
     if (userId === req.user!.id) {
-      return res.status(400).json({ success: false, message: 'Cannot delete your own account' })
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot delete your own account' 
+      })
     }
     
-    // Check if user exists
+    // Check if target user exists with full details
     const targetUser = await prisma.user.findUnique({
-      where: { id: userId }
-    })
-    
-    if (!targetUser) {
-      return res.status(404).json({ success: false, message: 'User not found' })
-    }
-    
-    // Soft delete - deactivate instead of hard delete
-    const user = await prisma.user.update({
       where: { id: userId },
-      data: { 
-        is_active: false,
-        updated_at: new Date()
+      include: { 
+        user_type: true,
+        seeker_profile: true,
+        employer_profile: true
       }
     })
     
-    console.log(`✅ User ${userId} deactivated by admin`)
+    if (!targetUser) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      })
+    }
     
-    res.json({ success: true, message: 'User deactivated successfully' })
+    const targetRole = targetUser.user_type?.type_name
+    const targetEmail = targetUser.email
+    
+    // ========== ROLE-BASED PERMISSION CHECKS ==========
+    
+    // Super Admin can delete anyone except themselves
+    if (currentRole === 'Super Admin') {
+      // Allow deletion, continue
+    }
+    // Admin can ONLY delete Job Seekers and Employers
+    else if (currentRole === 'Admin') {
+      if (targetRole !== 'Job Seeker' && targetRole !== 'Employer') {
+        return res.status(403).json({ 
+          success: false, 
+          message: `Admin cannot delete ${targetRole} accounts. Only Job Seekers and Employers can be deleted.`,
+          allowed_roles: ['Job Seeker', 'Employer'],
+          your_role: currentRole,
+          target_role: targetRole
+        })
+      }
+    }
+    
+    // Prevent deleting the last Super Admin
+    if (targetRole === 'Super Admin') {
+      const superAdminCount = await prisma.user.count({
+        where: { user_type: { type_name: 'Super Admin' } }
+      })
+      
+      if (superAdminCount <= 1) {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Cannot delete the last Super Admin account. This would lock out all administrators.' 
+        })
+      }
+    }
+    
+    console.log(`📝 AUDIT: ${currentRole} (${currentUser.email}) initiated deletion of user ${targetEmail} (${targetRole})`)
+    
+    // ========== PERMANENT DELETE - Remove all related data ==========
+    
+    const deletionSummary = {
+      user_email: targetEmail,
+      user_role: targetRole,
+      deleted_at: new Date().toISOString(),
+      deleted_by: currentUser.email,
+      deleted_by_role: currentRole,
+      details: {}
+    }
+    
+    // 1. Delete job application notes (if job seeker)
+    if (targetUser.seeker_profile) {
+      const applications = await prisma.jobApplication.findMany({
+        where: { seeker_id: targetUser.seeker_profile.id }
+      })
+      
+      for (const app of applications) {
+        await prisma.jobApplicationNote.deleteMany({
+          where: { application_id: app.id }
+        })
+      }
+      deletionSummary.details['application_notes_deleted'] = applications.length
+      
+      // 2. Delete job applications
+      const deletedApps = await prisma.jobApplication.deleteMany({
+        where: { seeker_id: targetUser.seeker_profile.id }
+      })
+      deletionSummary.details['applications_deleted'] = deletedApps.count
+      
+      // 3. Delete bookmarks
+      const deletedBookmarks = await prisma.jobBookmark.deleteMany({
+        where: { seeker_id: targetUser.seeker_profile.id }
+      })
+      deletionSummary.details['bookmarks_deleted'] = deletedBookmarks.count
+      
+      // 4. Delete seeker profile
+      await prisma.jobSeekerProfile.delete({
+        where: { id: targetUser.seeker_profile.id }
+      })
+      deletionSummary.details['seeker_profile_deleted'] = true
+    }
+    
+    // 5. Delete employer related data (if employer)
+    if (targetUser.employer_profile) {
+      // Get all jobs by this employer
+      const jobs = await prisma.jobPost.findMany({
+        where: { employer_id: targetUser.employer_profile.id }
+      })
+      deletionSummary.details['total_jobs'] = jobs.length
+      
+      let totalApplicationsDeleted = 0
+      let totalBookmarksDeleted = 0
+      
+      for (const job of jobs) {
+        // Delete applications for each job
+        const deletedJobApps = await prisma.jobApplication.deleteMany({
+          where: { job_id: job.id }
+        })
+        totalApplicationsDeleted += deletedJobApps.count
+        
+        // Delete bookmarks for each job
+        const deletedJobBookmarks = await prisma.jobBookmark.deleteMany({
+          where: { job_id: job.id }
+        })
+        totalBookmarksDeleted += deletedJobBookmarks.count
+      }
+      
+      deletionSummary.details['job_applications_deleted'] = totalApplicationsDeleted
+      deletionSummary.details['job_bookmarks_deleted'] = totalBookmarksDeleted
+      
+      // Delete all jobs
+      const deletedJobs = await prisma.jobPost.deleteMany({
+        where: { employer_id: targetUser.employer_profile.id }
+      })
+      deletionSummary.details['jobs_deleted'] = deletedJobs.count
+      
+      // Delete managed companies
+      const deletedCompanies = await prisma.managedCompany.deleteMany({
+        where: { employer_id: targetUser.employer_profile.id }
+      })
+      deletionSummary.details['managed_companies_deleted'] = deletedCompanies.count
+      
+      // Delete employer profile
+      await prisma.employerProfile.delete({
+        where: { id: targetUser.employer_profile.id }
+      })
+      deletionSummary.details['employer_profile_deleted'] = true
+    }
+    
+    // 6. Delete notifications
+    const deletedNotifications = await prisma.notification.deleteMany({
+      where: { user_id: userId }
+    })
+    deletionSummary.details['notifications_deleted'] = deletedNotifications.count
+    
+    // 7. Delete notification preferences
+    await prisma.notificationPreference.deleteMany({
+      where: { user_id: userId }
+    })
+    deletionSummary.details['notification_preferences_deleted'] = true
+    
+    // 8. Delete search logs
+    const deletedSearchLogs = await prisma.searchLog.deleteMany({
+      where: { user_id: userId }
+    })
+    deletionSummary.details['search_logs_deleted'] = deletedSearchLogs.count
+    
+    // 9. Delete audit logs (if any)
+    const deletedAuditLogs = await prisma.auditLog.deleteMany({
+      where: { admin_id: userId }
+    })
+    if (deletedAuditLogs.count > 0) {
+      deletionSummary.details['audit_logs_deleted'] = deletedAuditLogs.count
+    }
+    
+    // 10. Finally delete the user
+    await prisma.user.delete({
+      where: { id: userId }
+    })
+    
+    console.log(`✅ User ${targetEmail} (${targetRole}) permanently deleted by ${currentRole} (${currentUser.email})`)
+    console.log(`📊 Deletion summary:`, deletionSummary.details)
+    
+    // Create audit log entry
+    try {
+      await prisma.auditLog.create({
+        data: {
+          admin_id: currentUser.id,
+          action: 'PERMANENT_USER_DELETION',
+          target_type: 'USER',
+          target_id: userId,
+          details: deletionSummary,
+          ip_address: req.ip || req.socket.remoteAddress,
+          created_at: new Date()
+        }
+      })
+      console.log(`📝 Audit log created for deletion`)
+    } catch (auditError) {
+      console.error('Failed to create audit log:', auditError)
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `User ${targetEmail} (${targetRole}) has been permanently deleted from the system`,
+      data: deletionSummary
+    })
+    
   } catch (error: any) {
-    console.error('Error deleting user:', error)
-    res.status(500).json({ success: false, message: error.message })
+    console.error('Error permanently deleting user:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'An error occurred while deleting the user' 
+    })
   }
 })
 
@@ -2557,19 +2945,91 @@ app.post('/api/admin/users/:userId/reset-password', authMiddleware, async (req: 
     
     const currentUser = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      include: { user_type: true }
+      include: { user_type: true, seeker_profile: true, employer_profile: true }
     })
     
-    if (currentUser?.user_type?.type_name !== 'Admin' && currentUser?.user_type?.type_name !== 'Super Admin') {
-      return res.status(403).json({ success: false, message: 'Access denied' })
+    if (!currentUser) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' })
     }
     
-    if (newPassword.length < 6) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' })
+    const currentRole = currentUser.user_type?.type_name
+    
+    // Check if user has permission to reset passwords
+    if (currentRole !== 'Admin' && currentRole !== 'Super Admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied. Only Admin or Super Admin can reset passwords.' 
+      })
     }
     
+    // Get target user with full details
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { 
+        user_type: true,
+        seeker_profile: true,
+        employer_profile: true
+      }
+    })
+    
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+    
+    const targetRole = targetUser.user_type?.type_name
+    const targetName = targetUser.full_name || 
+                      targetUser.seeker_profile?.full_name || 
+                      targetUser.employer_profile?.company_name || 
+                      targetUser.email?.split('@')[0] || 
+                      'User'
+    
+    // ========== ROLE-BASED PERMISSION CHECKS ==========
+    
+    // Super Admin can reset anyone's password except themselves
+    if (currentRole === 'Super Admin') {
+      if (userId === req.user!.id) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Use the "Change Password" feature in your profile to update your own password.' 
+        })
+      }
+      // Allow, continue
+    }
+    // Admin can ONLY reset passwords for Job Seekers and Employers
+    else if (currentRole === 'Admin') {
+      if (targetRole !== 'Job Seeker' && targetRole !== 'Employer') {
+        return res.status(403).json({ 
+          success: false, 
+          message: `Admin cannot reset password for ${targetRole} accounts. Only Job Seekers and Employers can be managed.`,
+          allowed_roles: ['Job Seeker', 'Employer'],
+          your_role: currentRole,
+          target_role: targetRole
+        })
+      }
+    }
+    
+    // Validate password strength
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Password must be at least 6 characters long' 
+      })
+    }
+    
+    // Additional password strength checks (optional but recommended)
+    const hasUpperCase = /[A-Z]/.test(newPassword)
+    const hasLowerCase = /[a-z]/.test(newPassword)
+    const hasNumbers = /\d/.test(newPassword)
+    
+    let strengthWarning = ''
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+      strengthWarning = ' For better security, use uppercase, lowercase, and numbers.'
+    }
+    
+    // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10)
     
+    // Update user password
     await prisma.user.update({
       where: { id: userId },
       data: { 
@@ -2578,15 +3038,167 @@ app.post('/api/admin/users/:userId/reset-password', authMiddleware, async (req: 
       }
     })
     
-    console.log(`✅ Password reset for user ${userId}`)
+    // ========== SEND EMAIL NOTIFICATION ==========
+    let emailSent = false
+    let emailError = null
     
-    res.json({ success: true, message: 'Password reset successfully' })
+    try {
+      const emailTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      })
+      
+      const emailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Password Reset - Job Portal</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 30px; text-align: center; border-radius: 16px 16px 0 0; }
+            .content { background: #ffffff; padding: 30px; border-radius: 0 0 16px 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+            .password-box { background: #e0e7ff; padding: 20px; border-radius: 12px; font-family: monospace; font-size: 20px; text-align: center; margin: 20px 0; letter-spacing: 1px; }
+            .button { background: #2563eb; color: white; padding: 12px 28px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 20px 0; font-weight: 600; }
+            .button:hover { background: #1e40af; }
+            .warning-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 8px; }
+            .info-box { background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; margin-top: 20px; }
+            .badge { display: inline-block; padding: 4px 12px; background: #e5e7eb; border-radius: 20px; font-size: 12px; color: #4b5563; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="margin: 0; font-size: 28px;">🔐 Password Reset</h1>
+            </div>
+            <div class="content">
+              <div style="text-align: center; margin-bottom: 20px;">
+                <span class="badge">Security Notification</span>
+              </div>
+              
+              <h3 style="color: #1f2937; margin-top: 0;">Hello ${targetName},</h3>
+              
+              <p>An administrator has reset your Job Portal account password.</p>
+              
+              <div class="password-box">
+                <strong>Your New Password:</strong><br>
+                <span style="font-size: 24px; font-weight: bold;">${newPassword}</span>
+              </div>
+              
+              <div class="warning-box">
+                <strong>⚠️ Important Security Notice:</strong>
+                <p style="margin: 8px 0 0 0;">For your security, please change this password immediately after logging in. Do not share this password with anyone.</p>
+              </div>
+              
+              <div class="info-box">
+                <strong>📋 Password Requirements:</strong>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                  <li>Minimum 6 characters</li>
+                  <li>Use a mix of uppercase and lowercase letters</li>
+                  <li>Include numbers for better security</li>
+                  <li>Avoid using common words or personal information</li>
+                </ul>
+                ${strengthWarning ? `<p style="color: #f59e0b; margin-top: 8px;">⚠️ ${strengthWarning}</p>` : ''}
+              </div>
+              
+              <div style="text-align: center;">
+                <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/login" class="button">🔑 Login to Your Account</a>
+              </div>
+              
+              <p style="margin-top: 20px;">If you did not request this password reset, please contact our support team immediately at <a href="mailto:${process.env.EMAIL_USER}" style="color: #2563eb;">${process.env.EMAIL_USER}</a>.</p>
+              
+              <p>Best regards,<br><strong>Job Portal Security Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>© ${new Date().getFullYear()} Job Portal. All rights reserved.</p>
+              <p style="margin-top: 10px;">
+                <small>This is an automated security notification. Please do not reply to this email.</small>
+              </p>
+              <p style="margin-top: 10px;">
+                <small>This password reset was performed by: ${currentUser.email} (${currentRole})</small>
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+      
+      await emailTransporter.sendMail({
+        from: `"Job Portal Security" <${process.env.EMAIL_USER}>`,
+        to: targetUser.email,
+        subject: '🔐 Your Password Has Been Reset - Job Portal',
+        html: emailHtml
+      })
+      
+      emailSent = true
+      console.log(`✅ Password reset email sent to ${targetUser.email}`)
+      
+    } catch (emailError) {
+      console.error('❌ Failed to send password reset email:', emailError)
+      emailError = emailError.message
+      // Don't block the password reset if email fails
+    }
+    
+    // ========== CREATE IN-APP NOTIFICATION ==========
+    try {
+      await prisma.notification.create({
+        data: {
+          user_id: userId,
+          title: '🔐 Password Reset',
+          message: `Your password has been reset by an administrator (${currentUser.email}). Please log in with your new password and change it immediately for security.`,
+          type: 'security',
+          metadata: { 
+            reset_by: currentUser.email,
+            reset_by_role: currentRole,
+            reset_at: new Date().toISOString(),
+            email_sent: emailSent,
+            password_reset: true
+          },
+          created_at: new Date()
+        }
+      })
+      console.log(`✅ In-app notification created for ${targetUser.email}`)
+    } catch (notifError) {
+      console.error('Failed to create notification:', notifError)
+    }
+    
+    // ========== AUDIT LOG ==========
+    console.log(`📝 AUDIT: Password reset for user ${targetUser.email} (${targetRole})`)
+    console.log(`   Performed by: ${currentRole} (${currentUser.email})`)
+    console.log(`   Time: ${new Date().toISOString()}`)
+    console.log(`   Email notification: ${emailSent ? 'Sent' : 'Failed'}`)
+    
+    res.json({ 
+      success: true, 
+      message: `Password reset successfully for ${targetUser.email}${emailSent ? '. An email notification has been sent to the user.' : '. Email notification could not be sent, but password has been reset.'}`,
+      data: {
+        user_id: userId,
+        user_email: targetUser.email,
+        user_role: targetRole,
+        user_name: targetName,
+        reset_by: currentUser.email,
+        reset_by_role: currentRole,
+        reset_at: new Date().toISOString(),
+        email_sent: emailSent,
+        email_error: emailError || null,
+        password_strength_warning: strengthWarning || null
+      }
+    })
+    
   } catch (error: any) {
     console.error('Error resetting password:', error)
-    res.status(500).json({ success: false, message: error.message })
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'An error occurred while resetting the password' 
+    })
   }
 })
-
 // ========== JOB SEEKER PREFERENCES ==========
 
 // Get job seeker preferences
