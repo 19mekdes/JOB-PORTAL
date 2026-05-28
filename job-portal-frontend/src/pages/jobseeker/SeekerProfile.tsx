@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect } from "react";
 import {
@@ -163,6 +164,7 @@ const SeekerProfile: React.FC = () => {
 
   useEffect(() => {
     fetchProfile();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProfile = async () => {
@@ -474,7 +476,7 @@ const SeekerProfile: React.FC = () => {
       return;
     }
 
-    let updatedExperience = [...(profile?.experience || [])];
+    const updatedExperience = [...(profile?.experience || [])];
     if (editingExp) {
       const index = updatedExperience.findIndex((e) => e.id === editingExp.id);
       if (index !== -1) {
@@ -551,7 +553,7 @@ const SeekerProfile: React.FC = () => {
       return;
     }
 
-    let updatedEducation = [...(profile?.education || [])];
+    const updatedEducation = [...(profile?.education || [])];
     if (editingEdu) {
       const index = updatedEducation.findIndex((e) => e.id === editingEdu.id);
       if (index !== -1) {
@@ -675,7 +677,7 @@ const SeekerProfile: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full flex-col bg-gradient-to-r from-blue-500 to-purple-600">
+            <div className="flex items-center justify-center h-full flex-col bg-linear-to-r from-blue-500 to-purple-600">
               <Upload className="h-10 w-10 text-white/50 mb-2" />
               <p className="text-white/70 text-sm">
                 Click camera icon to upload cover image
@@ -800,7 +802,7 @@ const SeekerProfile: React.FC = () => {
               {/* Phone - Clickable */}
               {formData.phone && (
                 <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  <Phone className="h-4 w-4 text-gray-400 shrink-0" />
                   <a
                     href={`tel:${formData.phone}`}
                     className="text-blue-600 hover:underline"
@@ -813,7 +815,7 @@ const SeekerProfile: React.FC = () => {
               {/* LinkedIn - Clickable */}
               {formData.linkedin_url && (
                 <div className="flex items-center gap-2 text-sm">
-                  <FaLinkedin className="h-4 w-4 text-[#0077b5] flex-shrink-0" />
+                  <FaLinkedin className="h-4 w-4 text-[#0077b5] shrink-0" />
                   <a
                     href={formData.linkedin_url}
                     target="_blank"
@@ -828,7 +830,7 @@ const SeekerProfile: React.FC = () => {
               {/* GitHub - Clickable */}
               {formData.github_url && (
                 <div className="flex items-center gap-2 text-sm">
-                  <FaGithub className="h-4 w-4 text-gray-700 flex-shrink-0" />
+                  <FaGithub className="h-4 w-4 text-gray-700 shrink-0" />
                   <a
                     href={formData.github_url}
                     target="_blank"

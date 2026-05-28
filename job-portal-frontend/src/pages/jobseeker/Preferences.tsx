@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/immutability */
 // src/pages/jobseeker/Preferences.tsx
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -73,6 +76,7 @@ const JobSeekerPreferences: React.FC = () => {
   })
 
   useEffect(() => {
+    
     fetchPreferences()
     fetchIndustries()
     checkNotificationPermission()

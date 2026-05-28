@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/immutability */
 import { useState, useEffect, useRef } from 'react'
 import {
   Bell,
@@ -52,6 +54,7 @@ interface NotificationPreferences {
 
 const Settings = () => {
   const navigate = useNavigate()
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { user } = useSelector((state: RootState) => state.auth)
   const { darkMode, toggleDarkMode } = useTheme() // Use global theme
   
@@ -195,6 +198,7 @@ const Settings = () => {
         return true
       }
       return false
+    
     } catch (error: any) {
       console.error('Error uploading avatar:', error)
       toast({
@@ -220,6 +224,7 @@ const Settings = () => {
           description: "Profile picture removed successfully",
         })
       }
+    
     } catch (error: any) {
       console.error('Error deleting avatar:', error)
       toast({

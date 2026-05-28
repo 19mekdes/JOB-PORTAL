@@ -57,6 +57,7 @@ const AccountSettings: React.FC = () => {
       } else {
         setMessage({ type: 'error', text: data.message || 'Failed to change password' })
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       setMessage({ type: 'error', text: 'Network error. Please try again.' })
     } finally {

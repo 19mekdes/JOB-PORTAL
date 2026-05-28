@@ -73,6 +73,7 @@ const CompanyProfile: React.FC = () => {
   const [profile, setProfile] = useState<CompanyProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [industries, setIndustries] = useState<any[]>([])
 
   // Local File States
@@ -162,6 +163,7 @@ const CompanyProfile: React.FC = () => {
       if (profileData?.logo_url) {
         setLogoPreview(profileData.logo_url)
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Error fetching profile:', error)
       toast({
@@ -262,6 +264,7 @@ const CompanyProfile: React.FC = () => {
         title: "Success",
         description: "Profile updated successfully",
       })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Error saving profile:', error)
       toast({
@@ -352,7 +355,7 @@ const CompanyProfile: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full flex-col bg-gradient-to-r from-blue-600 to-indigo-700">
+            <div className="flex items-center justify-center h-full flex-col bg-linear-to-r from-blue-600 to-indigo-700">
               <Upload className="h-10 w-10 text-white/50 mb-2" />
               <p className="text-white/70 text-sm">Click camera icon to upload company banner</p>
             </div>

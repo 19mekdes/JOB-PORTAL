@@ -42,10 +42,10 @@ import { toast } from '@/hooks/use-toast'
 
 interface Application {
   id: string
-  job_title?: string      // Added backend flat key mapping definitions
-  candidate_name?: string // Added backend flat key mapping definitions
-  candidate_email?: string// Added backend flat key mapping definitions
-  location?: string       // Added backend flat key mapping definitions
+  job_title?: string      
+  candidate_name?: string 
+  candidate_email?: string
+  location?: string       
   job?: {
     title: string
     location: string
@@ -329,7 +329,7 @@ const EmployerApplications: React.FC = () => {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12 ring-2 ring-gray-50">
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-lg">
+                      <AvatarFallback className="bg-linear-to-br from-blue-500 to-indigo-600 text-white font-bold text-lg">
                         {getUserInitial(getSeekerName(application))}
                       </AvatarFallback>
                     </Avatar>
