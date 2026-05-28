@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { 
   Search, Plus, Edit, Trash2, MoreVertical, Shield,
   CheckCircle, XCircle, RefreshCw, AlertCircle,
-  UserPlus, Key, Ban, Eye, Crown, Mail, Phone
+  UserPlus, Key, Ban, Eye, Crown
 } from 'lucide-react'
 import {
   Dialog,
@@ -45,9 +45,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { toast } from '@/hooks/use-toast'
-
-// API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+import api from '@/services/api'
 
 interface Admin {
   id: string
@@ -86,32 +84,7 @@ const AdminsManagement: React.FC = () => {
     role: 'Admin'
   })
 
-  // Helper function to get auth token
-  const getToken = () => localStorage.getItem('token')
-
-  // API helper functions
-  const apiRequest = async (method: string, url: string, data?: any) => {
-    const token = getToken()
-    const options: RequestInit = {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : '',
-      },
-    }
-    if (data && (method === 'POST' || method === 'PUT')) {
-      options.body = JSON.stringify(data)
-    }
-    
-    const response = await fetch(`${API_BASE_URL}${url}`, options)
-    const result = await response.json()
-    if (!response.ok) {
-      throw new Error(result.message || result.error || 'API Error')
-    }
-    return result
-  }
-
-  // Get current user info from token
+  // Get current user role from token
   const getCurrentUserInfo = useCallback(() => {
     try {
       const token = localStorage.getItem('token')
@@ -132,25 +105,51 @@ const AdminsManagement: React.FC = () => {
     }
   }, [])
 
-  // Fetch all admins from backend
+  // Fetch admins from backend - FIXED: Use correct endpoint
   const fetchAdmins = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      console.log('Fetching admins from API...')
-      const response = await apiRequest('GET', '/super-admin/admins')
+      console.log('Fetching admins from /admin/users...')
+      const response = await api.get('/admin/users')
+      console.log('API Response:', response.data)
       
-      let adminsData: Admin[] = []
-      if (response.data && Array.isArray(response.data)) {
-        adminsData = response.data
-      } else if (response.admins && Array.isArray(response.admins)) {
-        adminsData = response.admins
-      } else if (Array.isArray(response)) {
-        adminsData = response
+      // Handle different response structures
+      let allUsers: any[] = []
+      if (response.data?.data && Array.isArray(response.data.data)) {
+        allUsers = response.data.data
+      } else if (response.data && Array.isArray(response.data)) {
+        allUsers = response.data
+      } else if (response.data?.users && Array.isArray(response.data.users)) {
+        allUsers = response.data.users
       }
       
-      console.log(`Found ${adminsData.length} admins`)
-      setAdmins(adminsData)
+      console.log(`Found ${allUsers.length} total users`)
+      
+      // Filter only Admin and Super Admin users
+      const adminUsers = allUsers.filter(
+        (user: any) => {
+          const userType = user.user_type?.type_name || user.role
+          return userType === 'Admin' || userType === 'Super Admin'
+        }
+      )
+      
+      console.log(`Found ${adminUsers.length} admin users`)
+      
+      // Map to Admin interface
+      const mappedAdmins: Admin[] = adminUsers.map((user: any) => ({
+        id: user.id,
+        full_name: user.full_name || user.seeker_profile?.full_name || user.email?.split('@')[0] || 'Admin',
+        email: user.email,
+        phone: user.phone || user.seeker_profile?.phone || null,
+        avatar: user.avatar || null,
+        role: user.user_type?.type_name || user.role || 'Admin',
+        is_active: user.is_active !== undefined ? user.is_active : true,
+        last_login: user.last_login || null,
+        created_at: user.created_at
+      }))
+      
+      setAdmins(mappedAdmins)
     } catch (err: any) {
       console.error('Failed to fetch admins:', err)
       setError(err.message || 'Failed to fetch admins')
@@ -179,21 +178,21 @@ const AdminsManagement: React.FC = () => {
     
     setSubmitting(true)
     try {
-      await apiRequest('POST', '/super-admin/admins', {
-        full_name: formData.full_name,
+      await api.post('/auth/register', {
         email: formData.email,
         password: formData.password,
-        phone: formData.phone || null,
-        role: formData.role
+        full_name: formData.full_name,
+        user_type: formData.role,
+        phone: formData.phone
       })
       
-      toast({ title: "Success", description: `${formData.full_name} has been created successfully!` })
+      toast({ title: "Success", description: "Admin created successfully!" })
       setIsAddDialogOpen(false)
       resetForm()
       fetchAdmins()
     } catch (err: any) {
       console.error('Failed to create admin:', err)
-      toast({ variant: "destructive", title: "Error", description: err.message || "Failed to create admin" })
+      toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to create admin" })
     } finally {
       setSubmitting(false)
     }
@@ -205,20 +204,18 @@ const AdminsManagement: React.FC = () => {
     
     setSubmitting(true)
     try {
-      const updateData: any = {
+      await api.put(`/admin/users/${selectedAdmin.id}`, {
         full_name: formData.full_name,
         phone: formData.phone,
         role: formData.role
-      }
+      })
       
-      await apiRequest('PUT', `/super-admin/admins/${selectedAdmin.id}`, updateData)
-      
-      toast({ title: "Success", description: `${formData.full_name} has been updated successfully!` })
+      toast({ title: "Success", description: "Admin updated successfully!" })
       setIsEditDialogOpen(false)
       fetchAdmins()
     } catch (err: any) {
       console.error('Failed to update admin:', err)
-      toast({ variant: "destructive", title: "Error", description: err.message || "Failed to update admin" })
+      toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to update admin" })
     } finally {
       setSubmitting(false)
     }
@@ -238,16 +235,14 @@ const AdminsManagement: React.FC = () => {
     
     setSubmitting(true)
     try {
-      await apiRequest('POST', `/super-admin/admins/${selectedAdmin.id}/reset-password`, { 
-        newPassword: newPassword 
+      await api.post(`/admin/users/${selectedAdmin.id}/reset-password`, { 
+        password: newPassword 
       })
-      
-      toast({ title: "Success", description: `Password reset for ${selectedAdmin.full_name}` })
+      toast({ title: "Success", description: "Password reset successfully!" })
       setIsResetPasswordOpen(false)
       setNewPassword('')
     } catch (err: any) {
-      console.error('Failed to reset password:', err)
-      toast({ variant: "destructive", title: "Error", description: err.message || "Failed to reset password" })
+      toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to reset password" })
     } finally {
       setSubmitting(false)
     }
@@ -259,14 +254,12 @@ const AdminsManagement: React.FC = () => {
     
     setSubmitting(true)
     try {
-      await apiRequest('PUT', `/super-admin/admins/${selectedAdmin.id}/suspend`, {})
-      
-      toast({ title: "Success", description: `${selectedAdmin.full_name} has been suspended` })
+      await api.put(`/admin/users/${selectedAdmin.id}/status`, { is_active: false })
+      toast({ title: "Success", description: "Admin suspended successfully!" })
       setIsSuspendDialogOpen(false)
       fetchAdmins()
     } catch (err: any) {
-      console.error('Failed to suspend admin:', err)
-      toast({ variant: "destructive", title: "Error", description: err.message || "Failed to suspend admin" })
+      toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to suspend admin" })
     } finally {
       setSubmitting(false)
     }
@@ -274,20 +267,12 @@ const AdminsManagement: React.FC = () => {
 
   // Activate admin
   const handleActivateAdmin = async (adminId: string) => {
-    const admin = admins.find(a => a.id === adminId)
-    if (!admin) return
-    
-    setSubmitting(true)
     try {
-      await apiRequest('PUT', `/super-admin/admins/${adminId}/activate`, {})
-      
-      toast({ title: "Success", description: `${admin.full_name} has been activated` })
+      await api.put(`/admin/users/${adminId}/status`, { is_active: true })
+      toast({ title: "Success", description: "Admin activated successfully!" })
       fetchAdmins()
     } catch (err: any) {
-      console.error('Failed to activate admin:', err)
-      toast({ variant: "destructive", title: "Error", description: err.message || "Failed to activate admin" })
-    } finally {
-      setSubmitting(false)
+      toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to activate admin" })
     }
   }
 
@@ -297,14 +282,13 @@ const AdminsManagement: React.FC = () => {
     
     setSubmitting(true)
     try {
-      await apiRequest('DELETE', `/super-admin/admins/${selectedAdmin.id}`)
-      
-      toast({ title: "Success", description: `${selectedAdmin.full_name} has been deleted permanently` })
+      await api.delete(`/admin/users/${selectedAdmin.id}`)
+      toast({ title: "Success", description: "Admin deleted successfully!" })
       setIsDeleteDialogOpen(false)
       fetchAdmins()
     } catch (err: any) {
       console.error('Failed to delete admin:', err)
-      toast({ variant: "destructive", title: "Error", description: err.message || "Failed to delete admin" })
+      toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to delete admin" })
     } finally {
       setSubmitting(false)
     }
@@ -349,15 +333,13 @@ const AdminsManagement: React.FC = () => {
   }
 
   const getInitials = (name: string) => {
-    if (!name || name === 'N/A') return 'AD'
-    const parts = name.trim().split(' ')
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase()
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    if (!name) return 'AD'
+    return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2)
   }
 
   const getRoleBadge = (role: string) => {
     if (role === 'Super Admin') {
-      return <Badge className="bg-purple-100 text-purple-700"><Crown className="h-3 w-3 mr-1" /> Super Admin</Badge>
+      return <Badge className="bg-purple-100 text-purple-700 flex items-center gap-1"><Crown className="h-3 w-3" /> Super Admin</Badge>
     }
     return <Badge className="bg-blue-100 text-blue-700">Admin</Badge>
   }
@@ -420,7 +402,7 @@ const AdminsManagement: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Total Admins</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
               </div>
               <Shield className="h-8 w-8 text-blue-500 opacity-50" />
             </div>
@@ -461,7 +443,7 @@ const AdminsManagement: React.FC = () => {
         </Card>
       </div>
 
-      {/* Filters and Table */}
+      {/* Filters */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center flex-wrap gap-4">
@@ -528,7 +510,7 @@ const AdminsManagement: React.FC = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead>
+                <thead className="bg-gray-50">
                   <tr className="border-b">
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Admin</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Role</th>
@@ -595,7 +577,7 @@ const AdminsManagement: React.FC = () => {
                             
                             <DropdownMenuSeparator />
                             
-                            {/* Suspend/Activate - Super Admin only (from backend) */}
+                            {/* Suspend/Activate - Super Admin only */}
                             {isSuperAdmin && (
                               admin.is_active ? (
                                 <DropdownMenuItem onClick={() => openSuspendDialog(admin)} className="text-yellow-600">
@@ -608,8 +590,8 @@ const AdminsManagement: React.FC = () => {
                               )
                             )}
                             
-                            {/* Delete - Super Admin only, and cannot delete self */}
-                            {isSuperAdmin && admin.id !== currentUserId && admin.role !== 'Super Admin' && (
+                            {/* Delete - Super Admin only, cannot delete self */}
+                            {isSuperAdmin && admin.id !== currentUserId && (
                               <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => openDeleteDialog(admin)} className="text-red-600">
@@ -638,36 +620,36 @@ const AdminsManagement: React.FC = () => {
           <div className="space-y-4">
             <div>
               <Label>Full Name *</Label>
-              <Input 
-                value={formData.full_name} 
+              <Input
+                value={formData.full_name}
                 onChange={(e) => setFormData({...formData, full_name: e.target.value})}
                 placeholder="John Doe"
               />
             </div>
             <div>
               <Label>Email *</Label>
-              <Input 
-                type="email" 
-                value={formData.email} 
+              <Input
+                type="email"
+                value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 placeholder="admin@example.com"
               />
             </div>
             <div>
               <Label>Password *</Label>
-              <Input 
-                type="password" 
-                value={formData.password} 
+              <Input
+                type="password"
+                value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
-                placeholder="Min 6 characters"
+                placeholder="Secure password (min 6 characters)"
               />
             </div>
             <div>
               <Label>Phone</Label>
-              <Input 
-                value={formData.phone} 
+              <Input
+                value={formData.phone}
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                placeholder="+1234567890"
+                placeholder="+251 912 345 678"
               />
             </div>
             <div>
@@ -692,7 +674,7 @@ const AdminsManagement: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
+      {/* Edit Admin Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -701,8 +683,8 @@ const AdminsManagement: React.FC = () => {
           <div className="space-y-4">
             <div>
               <Label>Full Name</Label>
-              <Input 
-                value={formData.full_name} 
+              <Input
+                value={formData.full_name}
                 onChange={(e) => setFormData({...formData, full_name: e.target.value})}
               />
             </div>
@@ -713,8 +695,8 @@ const AdminsManagement: React.FC = () => {
             </div>
             <div>
               <Label>Phone</Label>
-              <Input 
-                value={formData.phone} 
+              <Input
+                value={formData.phone}
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
               />
             </div>
@@ -745,15 +727,15 @@ const AdminsManagement: React.FC = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reset Password</DialogTitle>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 mt-2">
               Reset password for <span className="font-semibold">{selectedAdmin?.full_name}</span>
             </p>
           </DialogHeader>
           <div>
             <Label>New Password *</Label>
-            <Input 
-              type="password" 
-              value={newPassword} 
+            <Input
+              type="password"
+              value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Enter new password (min 6 characters)"
             />
@@ -767,27 +749,26 @@ const AdminsManagement: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Suspend Dialog */}
+      {/* Suspend Confirmation Dialog */}
       <AlertDialog open={isSuspendDialogOpen} onOpenChange={setIsSuspendDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Suspend Administrator</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to suspend <span className="font-semibold">{selectedAdmin?.full_name}</span>?
-              <br />
               The admin will not be able to access the dashboard until reactivated.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleSuspendAdmin} className="bg-yellow-600">
-              {submitting ? 'Suspending...' : 'Suspend'}
+              Suspend
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Delete Dialog */}
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -800,7 +781,7 @@ const AdminsManagement: React.FC = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteAdmin} className="bg-red-600">
-              {submitting ? 'Deleting...' : 'Delete'}
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

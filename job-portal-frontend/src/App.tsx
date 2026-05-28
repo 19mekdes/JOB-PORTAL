@@ -1,4 +1,3 @@
-// App.tsx - Full Corrected Code
 import React from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Provider } from 'react-redux'
@@ -63,7 +62,7 @@ import AdminProfile from '@/pages/admin/AdminProfile'
 // Super Admin
 import SuperAdminLayout from '@/pages/superadmin/SuperAdminLayout'
 import SuperAdminProfile from '@/pages/superadmin/Profile'
-
+import CompanyManagement from '@/pages/superadmin/CompanyManagement'
 // Route Guards
 import PrivateRoute, {
   JobSeekerRoute,
@@ -173,6 +172,8 @@ function App() {
           <Route element={<SuperAdminRoute />}>
             <Route path="/super-admin/*" element={<SuperAdminLayout />} />
             <Route path="/super-admin/profile" element={<SuperAdminProfile />} />
+            <Route path="/super-admin/companies" element={<CompanyManagement />} />
+            
           </Route>
 
           {/* ========== 404 NOT FOUND ========== */}
