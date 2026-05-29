@@ -67,6 +67,7 @@ import SuperAdminDashboard from '@/pages/superadmin/Dashboard'
 import AdminsManagement from '@/pages/superadmin/AdminsManagement'
 import AuditLogs from '@/pages/superadmin/AuditLogs'
 import Applications from '@/pages/superadmin/Applications'
+
 import JobModeration from '@/pages/superadmin/JobModeration'
 import BackupRestore from '@/pages/superadmin/BackupRestore'
 import SystemHealth from '@/pages/superadmin/SystemHealth'
@@ -192,6 +193,7 @@ function App() {
               <Route path="/super-admin/audit" element={<AuditLogs />} />
               <Route path="/super-admin/backup" element={<BackupRestore />} />
               <Route path="/super-admin/health" element={<SystemHealth />} />
+              <Route path="/super-admin/analytics" element={<Analytics />} />
               <Route path="/super-admin/jobs" element={<JobModeration />} />
               <Route path="/super-admin/applications" element={<Applications />} />
               <Route path="/super-admin/settings" element={<SettingsPage />} />

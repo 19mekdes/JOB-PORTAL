@@ -40,6 +40,7 @@ import AuditLogs from './AuditLogs'
 import JobModeration from './JobModeration'
 import BackupRestore from './BackupRestore'
 import Applications from './Applications'
+import Analytics from './Analytics'
 import SystemHealth from './SystemHealth'
 import SettingsPage from './Settings'
 import SuperAdminProfile from './Profile'
@@ -83,7 +84,7 @@ const SuperAdminLayout: React.FC = () => {
     { id: 'companies', title: 'Companies', icon: Building2, path: '/super-admin/companies', component: <CompanyManagement /> }, // ← UPDATED
     { id: 'jobs', title: 'Job Moderation', icon: Briefcase, path: '/super-admin/jobs', component: <JobModeration /> },
     { id: 'applications', title: 'Applications', icon: FileText, path: '/super-admin/applications', component: <Applications /> },
-    { id: 'analytics', title: 'Analytics', icon: BarChart3, path: '/super-admin/analytics', component: <div>Advanced Analytics</div> },
+    { id: 'analytics', title: 'Analytics', icon: BarChart3, path: '/super-admin/analytics', component: <Analytics /> },
     { id: 'audit', title: 'Audit Logs', icon: FileText, path: '/super-admin/audit', component: <AuditLogs /> },
     { id: 'backup', title: 'Backup & Restore', icon: Database, path: '/super-admin/backup', component: <BackupRestore /> },
     { id: 'health', title: 'System Health', icon: Activity, path: '/super-admin/health', component: <SystemHealth /> },

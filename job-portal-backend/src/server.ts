@@ -942,6 +942,127 @@ app.delete('/api/admin/jobs/:jobId', authMiddleware, isAdmin, async (req: Reques
 })
 
 
+
+
+// ========== AUDIT LOGS ENDPOINT ==========
+app.get('/api/admin/audit-logs', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    console.log('📊 Fetching audit logs...');
+    
+    // First, check if user is Super Admin
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    });
+    
+    const isSuperAdmin = currentUser?.user_type?.type_name === 'Super Admin';
+    
+    if (!isSuperAdmin) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied. Super Admin only.' 
+      });
+    }
+    
+    // Fetch all audit logs
+    const logs = await prisma.auditLog.findMany({
+      include: {
+        admin: {
+          select: {
+            email: true,
+            full_name: true,
+            user_type: true
+          }
+        }
+      },
+      orderBy: { created_at: 'desc' },
+      take: 200
+    });
+    
+    console.log(`✅ Found ${logs.length} audit logs`);
+    
+    // Format the response
+    const formattedLogs = logs.map(log => ({
+      id: log.id.toString(),
+      action: log.action,
+      performed_by: log.admin?.full_name || log.admin?.email || 'Unknown',
+      performed_by_email: log.admin?.email || 'Unknown',
+      performed_by_role: log.admin?.user_type?.type_name || 'Admin',
+      target_type: log.target_type,
+      target_id: log.target_id,
+      details: log.details,
+      ip_address: log.ip_address || 'Unknown',
+      created_at: log.created_at
+    }));
+    
+    res.json({ 
+      success: true, 
+      data: formattedLogs,
+      count: formattedLogs.length
+    });
+    
+  } catch (error: any) {
+    console.error('❌ Error fetching audit logs:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message,
+      data: []
+    });
+  }
+});
+
+// Export audit logs as CSV
+app.get('/api/admin/audit-logs/export', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    });
+    
+    const isSuperAdmin = currentUser?.user_type?.type_name === 'Super Admin';
+    
+    if (!isSuperAdmin) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+    
+    const logs = await prisma.auditLog.findMany({
+      include: {
+        admin: {
+          select: {
+            email: true,
+            full_name: true
+          }
+        }
+      },
+      orderBy: { created_at: 'desc' }
+    });
+    
+    // Create CSV
+    const headers = ['ID', 'Action', 'Performed By', 'Email', 'Target Type', 'Target ID', 'IP Address', 'Timestamp'];
+    const rows = logs.map(log => [
+      log.id,
+      log.action,
+      log.admin?.full_name || 'Unknown',
+      log.admin?.email || 'Unknown',
+      log.target_type,
+      log.target_id,
+      log.ip_address || 'Unknown',
+      log.created_at.toISOString()
+    ]);
+    
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=audit_logs_${new Date().toISOString().split('T')[0]}.csv`);
+    res.send(csvContent);
+    
+  } catch (error: any) {
+    console.error('Error exporting audit logs:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
 // ========== SUPER ADMIN - FULL ADMIN MANAGEMENT ENDPOINTS ==========
 // Add these after your existing routes but BEFORE app.listen()
 
