@@ -772,61 +772,7 @@ app.delete('/api/employer/cover', authMiddleware, async (req: Request, res: Resp
 
 
 
-// ========== COMPANY VERIFICATION ENDPOINT ==========
-// Verify company (Super Admin only)
-app.put('/api/admin/verify-company/:userId', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    const { is_verified } = req.body;
-    
-    console.log(`🔍 Verifying company for user: ${userId}`);
-    
-    // Find the user's employer profile
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { employer_profile: true }
-    });
-    
-    if (!user || !user.employer_profile) {
-      return res.status(404).json({ success: false, message: 'Company not found' });
-    }
-    
-    // Update verification status
-    const updatedEmployer = await prisma.employerProfile.update({
-      where: { id: user.employer_profile.id },
-      data: { 
-        is_verified: is_verified,
-        updated_at: new Date()
-      }
-    });
-    
-    // Send notification to company
-    await prisma.notification.create({
-      data: {
-        user_id: userId,
-        title: is_verified ? '✅ Company Verified!' : 'Company Verification Removed',
-        message: is_verified 
-          ? 'Your company has been verified. You now have a trust badge on your profile!'
-          : 'Your company verification has been removed. Please contact support for more information.',
-        type: 'company_update',
-        created_at: new Date()
-      }
-    });
-    
-    console.log(`✅ Company ${user.employer_profile.company_name} verification set to: ${is_verified}`);
-    
-    res.json({ 
-      success: true, 
-      message: is_verified ? 'Company verified successfully' : 'Company verification removed',
-      data: updatedEmployer
-    });
-  } catch (error: any) {
-    console.error('Error verifying company:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// ========== GET COMPANY JOBS COUNT ==========
+// ========== COMPANY JOBS COUNT ENDPOINT ==========
 // Get jobs count for all companies
 app.get('/api/admin/company-jobs-count', authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -851,6 +797,149 @@ app.get('/api/admin/company-jobs-count', authMiddleware, async (req: Request, re
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
+// ========== VERIFY COMPANY ENDPOINT ==========
+// Verify company (Super Admin only)
+app.put('/api/admin/verify-company/:userId', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { is_verified } = req.body;
+    
+    console.log(`🔍 Verifying company for user: ${userId}`);
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { employer_profile: true }
+    });
+    
+    if (!user || !user.employer_profile) {
+      return res.status(404).json({ success: false, message: 'Company not found' });
+    }
+    
+    const updatedEmployer = await prisma.employerProfile.update({
+      where: { id: user.employer_profile.id },
+      data: { 
+        is_verified: is_verified,
+        updated_at: new Date()
+      }
+    });
+    
+    console.log(`✅ Company ${user.employer_profile.company_name} verification set to: ${is_verified}`);
+    
+    res.json({ 
+      success: true, 
+      message: is_verified ? 'Company verified successfully' : 'Company verification removed',
+      data: updatedEmployer
+    });
+  } catch (error: any) {
+    console.error('Error verifying company:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ========== UPDATE JOBS COUNT ==========
+// Update all companies' job counts
+app.post('/api/admin/update-jobs-count', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
+  try {
+    const employers = await prisma.employerProfile.findMany({
+      include: {
+        jobs: true
+      }
+    });
+    
+    let updated = 0;
+    for (const employer of employers) {
+      const jobsCount = employer.jobs.length;
+      await prisma.employerProfile.update({
+        where: { id: employer.id },
+        data: { jobs_count: jobsCount }
+      });
+      updated++;
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `Updated ${updated} employers with job counts`,
+      data: employers.map(e => ({ company_name: e.company_name, jobs_count: e.jobs.length }))
+    });
+  } catch (error: any) {
+    console.error('Error updating jobs count:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
+
+// Get all jobs for admin
+app.get('/api/admin/jobs', authMiddleware, isAdmin, async (req: Request, res: Response) => {
+  try {
+    const jobs = await prisma.jobPost.findMany({
+      include: {
+        employer: {
+          include: {
+            user: true
+          }
+        },
+        industry: true,
+        employment_type: true,
+        status: true
+      },
+      orderBy: { created_at: 'desc' }
+    })
+    res.json({ success: true, data: jobs })
+  } catch (error: any) {
+    console.error('Error fetching jobs:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Update job status (approve/reject)
+app.put('/api/admin/jobs/:jobId/status', authMiddleware, isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { jobId } = req.params
+    const { status, reason } = req.body
+    
+    const statusRecord = await prisma.jobPostStatus.findFirst({
+      where: { status_name: status }
+    })
+    
+    if (!statusRecord) {
+      return res.status(404).json({ success: false, message: 'Status not found' })
+    }
+    
+    const job = await prisma.jobPost.update({
+      where: { id: jobId },
+      data: { status_id: statusRecord.id, updated_at: new Date() },
+      include: { employer: { include: { user: true } } }
+    })
+    
+    // Send notification to employer
+    await prisma.notification.create({
+      data: {
+        user_id: job.employer.user_id,
+        title: `Job ${status}`,
+        message: `Your job "${job.title}" has been ${status.toLowerCase()}.${reason ? ` Reason: ${reason}` : ''}`,
+        type: 'job_update',
+        created_at: new Date()
+      }
+    })
+    
+    res.json({ success: true, message: `Job ${status.toLowerCase()} successfully` })
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Delete job
+app.delete('/api/admin/jobs/:jobId', authMiddleware, isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { jobId } = req.params
+    await prisma.jobPost.delete({ where: { id: jobId } })
+    res.json({ success: true, message: 'Job deleted successfully' })
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
 
 
 // ========== SUPER ADMIN - FULL ADMIN MANAGEMENT ENDPOINTS ==========

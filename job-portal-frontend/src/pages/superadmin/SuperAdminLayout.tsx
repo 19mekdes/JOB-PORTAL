@@ -35,8 +35,11 @@ import api from '@/services/api'
 // Import all super admin components
 import SuperAdminDashboard from './Dashboard'
 import AdminsManagement from './AdminsManagement'
+import CompanyManagement from './CompanyManagement'  // ← ADD THIS IMPORT
 import AuditLogs from './AuditLogs'
+import JobModeration from './JobModeration'
 import BackupRestore from './BackupRestore'
+import Applications from './Applications'
 import SystemHealth from './SystemHealth'
 import SettingsPage from './Settings'
 import SuperAdminProfile from './Profile'
@@ -77,9 +80,9 @@ const SuperAdminLayout: React.FC = () => {
   const navItems: NavItem[] = [
     { id: 'dashboard', title: 'Dashboard', icon: LayoutDashboard, path: '/super-admin/dashboard', component: <SuperAdminDashboard /> },
     { id: 'admins', title: 'Admin Management', icon: Users, path: '/super-admin/admins', component: <AdminsManagement /> },
-    { id: 'companies', title: 'Companies', icon: Building2, path: '/super-admin/companies', component: <div>Companies Management</div> },
-    { id: 'jobs', title: 'Job Moderation', icon: Briefcase, path: '/super-admin/jobs', component: <div>Job Moderation</div> },
-    { id: 'applications', title: 'Applications', icon: FileText, path: '/super-admin/applications', component: <div>Applications Overview</div> },
+    { id: 'companies', title: 'Companies', icon: Building2, path: '/super-admin/companies', component: <CompanyManagement /> }, // ← UPDATED
+    { id: 'jobs', title: 'Job Moderation', icon: Briefcase, path: '/super-admin/jobs', component: <JobModeration /> },
+    { id: 'applications', title: 'Applications', icon: FileText, path: '/super-admin/applications', component: <Applications /> },
     { id: 'analytics', title: 'Analytics', icon: BarChart3, path: '/super-admin/analytics', component: <div>Advanced Analytics</div> },
     { id: 'audit', title: 'Audit Logs', icon: FileText, path: '/super-admin/audit', component: <AuditLogs /> },
     { id: 'backup', title: 'Backup & Restore', icon: Database, path: '/super-admin/backup', component: <BackupRestore /> },
@@ -251,8 +254,6 @@ const SuperAdminLayout: React.FC = () => {
             </div>
           </div>
         )}
-
-        
 
         {/* Navigation Menu */}
         <nav className="flex-1 py-4 overflow-y-auto">

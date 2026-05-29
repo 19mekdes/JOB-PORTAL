@@ -25,14 +25,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -71,6 +63,7 @@ const AdminsManagement: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isSuspendDialogOpen, setIsSuspendDialogOpen] = useState(false)
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [newPassword, setNewPassword] = useState('')
@@ -84,9 +77,17 @@ const AdminsManagement: React.FC = () => {
     role: 'Admin'
   })
 
-  // Get current user role from token
-  const getCurrentUserInfo = useCallback(() => {
+  // Get current user info
+  const getCurrentUserInfo = useCallback(async () => {
     try {
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        const user = JSON.parse(userStr)
+        setCurrentUserRole(user.user_type === 'Super Admin' ? 'Super Admin' : 'Admin')
+        setCurrentUserId(user.id)
+        return
+      }
+      
       const token = localStorage.getItem('token')
       if (token) {
         const base64Url = token.split('.')[1]
@@ -95,9 +96,8 @@ const AdminsManagement: React.FC = () => {
           return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
         }).join(''))
         const decoded = JSON.parse(jsonPayload)
-        const role = decoded.role || decoded.user_type
-        setCurrentUserRole(role === 'Super Admin' || role === 'super_admin' ? 'Super Admin' : 'Admin')
-        setCurrentUserId(decoded.id || decoded.userId)
+        setCurrentUserRole(decoded.role === 'Super Admin' ? 'Super Admin' : 'Admin')
+        setCurrentUserId(decoded.id)
       }
     } catch (error) {
       console.error('Failed to get user info:', error)
@@ -105,43 +105,30 @@ const AdminsManagement: React.FC = () => {
     }
   }, [])
 
-  // Fetch admins from backend - FIXED: Use correct endpoint
+  // Fetch admins
   const fetchAdmins = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      console.log('Fetching admins from /admin/users...')
       const response = await api.get('/admin/users')
-      console.log('API Response:', response.data)
       
-      // Handle different response structures
       let allUsers: any[] = []
       if (response.data?.data && Array.isArray(response.data.data)) {
         allUsers = response.data.data
       } else if (response.data && Array.isArray(response.data)) {
         allUsers = response.data
-      } else if (response.data?.users && Array.isArray(response.data.users)) {
-        allUsers = response.data.users
       }
       
-      console.log(`Found ${allUsers.length} total users`)
+      const adminUsers = allUsers.filter((user: any) => {
+        const userType = user.user_type?.type_name || user.role
+        return userType === 'Admin' || userType === 'Super Admin'
+      })
       
-      // Filter only Admin and Super Admin users
-      const adminUsers = allUsers.filter(
-        (user: any) => {
-          const userType = user.user_type?.type_name || user.role
-          return userType === 'Admin' || userType === 'Super Admin'
-        }
-      )
-      
-      console.log(`Found ${adminUsers.length} admin users`)
-      
-      // Map to Admin interface
       const mappedAdmins: Admin[] = adminUsers.map((user: any) => ({
         id: user.id,
-        full_name: user.full_name || user.seeker_profile?.full_name || user.email?.split('@')[0] || 'Admin',
+        full_name: user.full_name || 'Admin',
         email: user.email,
-        phone: user.phone || user.seeker_profile?.phone || null,
+        phone: user.phone || null,
         avatar: user.avatar || null,
         role: user.user_type?.type_name || user.role || 'Admin',
         is_active: user.is_active !== undefined ? user.is_active : true,
@@ -153,7 +140,6 @@ const AdminsManagement: React.FC = () => {
     } catch (err: any) {
       console.error('Failed to fetch admins:', err)
       setError(err.message || 'Failed to fetch admins')
-      setAdmins([])
     } finally {
       setLoading(false)
     }
@@ -191,7 +177,6 @@ const AdminsManagement: React.FC = () => {
       resetForm()
       fetchAdmins()
     } catch (err: any) {
-      console.error('Failed to create admin:', err)
       toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to create admin" })
     } finally {
       setSubmitting(false)
@@ -214,7 +199,6 @@ const AdminsManagement: React.FC = () => {
       setIsEditDialogOpen(false)
       fetchAdmins()
     } catch (err: any) {
-      console.error('Failed to update admin:', err)
       toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to update admin" })
     } finally {
       setSubmitting(false)
@@ -235,9 +219,7 @@ const AdminsManagement: React.FC = () => {
     
     setSubmitting(true)
     try {
-      await api.post(`/admin/users/${selectedAdmin.id}/reset-password`, { 
-        password: newPassword 
-      })
+      await api.post(`/admin/users/${selectedAdmin.id}/reset-password`, { password: newPassword })
       toast({ title: "Success", description: "Password reset successfully!" })
       setIsResetPasswordOpen(false)
       setNewPassword('')
@@ -287,7 +269,6 @@ const AdminsManagement: React.FC = () => {
       setIsDeleteDialogOpen(false)
       fetchAdmins()
     } catch (err: any) {
-      console.error('Failed to delete admin:', err)
       toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to delete admin" })
     } finally {
       setSubmitting(false)
@@ -302,6 +283,11 @@ const AdminsManagement: React.FC = () => {
       phone: '',
       role: 'Admin'
     })
+  }
+
+  const openViewDialog = (admin: Admin) => {
+    setSelectedAdmin(admin)
+    setIsViewDialogOpen(true)
   }
 
   const openEditDialog = (admin: Admin) => {
@@ -339,20 +325,14 @@ const AdminsManagement: React.FC = () => {
 
   const getRoleBadge = (role: string) => {
     if (role === 'Super Admin') {
-      return <Badge className="bg-purple-100 text-purple-700 flex items-center gap-1"><Crown className="h-3 w-3" /> Super Admin</Badge>
+      return <Badge className="bg-purple-100 text-purple-700"><Crown className="h-3 w-3 mr-1" /> Super Admin</Badge>
     }
     return <Badge className="bg-blue-100 text-blue-700">Admin</Badge>
   }
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Never'
-    try {
-      const date = new Date(dateString)
-      if (isNaN(date.getTime())) return 'Invalid'
-      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString()
-    } catch {
-      return dateString
-    }
+    return new Date(dateString).toLocaleDateString()
   }
 
   const filteredAdmins = admins.filter(admin => {
@@ -376,6 +356,21 @@ const AdminsManagement: React.FC = () => {
 
   const isSuperAdmin = currentUserRole === 'Super Admin'
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.dropdown-container')) {
+        document.querySelectorAll('[id^="dropdown-"]').forEach(el => {
+          el.classList.add('hidden');
+        });
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -384,7 +379,7 @@ const AdminsManagement: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Admin Management</h1>
           <p className="text-gray-500 mt-1">Manage system administrators and their permissions</p>
           <p className="text-sm text-gray-400 mt-1">
-            Logged in as: <span className="font-semibold">{currentUserRole || 'Loading...'}</span>
+            Logged in as: <span className="font-semibold">{currentUserRole || 'Admin'}</span>
           </p>
         </div>
         {isSuperAdmin && (
@@ -397,116 +392,38 @@ const AdminsManagement: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total Admins</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-              </div>
-              <Shield className="h-8 w-8 text-blue-500 opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Active</p>
-                <p className="text-2xl font-bold text-green-600">{stats.active}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-500 opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Inactive</p>
-                <p className="text-2xl font-bold text-red-600">{stats.inactive}</p>
-              </div>
-              <XCircle className="h-8 w-8 text-red-500 opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Super Admins</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.superAdmins}</p>
-              </div>
-              <Crown className="h-8 w-8 text-purple-500 opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
+        <Card><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-500">Total Admins</p><p className="text-2xl font-bold">{stats.total}</p></div><Shield className="h-8 w-8 text-blue-500 opacity-50" /></div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-500">Active</p><p className="text-2xl font-bold text-green-600">{stats.active}</p></div><CheckCircle className="h-8 w-8 text-green-500 opacity-50" /></div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-500">Inactive</p><p className="text-2xl font-bold text-red-600">{stats.inactive}</p></div><XCircle className="h-8 w-8 text-red-500 opacity-50" /></div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-gray-500">Super Admins</p><p className="text-2xl font-bold text-purple-600">{stats.superAdmins}</p></div><Crown className="h-8 w-8 text-purple-500 opacity-50" /></div></CardContent></Card>
       </div>
 
-      {/* Filters */}
+      {/* Filters and Table */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center flex-wrap gap-4">
-            <CardTitle>Administrators List</CardTitle>
+            <CardTitle>Administrators List ({filteredAdmins.length})</CardTitle>
             <div className="flex gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search admins..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 w-64"
-                />
-              </div>
+              <div className="relative"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" /><Input placeholder="Search admins..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 w-64" /></div>
               <Select value={filterRole} onValueChange={setFilterRole}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
+                <SelectTrigger className="w-32 bg-white"><SelectValue placeholder="Role" /></SelectTrigger>
+                <SelectContent className="bg-white border shadow-md z-50"><SelectItem value="all">All Roles</SelectItem><SelectItem value="super_admin">Super Admin</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent>
               </Select>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
+                <SelectTrigger className="w-32 bg-white"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectContent className="bg-white border shadow-md z-50"><SelectItem value="all">All Status</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent>
               </Select>
-              <Button variant="outline" onClick={fetchAdmins} disabled={loading}>
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
+              <Button variant="outline" onClick={fetchAdmins} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          {error && (
-            <Alert className="mb-4 bg-red-50 border-red-200">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">{error}</AlertDescription>
-            </Alert>
-          )}
+          {error && <Alert className="mb-4 bg-red-50"><AlertCircle className="h-4 w-4 text-red-600" /><AlertDescription>{error}</AlertDescription></Alert>}
           
           {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-gray-500">Loading admins...</p>
-            </div>
+            <div className="text-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div><p className="mt-2 text-gray-500">Loading admins...</p></div>
           ) : filteredAdmins.length === 0 ? (
-            <div className="text-center py-12">
-              <Shield className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-500">No administrators found</p>
-              {isSuperAdmin && (
-                <Button variant="outline" className="mt-4" onClick={() => setIsAddDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" /> Add your first admin
-                </Button>
-              )}
-            </div>
+            <div className="text-center py-12"><Shield className="h-12 w-12 text-gray-400 mx-auto mb-3" /><p className="text-gray-500">No administrators found</p>{isSuperAdmin && <Button variant="outline" className="mt-4" onClick={() => setIsAddDialogOpen(true)}><Plus className="h-4 w-4 mr-2" /> Add your first admin</Button>}</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -525,84 +442,122 @@ const AdminsManagement: React.FC = () => {
                     <tr key={admin.id} className="border-b hover:bg-gray-50">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10 bg-blue-100">
-                            <AvatarFallback className="bg-blue-100 text-blue-600 font-semibold">
-                              {getInitials(admin.full_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{admin.full_name}</p>
-                            <p className="text-sm text-gray-500">{admin.email}</p>
-                            {admin.phone && <p className="text-xs text-gray-400">{admin.phone}</p>}
-                          </div>
+                          <Avatar className="h-10 w-10 bg-blue-100"><AvatarFallback className="bg-blue-100 text-blue-600 font-semibold">{getInitials(admin.full_name)}</AvatarFallback></Avatar>
+                          <div><p className="font-medium text-gray-900">{admin.full_name}</p><p className="text-sm text-gray-500">{admin.email}</p>{admin.phone && <p className="text-xs text-gray-400">{admin.phone}</p>}</div>
                         </div>
                       </td>
                       <td className="py-3 px-4">{getRoleBadge(admin.role)}</td>
-                      <td className="py-3 px-4">
-                        {admin.is_active ? (
-                          <Badge className="bg-green-100 text-green-700">Active</Badge>
-                        ) : (
-                          <Badge className="bg-red-100 text-red-700">Suspended</Badge>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-sm">{formatDate(admin.last_login)}</td>
-                      <td className="py-3 px-4 text-sm">{formatDate(admin.created_at)}</td>
-                      <td className="py-3 px-4">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            
-                            {/* View Details - Everyone */}
-                            <DropdownMenuItem>
-                              <Eye className="h-4 w-4 mr-2" /> View Details
-                            </DropdownMenuItem>
-                            
-                            {/* Super Admin only actions */}
-                            {isSuperAdmin && (
-                              <>
-                                <DropdownMenuItem onClick={() => openEditDialog(admin)}>
-                                  <Edit className="h-4 w-4 mr-2" /> Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => openResetPasswordDialog(admin)}>
-                                  <Key className="h-4 w-4 mr-2" /> Reset Password
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                            
-                            <DropdownMenuSeparator />
-                            
-                            {/* Suspend/Activate - Super Admin only */}
-                            {isSuperAdmin && (
-                              admin.is_active ? (
-                                <DropdownMenuItem onClick={() => openSuspendDialog(admin)} className="text-yellow-600">
-                                  <Ban className="h-4 w-4 mr-2" /> Suspend
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem onClick={() => handleActivateAdmin(admin.id)} className="text-green-600">
-                                  <CheckCircle className="h-4 w-4 mr-2" /> Activate
-                                </DropdownMenuItem>
-                              )
-                            )}
-                            
-                            {/* Delete - Super Admin only, cannot delete self */}
-                            {isSuperAdmin && admin.id !== currentUserId && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => openDeleteDialog(admin)} className="text-red-600">
-                                  <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
+                      <td className="py-3 px-4">{admin.is_active ? <Badge className="bg-green-100 text-green-700">Active</Badge> : <Badge className="bg-red-100 text-red-700">Suspended</Badge>}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{formatDate(admin.last_login)}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{formatDate(admin.created_at)}</td>
+                      <td className="py-3 px-4 relative dropdown-container">
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              document.querySelectorAll('[id^="dropdown-"]').forEach(el => {
+                                if (el.id !== `dropdown-${admin.id}`) el.classList.add('hidden');
+                              });
+                              const dropdown = document.getElementById(`dropdown-${admin.id}`);
+                              if (dropdown) dropdown.classList.toggle('hidden');
+                            }}
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium hover:bg-gray-100 h-8 w-8 p-0 transition-colors"
+                            type="button"
+                          >
+                            <MoreVertical className="h-4 w-4 text-gray-600" />
+                          </button>
+                          
+                          {/* Dropdown menu - FIXED SOLID WHITE UTILITIES */}
+                          <div 
+                            id={`dropdown-${admin.id}`}
+                            className="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden"
+                            style={{ top: '100%' }}
+                          >
+                            <div className="py-1 bg-white">
+                              <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100 bg-gray-50">
+                                Actions
+                              </div>
+                              
+                              <button
+                                onClick={() => {
+                                  document.getElementById(`dropdown-${admin.id}`)?.classList.add('hidden');
+                                  openViewDialog(admin);
+                                }}
+                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors bg-white"
+                              >
+                                <Eye className="h-4 w-4 text-gray-500" /> View Details
+                              </button>
+                              
+                              {isSuperAdmin && (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      document.getElementById(`dropdown-${admin.id}`)?.classList.add('hidden');
+                                      openEditDialog(admin);
+                                    }}
+                                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors bg-white"
+                                  >
+                                    <Edit className="h-4 w-4 text-gray-500" /> Edit
+                                  </button>
+                                  
+                                  <button
+                                    onClick={() => {
+                                      document.getElementById(`dropdown-${admin.id}`)?.classList.add('hidden');
+                                      openResetPasswordDialog(admin);
+                                    }}
+                                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors bg-white"
+                                  >
+                                    <Key className="h-4 w-4 text-gray-500" /> Reset Password
+                                  </button>
+                                </>
+                              )}
+                              
+                              {isSuperAdmin && (
+                                <>
+                                  <div className="border-t border-gray-100 my-1"></div>
+                                  {admin.is_active ? (
+                                    <button
+                                      onClick={() => {
+                                        document.getElementById(`dropdown-${admin.id}`)?.classList.add('hidden');
+                                        openSuspendDialog(admin);
+                                      }}
+                                      className="w-full text-left px-4 py-2.5 text-sm text-yellow-700 hover:bg-yellow-50 flex items-center gap-3 transition-colors bg-white"
+                                    >
+                                      <Ban className="h-4 w-4 text-yellow-500" /> Suspend
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => {
+                                        document.getElementById(`dropdown-${admin.id}`)?.classList.add('hidden');
+                                        handleActivateAdmin(admin.id);
+                                      }}
+                                      className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50 flex items-center gap-3 transition-colors bg-white"
+                                    >
+                                      <CheckCircle className="h-4 w-4 text-green-500" /> Activate
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                              
+                              {isSuperAdmin && admin.id !== currentUserId && (
+                                <>
+                                  <div className="border-t border-gray-100 my-1"></div>
+                                  <button
+                                    onClick={() => {
+                                      document.getElementById(`dropdown-${admin.id}`)?.classList.add('hidden');
+                                      openDeleteDialog(admin);
+                                    }}
+                                    className="w-full text-left px-4 py-2.5 text-sm text-red-700 hover:bg-red-50 flex items-center gap-3 transition-colors bg-white"
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-500" /> Delete
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                       </td>
+                     </tr>
                   ))}
                 </tbody>
               </table>
@@ -611,178 +566,124 @@ const AdminsManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Add Admin Dialog */}
+      {/* Create New Admin Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md bg-white border shadow-2xl z-50">
           <DialogHeader>
-            <DialogTitle>Create New Admin</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-gray-900">Create New Admin</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 py-2">
+            <div><Label className="text-gray-700 font-medium">Full Name *</Label><Input value={formData.full_name} onChange={(e) => setFormData({...formData, full_name: e.target.value})} placeholder="John Doe" className="bg-white mt-1" /></div>
+            <div><Label className="text-gray-700 font-medium">Email *</Label><Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="admin@example.com" className="bg-white mt-1" /></div>
+            <div><Label className="text-gray-700 font-medium">Password *</Label><Input type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} placeholder="Min 6 characters" className="bg-white mt-1" /></div>
+            <div><Label className="text-gray-700 font-medium">Phone</Label><Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="+1234567890" className="bg-white mt-1" /></div>
             <div>
-              <Label>Full Name *</Label>
-              <Input
-                value={formData.full_name}
-                onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                placeholder="John Doe"
-              />
-            </div>
-            <div>
-              <Label>Email *</Label>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                placeholder="admin@example.com"
-              />
-            </div>
-            <div>
-              <Label>Password *</Label>
-              <Input
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-                placeholder="Secure password (min 6 characters)"
-              />
-            </div>
-            <div>
-              <Label>Phone</Label>
-              <Input
-                value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                placeholder="+251 912 345 678"
-              />
-            </div>
-            <div>
-              <Label>Role</Label>
+              <Label className="text-gray-700 font-medium">Role</Label>
               <Select value={formData.role} onValueChange={(value) => setFormData({...formData, role: value})}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  {isSuperAdmin && <SelectItem value="Super Admin">Super Admin</SelectItem>}
-                </SelectContent>
+                <SelectTrigger className="bg-white mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-white border shadow-md z-50"><SelectItem value="Admin">Admin</SelectItem>{isSuperAdmin && <SelectItem value="Super Admin">Super Admin</SelectItem>}</SelectContent>
               </Select>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateAdmin} disabled={submitting}>
-              {submitting ? 'Creating...' : 'Create Admin'}
-            </Button>
+            <Button onClick={handleCreateAdmin} disabled={submitting} className="bg-blue-600 hover:bg-blue-700 text-white">{submitting ? 'Creating...' : 'Create Admin'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Edit Admin Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md">
+      {/* View Details Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-md bg-white border shadow-2xl z-50">
           <DialogHeader>
-            <DialogTitle>Edit Admin</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-gray-900">Admin Details</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Full Name</Label>
-              <Input
-                value={formData.full_name}
-                onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-              />
+          {selectedAdmin && (
+            <div className="space-y-5 py-3">
+              <div className="flex items-center gap-4 border-b pb-4">
+                <Avatar className="h-14 w-14 bg-blue-100"><AvatarFallback className="bg-blue-100 text-blue-600 text-lg font-bold">{getInitials(selectedAdmin.full_name)}</AvatarFallback></Avatar>
+                <div><p className="text-lg font-bold text-gray-900">{selectedAdmin.full_name}</p><p className="text-sm text-gray-500">{selectedAdmin.email}</p></div>
+              </div>
+              <div className="grid grid-cols-2 gap-y-4 gap-x-6">
+                <div><p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Role</p><p className="text-sm font-medium text-gray-900 mt-0.5">{selectedAdmin.role}</p></div>
+                <div><p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</p><p className="text-sm font-medium mt-0.5">{selectedAdmin.is_active ? <span className="text-green-600 font-semibold">Active</span> : <span className="text-red-600 font-semibold">Suspended</span>}</p></div>
+                <div><p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Phone</p><p className="text-sm text-gray-900 mt-0.5">{selectedAdmin.phone || 'Not provided'}</p></div>
+                <div><p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Joined Date</p><p className="text-sm text-gray-900 mt-0.5">{formatDate(selectedAdmin.created_at)}</p></div>
+              </div>
             </div>
+          )}
+          <DialogFooter className="border-t pt-3">
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)} className="w-full sm:w-auto">Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md bg-white border shadow-2xl z-50">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Edit Admin</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div><Label className="text-gray-700 font-medium">Full Name</Label><Input value={formData.full_name} onChange={(e) => setFormData({...formData, full_name: e.target.value})} className="bg-white mt-1" /></div>
+            <div><Label className="text-gray-700 font-medium">Email</Label><Input type="email" value={formData.email} disabled className="bg-gray-100 text-gray-500 mt-1" /></div>
+            <div><Label className="text-gray-700 font-medium">Phone</Label><Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="bg-white mt-1" /></div>
             <div>
-              <Label>Email</Label>
-              <Input type="email" value={formData.email} disabled className="bg-gray-50" />
-              <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
-            </div>
-            <div>
-              <Label>Phone</Label>
-              <Input
-                value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label>Role</Label>
+              <Label className="text-gray-700 font-medium">Role</Label>
               <Select value={formData.role} onValueChange={(value) => setFormData({...formData, role: value})}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  {isSuperAdmin && <SelectItem value="Super Admin">Super Admin</SelectItem>}
-                </SelectContent>
+                <SelectTrigger className="bg-white mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-white border shadow-md z-50"><SelectItem value="Admin">Admin</SelectItem>{isSuperAdmin && <SelectItem value="Super Admin">Super Admin</SelectItem>}</SelectContent>
               </Select>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdateAdmin} disabled={submitting}>
-              {submitting ? 'Saving...' : 'Save Changes'}
-            </Button>
+            <Button onClick={handleUpdateAdmin} disabled={submitting} className="bg-blue-600 hover:bg-blue-700 text-white">{submitting ? 'Saving...' : 'Save Changes'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Reset Password Dialog */}
       <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md bg-white border shadow-2xl z-50">
           <DialogHeader>
-            <DialogTitle>Reset Password</DialogTitle>
-            <p className="text-sm text-gray-500 mt-2">
-              Reset password for <span className="font-semibold">{selectedAdmin?.full_name}</span>
-            </p>
+            <DialogTitle className="text-xl font-bold text-gray-900">Reset Password</DialogTitle>
           </DialogHeader>
-          <div>
-            <Label>New Password *</Label>
-            <Input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Enter new password (min 6 characters)"
-            />
+          <div className="py-2">
+            <Label className="text-gray-700 font-medium">New Password</Label>
+            <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min 6 characters" className="bg-white mt-1" />
           </div>
-          <DialogFooter>
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setIsResetPasswordOpen(false)}>Cancel</Button>
-            <Button onClick={handleResetPassword} disabled={submitting}>
-              {submitting ? 'Resetting...' : 'Reset Password'}
-            </Button>
+            <Button onClick={handleResetPassword} disabled={submitting} className="bg-blue-600 hover:bg-blue-700 text-white">{submitting ? 'Resetting...' : 'Reset Password'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Suspend Confirmation Dialog */}
+      {/* Suspend Alert Dialog */}
       <AlertDialog open={isSuspendDialogOpen} onOpenChange={setIsSuspendDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white border shadow-2xl z-50">
           <AlertDialogHeader>
-            <AlertDialogTitle>Suspend Administrator</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to suspend <span className="font-semibold">{selectedAdmin?.full_name}</span>?
-              The admin will not be able to access the dashboard until reactivated.
-            </AlertDialogDescription>
+            <AlertDialogTitle className="text-lg font-bold text-gray-900">Suspend Administrator</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-500">Are you sure you want to suspend {selectedAdmin?.full_name}? They will lose complete system dashboard clearance immediately.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSuspendAdmin} className="bg-yellow-600">
-              Suspend
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleSuspendAdmin} className="bg-yellow-600 hover:bg-yellow-700 text-white">Suspend</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Alert Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white border shadow-2xl z-50">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Administrator</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete <span className="font-semibold">{selectedAdmin?.full_name}</span>'s account
-              and remove all associated data.
-            </AlertDialogDescription>
+            <AlertDialogTitle className="text-lg font-bold text-gray-900 text-red-600">Delete Administrator</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-500">This action cannot be undone. This will permanently delete the admin account for {selectedAdmin?.full_name} from the database.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteAdmin} className="bg-red-600">
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteAdmin} className="bg-red-600 hover:bg-red-700 text-white">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

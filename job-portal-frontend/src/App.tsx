@@ -63,6 +63,15 @@ import AdminProfile from '@/pages/admin/AdminProfile'
 import SuperAdminLayout from '@/pages/superadmin/SuperAdminLayout'
 import SuperAdminProfile from '@/pages/superadmin/Profile'
 import CompanyManagement from '@/pages/superadmin/CompanyManagement'
+import SuperAdminDashboard from '@/pages/superadmin/Dashboard'
+import AdminsManagement from '@/pages/superadmin/AdminsManagement'
+import AuditLogs from '@/pages/superadmin/AuditLogs'
+import Applications from '@/pages/superadmin/Applications'
+import JobModeration from '@/pages/superadmin/JobModeration'
+import BackupRestore from '@/pages/superadmin/BackupRestore'
+import SystemHealth from '@/pages/superadmin/SystemHealth'
+import SettingsPage from '@/pages/superadmin/Settings'
+
 // Route Guards
 import PrivateRoute, {
   JobSeekerRoute,
@@ -87,7 +96,6 @@ function App() {
           </Route>
 
           {/* ========== PUBLIC JOB ROUTES (No Login Required - MainLayout) ========== */}
-          {/* These are for non-logged-in users to browse jobs */}
           <Route element={<MainLayout />}>
             <Route path="/jobs" element={<JobsPage />} />
             <Route path="/jobs/:id" element={<JobDetailsPage />} />
@@ -125,7 +133,6 @@ function App() {
           </Route>
 
           {/* ========== JOB SEEKER ONLY ROUTES (WITH SIDEBAR - Requires Login) ========== */}
-          {/* Note: /jobs and /jobs/:id are NOT here because they are public */}
           <Route element={<JobSeekerRoute />}>
             <Route element={<JobSeekerLayout />}>
               <Route path="/dashboard" element={<DashboardContent />} />
@@ -168,12 +175,28 @@ function App() {
             </Route>
           </Route>
 
-          {/* ========== SUPER ADMIN ONLY ROUTES ========== */}
+          {/* ========== SUPER ADMIN ONLY ROUTES (WITH SIDEBAR) ========== */}
           <Route element={<SuperAdminRoute />}>
-            <Route path="/super-admin/*" element={<SuperAdminLayout />} />
-            <Route path="/super-admin/profile" element={<SuperAdminProfile />} />
-            <Route path="/super-admin/companies" element={<CompanyManagement />} />
-            
+            <Route element={<SuperAdminLayout />}>
+              {/* Dashboard */}
+              <Route path="/super-admin" element={<SuperAdminDashboard />} />
+              <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
+              
+              {/* Admin Management */}
+              <Route path="/super-admin/admins" element={<AdminsManagement />} />
+              
+              {/* Company Management */}
+              <Route path="/super-admin/companies" element={<CompanyManagement />} />
+              
+              {/* Other Super Admin Pages */}
+              <Route path="/super-admin/audit" element={<AuditLogs />} />
+              <Route path="/super-admin/backup" element={<BackupRestore />} />
+              <Route path="/super-admin/health" element={<SystemHealth />} />
+              <Route path="/super-admin/jobs" element={<JobModeration />} />
+              <Route path="/super-admin/applications" element={<Applications />} />
+              <Route path="/super-admin/settings" element={<SettingsPage />} />
+              <Route path="/super-admin/profile" element={<SuperAdminProfile />} />
+            </Route>
           </Route>
 
           {/* ========== 404 NOT FOUND ========== */}
