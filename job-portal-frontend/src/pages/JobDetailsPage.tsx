@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -218,7 +219,7 @@ const JobDetailsPage: React.FC = () => {
   const benefitsList = formatTextToBulletPoints(job.benefits)
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-linear-to-b from-gray-50 to-white">
       <div className="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         
         {/* Back Button */}
@@ -237,7 +238,7 @@ const JobDetailsPage: React.FC = () => {
               <div className="p-6">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="flex items-start gap-4">
-                    <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+                    <div className="h-16 w-16 rounded-xl bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
                       <span className="text-white text-2xl font-bold">
                         {job.employer.company_name?.charAt(0) || 'C'}
                       </span>
@@ -367,7 +368,7 @@ const JobDetailsPage: React.FC = () => {
             
             {/* Apply Card */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden sticky top-6">
-              <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white">
+              <div className="p-5 border-b border-gray-100 bg-linear-to-r from-blue-50 to-white">
                 <h3 className="text-lg font-semibold text-gray-900">Apply for this job</h3>
               </div>
               <div className="p-5 space-y-4">
@@ -395,7 +396,7 @@ const JobDetailsPage: React.FC = () => {
                     <p className="text-red-800 font-medium">Position Closed</p>
                   </div>
                 ) : (
-                  <button onClick={handleApply} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2">
+                  <button onClick={handleApply} className="w-full bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2">
                     <Send className="h-4 w-4" /> Apply Now
                   </button>
                 )}
@@ -404,12 +405,12 @@ const JobDetailsPage: React.FC = () => {
 
             {/* Company Info Card */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-white">
+              <div className="p-5 border-b border-gray-100 bg-linear-to-r from-purple-50 to-white">
                 <h3 className="text-lg font-semibold text-gray-900">About the Company</h3>
               </div>
               <div className="p-5">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
+                  <div className="h-14 w-14 rounded-xl bg-linear-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
                     <span className="text-white text-xl font-bold">{job.employer.company_name?.charAt(0) || 'C'}</span>
                   </div>
                   <div>

@@ -54,7 +54,7 @@ const Home: React.FC = () => {
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: `url("https://images.pexels.com/photos/3184416/pexels-photo-3184416.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&dpr=2")`,
-            backgroundColor: '#1e40af', // Fallback color while image loads
+            backgroundColor: '#1e40af', 
           }}
         >
           {/* Dark Overlay for text readability */}
@@ -106,7 +106,7 @@ const Home: React.FC = () => {
               <div className="flex items-center gap-2"><CheckCircle className="h-4 w-4" /><span>Verified Companies</span></div>
               <div className="flex items-center gap-2"><Shield className="h-4 w-4" /><span>Secure Platform</span></div>
               <div className="flex items-center gap-2"><Star className="h-4 w-4" /><span>4.9/5 Rating</span></div>
-              <div className="flex items-center gap-2"><Award className="h-4 w-4" /><span>Best Platform 2024</span></div>
+              <div className="flex items-center gap-2"><Award className="h-4 w-4" /><span>Best Platform 2026</span></div>
             </div>
           </div>
         </div>

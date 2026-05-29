@@ -113,7 +113,7 @@ const Unauthorized: React.FC = () => {
                 key={index}
                 onClick={action.action}
                 variant={action.variant as any}
-                className="min-w-[160px]"
+                className="min-w-40"
               >
                 <Icon className="h-4 w-4 mr-2" />
                 {action.title}

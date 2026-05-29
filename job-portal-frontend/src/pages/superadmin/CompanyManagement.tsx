@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { 
-  Search, Plus, Edit, Trash2, MoreVertical, Shield,
+  Search, Edit, Trash2, MoreVertical, Shield,
   CheckCircle, XCircle, RefreshCw, AlertCircle,
-  Building, Users, Briefcase, Eye, Crown,
-  Mail, Phone, MapPin, Globe, Calendar, Check, X, Clock
+  Building, Briefcase, Eye, Crown,
+  MapPin, Calendar, Users, Mail, Globe, Phone
 } from 'lucide-react'
 import {
   Dialog,
@@ -45,9 +45,10 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from '@/hooks/use-toast'
-import api from '@/services/api'
+
+// API Configuration
+const API_BASE_URL = 'http://localhost:5000/api'
 
 interface Company {
   id: string
@@ -57,40 +58,38 @@ interface Company {
   website: string | null
   location: string | null
   company_size: string | null
-  founded_year: number | null
   logo_url: string | null
-  cover_image: string | null
   is_verified: boolean
   is_active: boolean
   created_at: string
-  updated_at: string
-  industry: {
-    id: number
-    industry_name: string
-  } | null
-  user: {
-    email: string
-    full_name: string
-  }
-  _count?: {
-    jobs: number
-  }
-  stats?: {
-    total_jobs: number
-    active_jobs: number
-    total_applications: number
-    total_views: number
-  }
+  industry_name: string | null
+  email: string
+  phone: string | null
+  jobs_count: number
 }
 
-interface CompanyStats {
-  total_companies: number
-  active_companies: number
-  pending_companies: number
-  verified_companies: number
-  suspended_companies: number
-  total_jobs: number
-  total_applications: number
+// Helper function to get token from multiple possible locations
+const getAuthToken = (): string | null => {
+  // Try multiple possible token locations
+  const token = localStorage.getItem('token') || 
+                localStorage.getItem('admin_token') || 
+                localStorage.getItem('accessToken') ||
+                sessionStorage.getItem('token')
+  
+  // Also check if token is stored inside user object
+  if (!token) {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        return user.token || user.accessToken || null
+      } catch (e) {
+        console.error('Error parsing user:', e)
+      }
+    }
+  }
+  
+  return token
 }
 
 const CompanyManagement: React.FC = () => {
@@ -100,17 +99,6 @@ const CompanyManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterVerification, setFilterVerification] = useState('all')
-  const [filterIndustry, setFilterIndustry] = useState('all')
-  const [industries, setIndustries] = useState<{ id: number; industry_name: string }[]>([])
-  const [stats, setStats] = useState<CompanyStats>({
-    total_companies: 0,
-    active_companies: 0,
-    pending_companies: 0,
-    verified_companies: 0,
-    suspended_companies: 0,
-    total_jobs: 0,
-    total_applications: 0
-  })
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -118,130 +106,110 @@ const CompanyManagement: React.FC = () => {
   const [isSuspendDialogOpen, setIsSuspendDialogOpen] = useState(false)
   const [isVerifyDialogOpen, setIsVerifyDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [currentUserRole, setCurrentUserRole] = useState<string>('')
   const [formData, setFormData] = useState({
     company_name: '',
     company_description: '',
     website: '',
     location: '',
-    company_size: '',
-    founded_year: '',
-    industry_id: ''
+    company_size: ''
   })
+  const [tokenDebug, setTokenDebug] = useState<string>('Checking...')
 
-  // Get current user role from token
-  const getCurrentUserRole = useCallback(() => {
-    try {
-      const token = localStorage.getItem('token')
-      if (token) {
-        const base64Url = token.split('.')[1]
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-        }).join(''))
-        const decoded = JSON.parse(jsonPayload)
-        const role = decoded.role || decoded.user_type
-        setCurrentUserRole(role === 'Super Admin' || role === 'super_admin' ? 'Super Admin' : 'Admin')
-      }
-    } catch (error) {
-      console.error('Failed to get user role:', error)
-      setCurrentUserRole('Admin')
+  // API helper function
+  const apiRequest = async (method: string, url: string, data?: any) => {
+    const token = getAuthToken()
+    
+    if (!token) {
+      throw new Error('No authentication token found. Please login again.')
     }
-  }, [])
+    
+    const options: RequestInit = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    }
+    if (data && (method === 'POST' || method === 'PUT')) {
+      options.body = JSON.stringify(data)
+    }
+    
+    console.log(`Making ${method} request to: ${url}`)
+    const response = await fetch(`${API_BASE_URL}${url}`, options)
+    const result = await response.json()
+    if (!response.ok) {
+      throw new Error(result.message || result.error || 'API Error')
+    }
+    return result
+  }
 
-  // Fetch industries for filter
-  const fetchIndustries = useCallback(async () => {
-    try {
-      const response = await api.get('/industries')
-      if (response.data?.data) {
-        setIndustries(response.data.data)
-      }
-    } catch (err) {
-      console.error('Failed to fetch industries:', err)
+  // Check token status
+  const checkToken = () => {
+    const token = getAuthToken()
+    if (token) {
+      setTokenDebug(`✅ Token found (length: ${token.length})`)
+      return true
+    } else {
+      setTokenDebug('❌ No token found in localStorage')
+      return false
     }
-  }, [])
+  }
 
   // Fetch companies from backend
   const fetchCompanies = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const token = localStorage.getItem('token')
+      const token = getAuthToken()
       if (!token) {
-        throw new Error('No authentication token found')
+        throw new Error('Please login first. No authentication token found.')
       }
 
-      console.log('Fetching companies from /admin/users?role=Employer...')
-      const response = await api.get('/admin/users', {
-        params: { role: 'Employer', limit: 100 }
-      })
+      console.log('Fetching companies from /admin/users...')
+      console.log('Using token:', token.substring(0, 50) + '...')
       
-      console.log('Companies response:', response.data)
+      const response = await apiRequest('GET', '/admin/users')
+      console.log('API Response:', response)
       
       let allUsers: any[] = []
-      if (response.data?.data && Array.isArray(response.data.data)) {
-        allUsers = response.data.data
-      } else if (response.data && Array.isArray(response.data)) {
+      if (response.data && Array.isArray(response.data)) {
         allUsers = response.data
+      } else if (response.users && Array.isArray(response.users)) {
+        allUsers = response.users
+      } else if (Array.isArray(response)) {
+        allUsers = response
       }
       
-      // Filter only Employer users and map to company format
+      console.log(`Total users found: ${allUsers.length}`)
+      
+      // Filter only Employer users
       const employerUsers = allUsers.filter(user => {
         const userType = user.user_type?.type_name || user.role
         return userType === 'Employer'
       })
       
-      console.log(`Found ${employerUsers.length} employers`)
+      console.log(`Employers found: ${employerUsers.length}`)
       
       // Map to Company interface
       const mappedCompanies: Company[] = employerUsers.map((user: any) => ({
         id: user.id,
         user_id: user.id,
-        company_name: user.employer_profile?.company_name || user.full_name || 'N/A',
+        company_name: user.employer_profile?.company_name || user.full_name || 'Unnamed Company',
         company_description: user.employer_profile?.company_description || null,
         website: user.employer_profile?.website || null,
         location: user.employer_profile?.location || null,
         company_size: user.employer_profile?.company_size || null,
-        founded_year: user.employer_profile?.founded_year || null,
         logo_url: user.employer_profile?.logo_url || null,
-        cover_image: user.employer_profile?.cover_image || null,
         is_verified: user.employer_profile?.is_verified || false,
         is_active: user.is_active !== undefined ? user.is_active : true,
         created_at: user.created_at,
-        updated_at: user.updated_at,
-        industry: user.employer_profile?.industry || null,
-        user: {
-          email: user.email,
-          full_name: user.full_name || ''
-        },
-        _count: {
-          jobs: user.employer_profile?.jobs_count || 0
-        },
-        stats: {
-          total_jobs: user.employer_profile?.jobs_count || 0,
-          active_jobs: 0,
-          total_applications: 0,
-          total_views: 0
-        }
+        industry_name: user.employer_profile?.industry?.industry_name || null,
+        email: user.email,
+        phone: user.employer_profile?.phone || null,
+        jobs_count: user.employer_profile?.jobs_count || 0
       }))
       
       setCompanies(mappedCompanies)
-      
-      // Calculate stats
-      const activeCompanies = mappedCompanies.filter(c => c.is_active).length
-      const verifiedCompanies = mappedCompanies.filter(c => c.is_verified).length
-      const suspendedCompanies = mappedCompanies.filter(c => !c.is_active).length
-      const totalJobs = mappedCompanies.reduce((sum, c) => sum + (c._count?.jobs || 0), 0)
-      
-      setStats({
-        total_companies: mappedCompanies.length,
-        active_companies: activeCompanies,
-        pending_companies: 0,
-        verified_companies: verifiedCompanies,
-        suspended_companies: suspendedCompanies,
-        total_jobs: totalJobs,
-        total_applications: 0
-      })
       
     } catch (err: any) {
       console.error('Failed to fetch companies:', err)
@@ -253,54 +221,29 @@ const CompanyManagement: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    fetchCompanies()
-    fetchIndustries()
-    getCurrentUserRole()
-  }, [fetchCompanies, fetchIndustries, getCurrentUserRole])
-
-  // Update company
-  const handleUpdateCompany = async () => {
-    if (!selectedCompany) return
-    
-    setSubmitting(true)
-    try {
-      // Update employer profile
-      await api.put(`/employer/profile`, {
-        company_name: formData.company_name,
-        company_description: formData.company_description,
-        website: formData.website,
-        location: formData.location,
-        company_size: formData.company_size,
-        founded_year: formData.founded_year ? parseInt(formData.founded_year) : null,
-        industry_id: formData.industry_id ? parseInt(formData.industry_id) : null
-      })
-      
-      toast({ title: "Success", description: "Company updated successfully!" })
-      setIsEditDialogOpen(false)
-      fetchCompanies()
-    } catch (err: any) {
-      console.error('Failed to update company:', err)
-      toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to update company" })
-    } finally {
-      setSubmitting(false)
+    checkToken()
+    const token = getAuthToken()
+    if (!token) {
+      setError('No authentication token found. Please login first.')
+      setLoading(false)
+      return
     }
-  }
+    fetchCompanies()
+  }, [fetchCompanies])
 
   // Verify company
   const handleVerifyCompany = async () => {
     if (!selectedCompany) return
-    
     setSubmitting(true)
     try {
-      await api.put(`/admin/users/${selectedCompany.user_id}/status`, { 
+      await apiRequest('PUT', `/admin/users/${selectedCompany.user_id}/status`, { 
         is_verified: true 
       })
-      
       toast({ title: "Success", description: `${selectedCompany.company_name} has been verified!` })
       setIsVerifyDialogOpen(false)
       fetchCompanies()
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to verify company" })
+      toast({ variant: "destructive", title: "Error", description: err.message })
     } finally {
       setSubmitting(false)
     }
@@ -309,16 +252,14 @@ const CompanyManagement: React.FC = () => {
   // Suspend company
   const handleSuspendCompany = async () => {
     if (!selectedCompany) return
-    
     setSubmitting(true)
     try {
-      await api.put(`/admin/users/${selectedCompany.user_id}/status`, { is_active: false })
-      
+      await apiRequest('PUT', `/admin/users/${selectedCompany.user_id}/status`, { is_active: false })
       toast({ title: "Success", description: `${selectedCompany.company_name} has been suspended` })
       setIsSuspendDialogOpen(false)
       fetchCompanies()
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to suspend company" })
+      toast({ variant: "destructive", title: "Error", description: err.message })
     } finally {
       setSubmitting(false)
     }
@@ -328,15 +269,13 @@ const CompanyManagement: React.FC = () => {
   const handleActivateCompany = async (companyId: string) => {
     const company = companies.find(c => c.id === companyId)
     if (!company) return
-    
     setSubmitting(true)
     try {
-      await api.put(`/admin/users/${company.user_id}/status`, { is_active: true })
-      
+      await apiRequest('PUT', `/admin/users/${company.user_id}/status`, { is_active: true })
       toast({ title: "Success", description: `${company.company_name} has been activated` })
       fetchCompanies()
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to activate company" })
+      toast({ variant: "destructive", title: "Error", description: err.message })
     } finally {
       setSubmitting(false)
     }
@@ -345,34 +284,17 @@ const CompanyManagement: React.FC = () => {
   // Delete company
   const handleDeleteCompany = async () => {
     if (!selectedCompany) return
-    
     setSubmitting(true)
     try {
-      await api.delete(`/admin/users/${selectedCompany.user_id}`)
-      
-      toast({ title: "Success", description: `${selectedCompany.company_name} has been deleted permanently` })
+      await apiRequest('DELETE', `/admin/users/${selectedCompany.user_id}`)
+      toast({ title: "Success", description: `${selectedCompany.company_name} has been deleted` })
       setIsDeleteDialogOpen(false)
       fetchCompanies()
     } catch (err: any) {
-      console.error('Failed to delete company:', err)
-      toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to delete company" })
+      toast({ variant: "destructive", title: "Error", description: err.message })
     } finally {
       setSubmitting(false)
     }
-  }
-
-  const openEditDialog = (company: Company) => {
-    setSelectedCompany(company)
-    setFormData({
-      company_name: company.company_name,
-      company_description: company.company_description || '',
-      website: company.website || '',
-      location: company.location || '',
-      company_size: company.company_size || '',
-      founded_year: company.founded_year?.toString() || '',
-      industry_id: company.industry?.id?.toString() || ''
-    })
-    setIsEditDialogOpen(true)
   }
 
   const openViewDialog = (company: Company) => {
@@ -396,8 +318,8 @@ const CompanyManagement: React.FC = () => {
   }
 
   const getInitials = (name: string) => {
-    if (!name) return 'CO'
-    return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2)
+    if (!name || name === 'Unnamed Company') return 'CO'
+    return name.slice(0, 2).toUpperCase()
   }
 
   const getStatusBadge = (is_active: boolean) => {
@@ -409,37 +331,36 @@ const CompanyManagement: React.FC = () => {
 
   const getVerificationBadge = (is_verified: boolean) => {
     if (is_verified) {
-      return <Badge className="bg-blue-100 text-blue-700"><CheckCircle className="h-3 w-3 mr-1" /> Verified</Badge>
+      return <Badge className="bg-blue-100 text-blue-700"><Shield className="h-3 w-3 mr-1" /> Verified</Badge>
     }
-    return <Badge className="bg-yellow-100 text-yellow-700"><Clock className="h-3 w-3 mr-1" /> Pending</Badge>
+    return <Badge className="bg-yellow-100 text-yellow-700"><AlertCircle className="h-3 w-3 mr-1" /> Pending</Badge>
   }
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'Never'
-    try {
-      const date = new Date(dateString)
-      if (isNaN(date.getTime())) return 'Invalid'
-      return date.toLocaleDateString()
-    } catch {
-      return dateString
-    }
+    return new Date(dateString).toLocaleDateString()
   }
 
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         company.user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                         company.email?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = filterStatus === 'all' ||
                          (filterStatus === 'active' && company.is_active) ||
                          (filterStatus === 'inactive' && !company.is_active)
     const matchesVerification = filterVerification === 'all' ||
                                (filterVerification === 'verified' && company.is_verified) ||
                                (filterVerification === 'unverified' && !company.is_verified)
-    const matchesIndustry = filterIndustry === 'all' || 
-                           (company.industry?.id.toString() === filterIndustry)
-    return matchesSearch && matchesStatus && matchesVerification && matchesIndustry
+    return matchesSearch && matchesStatus && matchesVerification
   })
 
-  const isSuperAdmin = currentUserRole === 'Super Admin'
+  const stats = {
+    total: companies.length,
+    active: companies.filter(c => c.is_active).length,
+    suspended: companies.filter(c => !c.is_active).length,
+    verified: companies.filter(c => c.is_verified).length,
+    unverified: companies.filter(c => !c.is_verified).length,
+    totalJobs: companies.reduce((sum, c) => sum + (c.jobs_count || 0), 0)
+  }
 
   return (
     <div className="space-y-6">
@@ -447,21 +368,18 @@ const CompanyManagement: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Company Management</h1>
-          <p className="text-gray-500 mt-1">Manage employer companies and their verification status</p>
-          <p className="text-sm text-gray-400 mt-1">
-            Logged in as: <span className="font-semibold">{currentUserRole || 'Loading...'}</span>
-          </p>
+          <p className="text-gray-500 mt-1">Manage employer companies and verification status</p>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Total Companies</p>
-                <p className="text-2xl font-bold">{stats.total_companies}</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
               </div>
               <Building className="h-8 w-8 text-blue-500 opacity-50" />
             </div>
@@ -472,7 +390,7 @@ const CompanyManagement: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Active</p>
-                <p className="text-2xl font-bold text-green-600">{stats.active_companies}</p>
+                <p className="text-2xl font-bold text-green-600">{stats.active}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-500 opacity-50" />
             </div>
@@ -482,10 +400,21 @@ const CompanyManagement: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Verified</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.verified_companies}</p>
+                <p className="text-sm text-gray-500">Suspended</p>
+                <p className="text-2xl font-bold text-red-600">{stats.suspended}</p>
               </div>
-              <Shield className="h-8 w-8 text-blue-500 opacity-50" />
+              <XCircle className="h-8 w-8 text-red-500 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Verified</p>
+                <p className="text-2xl font-bold text-purple-600">{stats.verified}</p>
+              </div>
+              <Shield className="h-8 w-8 text-purple-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
@@ -494,13 +423,15 @@ const CompanyManagement: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Total Jobs</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.total_jobs}</p>
+                <p className="text-2xl font-bold text-orange-600">{stats.totalJobs}</p>
               </div>
-              <Briefcase className="h-8 w-8 text-purple-500 opacity-50" />
+              <Briefcase className="h-8 w-8 text-orange-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
       </div>
+
+      
 
       {/* Filters */}
       <Card>
@@ -537,19 +468,6 @@ const CompanyManagement: React.FC = () => {
                   <SelectItem value="unverified">Unverified</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={filterIndustry} onValueChange={setFilterIndustry}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Industry" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Industries</SelectItem>
-                  {industries.map(industry => (
-                    <SelectItem key={industry.id} value={industry.id.toString()}>
-                      {industry.industry_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <Button variant="outline" onClick={fetchCompanies} disabled={loading}>
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
@@ -573,6 +491,9 @@ const CompanyManagement: React.FC = () => {
             <div className="text-center py-12">
               <Building className="h-12 w-12 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-500">No companies found</p>
+              {!getAuthToken() && (
+                <p className="text-sm text-red-500 mt-2">Click "Force Login & Save Token" button above</p>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -598,24 +519,20 @@ const CompanyManagement: React.FC = () => {
                             {company.logo_url ? (
                               <AvatarImage src={company.logo_url} />
                             ) : (
-                              <AvatarFallback className="bg-blue-100 text-blue-600 font-semibold">
+                              <AvatarFallback className="bg-blue-100 text-blue-600">
                                 {getInitials(company.company_name)}
                               </AvatarFallback>
                             )}
                           </Avatar>
                           <div>
                             <p className="font-medium">{company.company_name}</p>
-                            <p className="text-sm text-gray-500">{company.user.email}</p>
+                            <p className="text-sm text-gray-500">{company.email}</p>
                           </div>
                         </div>
-                       </td>
-                      <td className="py-3 px-4 text-sm">
-                        {company.industry?.industry_name || '-'}
                       </td>
+                      <td className="py-3 px-4 text-sm">{company.industry_name || '-'}</td>
                       <td className="py-3 px-4 text-sm">{company.location || '-'}</td>
-                      <td className="py-3 px-4 text-sm font-medium">
-                        {company._count?.jobs || 0}
-                      </td>
+                      <td className="py-3 px-4 text-sm font-medium">{company.jobs_count}</td>
                       <td className="py-3 px-4">{getStatusBadge(company.is_active)}</td>
                       <td className="py-3 px-4">{getVerificationBadge(company.is_verified)}</td>
                       <td className="py-3 px-4 text-sm">{formatDate(company.created_at)}</td>
@@ -632,53 +549,37 @@ const CompanyManagement: React.FC = () => {
                             <DropdownMenuItem onClick={() => openViewDialog(company)}>
                               <Eye className="h-4 w-4 mr-2" /> View Details
                             </DropdownMenuItem>
-                            {isSuperAdmin && (
-                              <>
-                                <DropdownMenuItem onClick={() => openEditDialog(company)}>
-                                  <Edit className="h-4 w-4 mr-2" /> Edit
-                                </DropdownMenuItem>
-                                {!company.is_verified && (
-                                  <DropdownMenuItem onClick={() => openVerifyDialog(company)}>
-                                    <Shield className="h-4 w-4 mr-2" /> Verify Company
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuSeparator />
-                                {company.is_active ? (
-                                  <DropdownMenuItem 
-                                    onClick={() => openSuspendDialog(company)}
-                                    className="text-yellow-600"
-                                  >
-                                    <XCircle className="h-4 w-4 mr-2" /> Suspend
-                                  </DropdownMenuItem>
-                                ) : (
-                                  <DropdownMenuItem 
-                                    onClick={() => handleActivateCompany(company.id)}
-                                    className="text-green-600"
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-2" /> Activate
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem 
-                                  onClick={() => openDeleteDialog(company)}
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                </DropdownMenuItem>
-                              </>
+                            {!company.is_verified && (
+                              <DropdownMenuItem onClick={() => openVerifyDialog(company)}>
+                                <Shield className="h-4 w-4 mr-2" /> Verify Company
+                              </DropdownMenuItem>
                             )}
+                            <DropdownMenuSeparator />
+                            {company.is_active ? (
+                              <DropdownMenuItem onClick={() => openSuspendDialog(company)} className="text-yellow-600">
+                                <XCircle className="h-4 w-4 mr-2" /> Suspend
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem onClick={() => handleActivateCompany(company.id)} className="text-green-600">
+                                <CheckCircle className="h-4 w-4 mr-2" /> Activate
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => openDeleteDialog(company)} className="text-red-600">
+                              <Trash2 className="h-4 w-4 mr-2" /> Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
                     </tr>
                   ))}
                 </tbody>
-               </table>
+              </table>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* View Company Dialog */}
+      {/* View Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -687,134 +588,31 @@ const CompanyManagement: React.FC = () => {
           {selectedCompany && (
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16 bg-blue-100">
-                  {selectedCompany.logo_url ? (
-                    <AvatarImage src={selectedCompany.logo_url} />
-                  ) : (
-                    <AvatarFallback className="text-lg">
-                      {getInitials(selectedCompany.company_name)}
-                    </AvatarFallback>
-                  )}
+                <Avatar className="h-16 w-16">
+                  <AvatarFallback className="text-lg">{getInitials(selectedCompany.company_name)}</AvatarFallback>
                 </Avatar>
                 <div>
                   <h2 className="text-xl font-bold">{selectedCompany.company_name}</h2>
-                  <p className="text-gray-500">{selectedCompany.user.email}</p>
+                  <p className="text-gray-500">{selectedCompany.email}</p>
                 </div>
               </div>
-              
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-gray-500">Industry</Label>
-                  <p>{selectedCompany.industry?.industry_name || '-'}</p>
-                </div>
-                <div>
-                  <Label className="text-gray-500">Location</Label>
-                  <p>{selectedCompany.location || '-'}</p>
-                </div>
-                <div>
-                  <Label className="text-gray-500">Company Size</Label>
-                  <p>{selectedCompany.company_size || '-'}</p>
-                </div>
-                <div>
-                  <Label className="text-gray-500">Founded Year</Label>
-                  <p>{selectedCompany.founded_year || '-'}</p>
-                </div>
-                <div>
-                  <Label className="text-gray-500">Website</Label>
-                  <p>{selectedCompany.website || '-'}</p>
-                </div>
-                <div>
-                  <Label className="text-gray-500">Total Jobs</Label>
-                  <p>{selectedCompany._count?.jobs || 0}</p>
-                </div>
+                <div><Label className="text-gray-500">Industry</Label><p>{selectedCompany.industry_name || '-'}</p></div>
+                <div><Label className="text-gray-500">Location</Label><p>{selectedCompany.location || '-'}</p></div>
+                <div><Label className="text-gray-500">Company Size</Label><p>{selectedCompany.company_size || '-'}</p></div>
+                <div><Label className="text-gray-500">Website</Label><p>{selectedCompany.website || '-'}</p></div>
+                <div><Label className="text-gray-500">Total Jobs</Label><p>{selectedCompany.jobs_count}</p></div>
+                <div><Label className="text-gray-500">Joined Date</Label><p>{formatDate(selectedCompany.created_at)}</p></div>
               </div>
-              
               <div>
                 <Label className="text-gray-500">Description</Label>
-                <p className="mt-1 text-gray-700">{selectedCompany.company_description || 'No description provided'}</p>
+                <p className="mt-1">{selectedCompany.company_description || 'No description provided'}</p>
               </div>
-              
-              <div className="flex justify-end gap-2">
+              <DialogFooter>
                 <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
-              </div>
+              </DialogFooter>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Company Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Company</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Company Name</Label>
-              <Input
-                value={formData.company_name}
-                onChange={(e) => setFormData({...formData, company_name: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <textarea
-                className="w-full min-h-[100px] px-3 py-2 border rounded-md"
-                value={formData.company_description}
-                onChange={(e) => setFormData({...formData, company_description: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label>Website</Label>
-              <Input
-                value={formData.website}
-                onChange={(e) => setFormData({...formData, website: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label>Location</Label>
-              <Input
-                value={formData.location}
-                onChange={(e) => setFormData({...formData, location: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label>Company Size</Label>
-              <Select value={formData.company_size} onValueChange={(value) => setFormData({...formData, company_size: value})}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1-10">1-10 employees</SelectItem>
-                  <SelectItem value="11-50">11-50 employees</SelectItem>
-                  <SelectItem value="51-200">51-200 employees</SelectItem>
-                  <SelectItem value="201-500">201-500 employees</SelectItem>
-                  <SelectItem value="500+">500+ employees</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Industry</Label>
-              <Select value={formData.industry_id} onValueChange={(value) => setFormData({...formData, industry_id: value})}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {industries.map(industry => (
-                    <SelectItem key={industry.id} value={industry.id.toString()}>
-                      {industry.industry_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdateCompany} disabled={submitting}>
-              {submitting ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -825,8 +623,7 @@ const CompanyManagement: React.FC = () => {
             <AlertDialogTitle>Verify Company</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to verify <span className="font-semibold">{selectedCompany?.company_name}</span>?
-              <br />
-              Verified companies receive a trust badge and appear higher in search results.
+              <br />Verified companies receive a trust badge.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -845,8 +642,7 @@ const CompanyManagement: React.FC = () => {
             <AlertDialogTitle>Suspend Company</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to suspend <span className="font-semibold">{selectedCompany?.company_name}</span>?
-              <br />
-              Suspended companies cannot post jobs or access the platform.
+              <br />Suspended companies cannot post jobs.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -865,7 +661,7 @@ const CompanyManagement: React.FC = () => {
             <AlertDialogTitle>Delete Company</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete <span className="font-semibold">{selectedCompany?.company_name}</span>
-              and remove all associated jobs and data.
+              and remove all associated data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
