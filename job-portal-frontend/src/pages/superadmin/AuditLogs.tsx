@@ -78,13 +78,12 @@ const AuditLogs: React.FC = () => {
     try {
       const token = getToken()
       if (!token) {
-        setError('No authentication token found. Please login.')
+        setError('No token found. Please login.')
         setLoading(false)
         return
       }
 
-      console.log('Fetching audit logs with token:', token.substring(0, 50) + '...')
-      
+      console.log('Fetching audit logs...')
       const response = await fetch(`${API_BASE_URL}/admin/audit-logs`, {
         method: 'GET',
         headers: {
@@ -97,17 +96,15 @@ const AuditLogs: React.FC = () => {
       console.log('Response:', data)
       
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch')
+        throw new Error(data.message || `HTTP ${response.status}`)
       }
       
       let auditLogs: AuditLog[] = []
       if (data.data && Array.isArray(data.data)) {
         auditLogs = data.data
-      } else if (Array.isArray(data)) {
-        auditLogs = data
       }
       
-      console.log(`✅ Found ${auditLogs.length} audit logs`)
+      console.log(`Loaded ${auditLogs.length} audit logs`)
       setLogs(auditLogs)
       setFilteredLogs(auditLogs)
       
@@ -126,9 +123,9 @@ const AuditLogs: React.FC = () => {
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
       filtered = filtered.filter(log => 
-        log.action.toLowerCase().includes(term) ||
-        log.performed_by.toLowerCase().includes(term) ||
-        log.target_type.toLowerCase().includes(term)
+        log.action?.toLowerCase().includes(term) ||
+        log.performed_by?.toLowerCase().includes(term) ||
+        log.target_type?.toLowerCase().includes(term)
       )
     }
     
@@ -183,7 +180,6 @@ const AuditLogs: React.FC = () => {
     if (a.includes('update')) return <Edit className="h-4 w-4 text-blue-600" />
     if (a.includes('login')) return <LogIn className="h-4 w-4 text-indigo-600" />
     if (a.includes('verify')) return <CheckCircle className="h-4 w-4 text-green-600" />
-    if (a.includes('job')) return <Briefcase className="h-4 w-4 text-blue-600" />
     return <Activity className="h-4 w-4 text-gray-600" />
   }
 
@@ -206,9 +202,9 @@ const AuditLogs: React.FC = () => {
   }
 
   const isSuperAdmin = currentUserRole === 'Super Admin'
+  const token = getToken()
 
-  // Show login prompt if no token
-  if (!getToken()) {
+  if (!token) {
     return (
       <div className="flex flex-col items-center justify-center h-96">
         <Shield className="h-16 w-16 text-gray-400 mb-4" />
@@ -222,20 +218,23 @@ const AuditLogs: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
       </div>
     )
   }
 
   return (
-    <><div className="space-y-6">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
           <p className="text-gray-500 mt-1">Track all system activities and admin actions</p>
-          <p className="text-sm text-gray-400 mt-1">Logged in as: {currentUserRole || 'Admin'}</p>
+          <p className="text-sm text-gray-400 mt-1">
+            Logged in as: <span className="font-semibold">{currentUserRole || 'Admin'}</span>
+          </p>
           {logs.length > 0 && (
-            <p className="text-xs text-green-600 mt-1">✅ {logs.length} audit logs loaded from database</p>
+            <p className="text-xs text-green-600 mt-1">✅ {logs.length} real audit logs loaded</p>
           )}
         </div>
         <div className="flex gap-2">
@@ -257,10 +256,11 @@ const AuditLogs: React.FC = () => {
         </Alert>
       )}
 
-      <Card>
-        <CardHeader>
+      {/* Filters */}
+      <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+        <CardHeader className="border-b border-gray-100 pb-3">
           <div className="flex justify-between items-center flex-wrap gap-4">
-            <CardTitle>Activity Logs ({filteredLogs.length})</CardTitle>
+            <CardTitle className="text-gray-900">Activity Logs ({filteredLogs.length})</CardTitle>
             <div className="flex gap-2 flex-wrap">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -268,7 +268,8 @@ const AuditLogs: React.FC = () => {
                   placeholder="Search logs..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 w-64 border-gray-300" />
+                  className="pl-9 w-64 border-gray-300"
+                />
               </div>
               <Select value={filterAction} onValueChange={setFilterAction}>
                 <SelectTrigger className="w-40">
@@ -283,13 +284,20 @@ const AuditLogs: React.FC = () => {
                   <SelectItem value="VERIFY_COMPANY">Verify Company</SelectItem>
                   <SelectItem value="APPROVE_JOB">Approve Job</SelectItem>
                   <SelectItem value="SUSPEND_USER">Suspend User</SelectItem>
-                  <SelectItem value="RESET_PASSWORD">Reset Password</SelectItem>
-                  <SelectItem value="BULK_DELETE_JOBS">Bulk Delete Jobs</SelectItem>
-                  <SelectItem value="EXPORT_DATA">Export Data</SelectItem>
                 </SelectContent>
               </Select>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-36" />
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-36" />
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-36"
+              />
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-36"
+              />
             </div>
           </div>
         </CardHeader>
@@ -298,23 +306,6 @@ const AuditLogs: React.FC = () => {
             <div className="text-center py-12">
               <Shield className="h-12 w-12 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-500">No audit logs found</p>
-              {logs.length === 0 && (
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={async () => {
-                    const token = getToken()
-                    const res = await fetch(`${API_BASE_URL}/admin/audit-logs`, {
-                      headers: { 'Authorization': `Bearer ${token}` }
-                    })
-                    const data = await res.json()
-                    console.log('API Response:', data)
-                    alert(`Response: ${JSON.stringify(data, null, 2)}`)
-                  } }
-                >
-                  Debug API
-                </Button>
-              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -327,62 +318,97 @@ const AuditLogs: React.FC = () => {
                     <th className="text-left py-3 px-4 text-sm font-medium">Timestamp</th>
                     <th className="text-left py-3 px-4 text-sm font-medium">IP Address</th>
                     <th className="text-left py-3 px-4 text-sm font-medium">Actions</th>
-
-                  </table>
-               
-              </thead>
-
-              <tbody>
-                {filteredLogs.map((log) => (
-                  <tr key={log.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        {getActionIcon(log.action)}
-                        <Badge className={getActionBadgeClass(log.action)}>
-                          {getActionDisplay(log.action)}
-                        </Badge>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <p className="font-medium">{log.performed_by}</p>
-                      <p className="text-xs text-gray-500">{log.performed_by_email}</p>
-                    </td>
-                    <td className="py-3 px-4">
-                      <p className="text-sm">{log.target_type}</p>
-                      <p className="text-xs text-gray-500">ID: {log.target_id}</p>
-                    </td>
-                    <td className="py-3 px-4 text-sm">{formatDate(log.created_at)}</td>
-                    <td className="py-3 px-4 text-sm">{log.ip_address}</td>
-                    <td className="py-3 px-4">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openDetailsDialog(log)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>)}
-        </div>
-        )}
-      </CardContent>
-    </Card><Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+                </thead>
+                <tbody>
+                  {filteredLogs.map((log) => (
+                    <tr key={log.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          {getActionIcon(log.action)}
+                          <Badge className={getActionBadgeClass(log.action)}>
+                            {getActionDisplay(log.action)}
+                          </Badge>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <p className="font-medium">{log.performed_by}</p>
+                        <p className="text-xs text-gray-500">{log.performed_by_email}</p>
+                      </td>
+                      <td className="py-3 px-4">
+                        <p className="text-sm">{log.target_type}</p>
+                        <p className="text-xs text-gray-500">ID: {log.target_id}</p>
+                      </td>
+                      <td className="py-3 px-4 text-sm">{formatDate(log.created_at)}</td>
+                      <td className="py-3 px-4 text-sm">{log.ip_address}</td>
+                      <td className="py-3 px-4">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openDetailsDialog(log)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Details Dialog */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>Audit Log Details</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Audit Log Details</DialogTitle>
+          </DialogHeader>
           {selectedLog && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Action</Label><p className="mt-1">{getActionDisplay(selectedLog.action)}</p></div>
-                <div><Label>Timestamp</Label><p className="mt-1">{formatDate(selectedLog.created_at)}</p></div>
-                <div><Label>Performed By</Label><p className="mt-1">{selectedLog.performed_by}</p></div>
-                <div><Label>Role</Label><p className="mt-1">{selectedLog.performed_by_role}</p></div>
-                <div><Label>Target Type</Label><p className="mt-1">{selectedLog.target_type}</p></div>
-                <div><Label>Target ID</Label><p className="mt-1">{selectedLog.target_id}</p></div>
-                <div><Label>IP Address</Label><p className="mt-1">{selectedLog.ip_address}</p></div>
+                <div>
+                  <Label className="text-gray-500">Action</Label>
+                  <p className="mt-1 font-medium">{getActionDisplay(selectedLog.action)}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Timestamp</Label>
+                  <p className="mt-1">{formatDate(selectedLog.created_at)}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Performed By</Label>
+                  <p className="mt-1">{selectedLog.performed_by}</p>
+                  <p className="text-xs text-gray-500">{selectedLog.performed_by_email}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Role</Label>
+                  <p className="mt-1">{selectedLog.performed_by_role}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Target Type</Label>
+                  <p className="mt-1">{selectedLog.target_type}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Target ID</Label>
+                  <p className="mt-1 text-sm">{selectedLog.target_id}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">IP Address</Label>
+                  <p className="mt-1">{selectedLog.ip_address}</p>
+                </div>
               </div>
+              
               {selectedLog.details && (
-                <div><Label>Details</Label><pre className="mt-1 p-3 bg-gray-50 rounded-lg text-sm overflow-auto">{JSON.stringify(selectedLog.details, null, 2)}</pre></div>
+                <div>
+                  <Label className="text-gray-500">Additional Details</Label>
+                  <pre className="mt-1 p-3 bg-gray-50 rounded-lg text-sm overflow-auto max-h-48">
+                    {typeof selectedLog.details === 'string' 
+                      ? selectedLog.details 
+                      : JSON.stringify(selectedLog.details, null, 2)}
+                  </pre>
+                </div>
               )}
-              <DialogFooter><Button variant="outline" onClick={() => setIsDetailsOpen(false)}>Close</Button></DialogFooter>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>Close</Button>
+              </DialogFooter>
             </div>
           )}
         </DialogContent>
