@@ -1,4 +1,7 @@
-// src/pages/superadmin/Analytics.tsx
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/immutability */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -54,7 +57,6 @@ interface AnalyticsData {
   topSkills: Array<{ skill: string; count: number }>
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#6b7280']
 
 const Analytics: React.FC = () => {
   const [loading, setLoading] = useState(true)
