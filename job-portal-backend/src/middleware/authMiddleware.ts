@@ -11,6 +11,7 @@ declare global {
       user?: {
         id: string;
         email: string;
+        full_name?: string;  // Make full_name optional
       };
       fullUser?: any;
     }
@@ -26,8 +27,14 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     }
     
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; email: string };
-    req.user = decoded;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; email: string; full_name?: string };
+    
+    // ✅ FIX: Set req.user with optional full_name
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      full_name: decoded.full_name || ''
+    };
     
     // Get full user data including role
     const fullUser = await prisma.user.findUnique({
