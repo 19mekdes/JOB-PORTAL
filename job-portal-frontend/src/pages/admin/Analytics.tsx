@@ -11,7 +11,8 @@ import {
   UserCheck,
   CheckCircle,
   XCircle,
-  Eye} from 'lucide-react'
+  Eye
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -21,7 +22,6 @@ import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
 interface AnalyticsData {
-  // User Statistics
   totalUsers: number
   totalJobSeekers: number
   totalEmployers: number
@@ -29,8 +29,6 @@ interface AnalyticsData {
   newUsersThisMonth: number
   userGrowth: number
   activeUsers: number
-  
-  // Job Statistics
   totalJobs: number
   activeJobs: number
   closedJobs: number
@@ -38,8 +36,6 @@ interface AnalyticsData {
   jobGrowth: number
   jobsByIndustry: Array<{ industry: string; count: number }>
   jobsByType: Array<{ type: string; count: number }>
-  
-  // Application Statistics
   totalApplications: number
   pendingApplications: number
   reviewedApplications: number
@@ -47,19 +43,13 @@ interface AnalyticsData {
   interviewApplications: number
   acceptedApplications: number
   rejectedApplications: number
-  
-  // Engagement Metrics
   totalViews: number
   averageViewsPerJob: number
   averageApplicationsPerJob: number
   conversionRate: number
-  
-  // Monthly Trends
   jobsByMonth: Array<{ month: string; count: number }>
   applicationsByMonth: Array<{ month: string; count: number }>
   viewsByMonth: Array<{ month: string; count: number }>
-  
-  // Top Performers
   topIndustries: Array<{ name: string; count: number }>
   topEmployers: Array<{ name: string; jobCount: number; views: number }>
   topSkills: Array<{ skill: string; count: number }>
@@ -117,45 +107,45 @@ const AdminAnalytics: React.FC = () => {
       
       console.log('Analytics API Response:', response.data)
       
-      // Check if response has data property
-      let analyticsData = response.data.data || response.data || {}
+      // Safely extract data with fallbacks
+      const responseData = response.data?.data || response.data || {}
       
-      // Safely extract arrays with fallbacks
-      const jobsByIndustry = Array.isArray(analyticsData.jobsByIndustry) ? analyticsData.jobsByIndustry : []
-      const jobsByType = Array.isArray(analyticsData.jobsByType) ? analyticsData.jobsByType : []
-      const jobsByMonth = Array.isArray(analyticsData.jobsByMonth) ? analyticsData.jobsByMonth : []
-      const applicationsByMonth = Array.isArray(analyticsData.applicationsByMonth) ? analyticsData.applicationsByMonth : []
-      const viewsByMonth = Array.isArray(analyticsData.viewsByMonth) ? analyticsData.viewsByMonth : []
-      const topIndustries = Array.isArray(analyticsData.topIndustries) ? analyticsData.topIndustries : []
-      const topEmployers = Array.isArray(analyticsData.topEmployers) ? analyticsData.topEmployers : []
-      const topSkills = Array.isArray(analyticsData.topSkills) ? analyticsData.topSkills : []
+      // Safely extract arrays
+      const jobsByIndustry = Array.isArray(responseData.jobsByIndustry) ? responseData.jobsByIndustry : []
+      const jobsByType = Array.isArray(responseData.jobsByType) ? responseData.jobsByType : []
+      const jobsByMonth = Array.isArray(responseData.jobsByMonth) ? responseData.jobsByMonth : []
+      const applicationsByMonth = Array.isArray(responseData.applicationsByMonth) ? responseData.applicationsByMonth : []
+      const viewsByMonth = Array.isArray(responseData.viewsByMonth) ? responseData.viewsByMonth : []
+      const topIndustries = Array.isArray(responseData.topIndustries) ? responseData.topIndustries : []
+      const topEmployers = Array.isArray(responseData.topEmployers) ? responseData.topEmployers : []
+      const topSkills = Array.isArray(responseData.topSkills) ? responseData.topSkills : []
       
       setData({
-        totalUsers: analyticsData.totalUsers || 0,
-        totalJobSeekers: analyticsData.totalJobSeekers || 0,
-        totalEmployers: analyticsData.totalEmployers || 0,
-        totalAdmins: analyticsData.totalAdmins || 0,
-        newUsersThisMonth: analyticsData.newUsersThisMonth || 0,
-        userGrowth: analyticsData.userGrowth || 0,
-        activeUsers: analyticsData.activeUsers || 0,
-        totalJobs: analyticsData.totalJobs || 0,
-        activeJobs: analyticsData.activeJobs || 0,
-        closedJobs: analyticsData.closedJobs || 0,
-        newJobsThisMonth: analyticsData.newJobsThisMonth || 0,
-        jobGrowth: analyticsData.jobGrowth || 0,
+        totalUsers: responseData.totalUsers ?? 0,
+        totalJobSeekers: responseData.totalJobSeekers ?? 0,
+        totalEmployers: responseData.totalEmployers ?? 0,
+        totalAdmins: responseData.totalAdmins ?? 0,
+        newUsersThisMonth: responseData.newUsersThisMonth ?? 0,
+        userGrowth: responseData.userGrowth ?? 0,
+        activeUsers: responseData.activeUsers ?? 0,
+        totalJobs: responseData.totalJobs ?? 0,
+        activeJobs: responseData.activeJobs ?? 0,
+        closedJobs: responseData.closedJobs ?? 0,
+        newJobsThisMonth: responseData.newJobsThisMonth ?? 0,
+        jobGrowth: responseData.jobGrowth ?? 0,
         jobsByIndustry,
         jobsByType,
-        totalApplications: analyticsData.totalApplications || 0,
-        pendingApplications: analyticsData.pendingApplications || 0,
-        reviewedApplications: analyticsData.reviewedApplications || 0,
-        shortlistedApplications: analyticsData.shortlistedApplications || 0,
-        interviewApplications: analyticsData.interviewApplications || 0,
-        acceptedApplications: analyticsData.acceptedApplications || 0,
-        rejectedApplications: analyticsData.rejectedApplications || 0,
-        totalViews: analyticsData.totalViews || 0,
-        averageViewsPerJob: analyticsData.averageViewsPerJob || 0,
-        averageApplicationsPerJob: analyticsData.averageApplicationsPerJob || 0,
-        conversionRate: analyticsData.conversionRate || 0,
+        totalApplications: responseData.totalApplications ?? 0,
+        pendingApplications: responseData.pendingApplications ?? 0,
+        reviewedApplications: responseData.reviewedApplications ?? 0,
+        shortlistedApplications: responseData.shortlistedApplications ?? 0,
+        interviewApplications: responseData.interviewApplications ?? 0,
+        acceptedApplications: responseData.acceptedApplications ?? 0,
+        rejectedApplications: responseData.rejectedApplications ?? 0,
+        totalViews: responseData.totalViews ?? 0,
+        averageViewsPerJob: responseData.averageViewsPerJob ?? 0,
+        averageApplicationsPerJob: responseData.averageApplicationsPerJob ?? 0,
+        conversionRate: responseData.conversionRate ?? 0,
         jobsByMonth,
         applicationsByMonth,
         viewsByMonth,
@@ -177,7 +167,7 @@ const AdminAnalytics: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 bg-white min-h-screen p-6 rounded-xl">
         <div className="flex justify-between items-center">
           <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
           <div className="h-10 w-32 bg-gray-200 rounded animate-pulse" />
@@ -194,53 +184,53 @@ const AdminAnalytics: React.FC = () => {
   const statsCards = [
     {
       title: 'Total Users',
-      value: data.totalUsers.toLocaleString(),
+      value: (data.totalUsers || 0).toLocaleString(),
       icon: Users,
-      change: `${data.newUsersThisMonth} new this month`,
+      change: `${data.newUsersThisMonth || 0} new this month`,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
-      trend: `${data.userGrowth > 0 ? '+' : ''}${data.userGrowth}%`
+      trend: `${(data.userGrowth || 0) > 0 ? '+' : ''}${data.userGrowth || 0}%`
     },
     {
       title: 'Total Jobs',
-      value: data.totalJobs.toLocaleString(),
+      value: (data.totalJobs || 0).toLocaleString(),
       icon: Briefcase,
-      change: `${data.activeJobs} active / ${data.closedJobs} closed`,
+      change: `${data.activeJobs || 0} active / ${data.closedJobs || 0} closed`,
       color: 'text-green-600',
       bg: 'bg-green-50',
-      trend: `${data.jobGrowth > 0 ? '+' : ''}${data.jobGrowth}%`
+      trend: `${(data.jobGrowth || 0) > 0 ? '+' : ''}${data.jobGrowth || 0}%`
     },
     {
       title: 'Applications',
-      value: data.totalApplications.toLocaleString(),
+      value: (data.totalApplications || 0).toLocaleString(),
       icon: FileText,
-      change: `${data.pendingApplications} pending`,
+      change: `${data.pendingApplications || 0} pending`,
       color: 'text-purple-600',
       bg: 'bg-purple-50',
-      trend: `${data.acceptedApplications} accepted`
+      trend: `${data.acceptedApplications || 0} accepted`
     },
     {
       title: 'Views',
-      value: data.totalViews.toLocaleString(),
+      value: (data.totalViews || 0).toLocaleString(),
       icon: Eye,
-      change: `${data.averageViewsPerJob} avg per job`,
+      change: `${data.averageViewsPerJob || 0} avg per job`,
       color: 'text-orange-600',
       bg: 'bg-orange-50',
-      trend: `${data.conversionRate}% conversion`
+      trend: `${data.conversionRate || 0}% conversion`
     }
   ]
 
   const applicationStats = [
-    { label: 'Pending', count: data.pendingApplications, color: 'bg-yellow-500', percentage: data.totalApplications > 0 ? (data.pendingApplications / data.totalApplications) * 100 : 0 },
-    { label: 'Reviewed', count: data.reviewedApplications, color: 'bg-blue-500', percentage: data.totalApplications > 0 ? (data.reviewedApplications / data.totalApplications) * 100 : 0 },
-    { label: 'Shortlisted', count: data.shortlistedApplications, color: 'bg-purple-500', percentage: data.totalApplications > 0 ? (data.shortlistedApplications / data.totalApplications) * 100 : 0 },
-    { label: 'Interview', count: data.interviewApplications, color: 'bg-indigo-500', percentage: data.totalApplications > 0 ? (data.interviewApplications / data.totalApplications) * 100 : 0 },
-    { label: 'Accepted', count: data.acceptedApplications, color: 'bg-green-500', percentage: data.totalApplications > 0 ? (data.acceptedApplications / data.totalApplications) * 100 : 0 },
-    { label: 'Rejected', count: data.rejectedApplications, color: 'bg-red-500', percentage: data.totalApplications > 0 ? (data.rejectedApplications / data.totalApplications) * 100 : 0 }
+    { label: 'Pending', count: data.pendingApplications || 0, color: 'bg-yellow-500', percentage: data.totalApplications > 0 ? ((data.pendingApplications || 0) / data.totalApplications) * 100 : 0 },
+    { label: 'Reviewed', count: data.reviewedApplications || 0, color: 'bg-blue-500', percentage: data.totalApplications > 0 ? ((data.reviewedApplications || 0) / data.totalApplications) * 100 : 0 },
+    { label: 'Shortlisted', count: data.shortlistedApplications || 0, color: 'bg-purple-500', percentage: data.totalApplications > 0 ? ((data.shortlistedApplications || 0) / data.totalApplications) * 100 : 0 },
+    { label: 'Interview', count: data.interviewApplications || 0, color: 'bg-indigo-500', percentage: data.totalApplications > 0 ? ((data.interviewApplications || 0) / data.totalApplications) * 100 : 0 },
+    { label: 'Accepted', count: data.acceptedApplications || 0, color: 'bg-green-500', percentage: data.totalApplications > 0 ? ((data.acceptedApplications || 0) / data.totalApplications) * 100 : 0 },
+    { label: 'Rejected', count: data.rejectedApplications || 0, color: 'bg-red-500', percentage: data.totalApplications > 0 ? ((data.rejectedApplications || 0) / data.totalApplications) * 100 : 0 }
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-white min-h-screen p-6 rounded-xl">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -254,14 +244,14 @@ const AdminAnalytics: React.FC = () => {
         {statsCards.map((stat) => {
           const Icon = stat.icon
           return (
-            <Card key={stat.title} className="hover:shadow-md transition">
+            <Card key={stat.title} className="hover:shadow-md transition bg-white border border-gray-200">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">{stat.title}</p>
                     <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
                     <p className="text-xs text-gray-400 mt-1">{stat.change}</p>
-                    <Badge variant="secondary" className="mt-1 text-xs">
+                    <Badge variant="secondary" className="mt-1 text-xs bg-gray-100">
                       {stat.trend}
                     </Badge>
                   </div>
@@ -276,20 +266,20 @@ const AdminAnalytics: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="jobs">Jobs Analytics</TabsTrigger>
-          <TabsTrigger value="applications">Applications</TabsTrigger>
-          <TabsTrigger value="users">User Insights</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="bg-white">
+        <TabsList className="grid w-full grid-cols-4 bg-gray-100">
+          <TabsTrigger value="overview" className="bg-white data-[state=active]:bg-blue-600 data-[state=active]:text-white">Overview</TabsTrigger>
+          <TabsTrigger value="jobs" className="bg-white data-[state=active]:bg-green-600 data-[state=active]:text-white">Jobs Analytics</TabsTrigger>
+          <TabsTrigger value="applications" className="bg-white data-[state=active]:bg-purple-600 data-[state=active]:text-white">Applications</TabsTrigger>
+          <TabsTrigger value="users" className="bg-white data-[state=active]:bg-orange-600 data-[state=active]:text-white">User Insights</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6 mt-6">
           {/* Application Status Distribution */}
-          <Card>
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
-              <CardTitle>Application Status Distribution</CardTitle>
+              <CardTitle className="text-gray-900">Application Status Distribution</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -297,9 +287,9 @@ const AdminAnalytics: React.FC = () => {
                   <div key={stat.label}>
                     <div className="flex justify-between text-sm mb-1">
                       <span>{stat.label}</span>
-                      <span className="font-medium">{stat.count} ({Math.round(stat.percentage)}%)</span>
+                      <span className="font-medium">{stat.count.toLocaleString()} ({Math.round(stat.percentage)}%)</span>
                     </div>
-                    <Progress value={stat.percentage} className={`h-2 ${stat.color}`} />
+                    <Progress value={stat.percentage} className="h-2" />
                   </div>
                 ))}
               </div>
@@ -308,9 +298,9 @@ const AdminAnalytics: React.FC = () => {
 
           {/* Jobs by Industry */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
+            <Card className="bg-white border border-gray-200">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-gray-900">
                   <Building2 className="h-5 w-5" />
                   Jobs by Industry
                 </CardTitle>
@@ -322,7 +312,7 @@ const AdminAnalytics: React.FC = () => {
                   <div className="space-y-3">
                     {data.jobsByIndustry.slice(0, 5).map((industry, i) => (
                       <div key={i} className="flex justify-between items-center">
-                        <span className="text-sm">{industry.industry}</span>
+                        <span className="text-sm text-gray-700">{industry.industry}</span>
                         <div className="flex items-center gap-3">
                           <div className="w-32 bg-gray-200 rounded-full h-2">
                             <div 
@@ -330,7 +320,7 @@ const AdminAnalytics: React.FC = () => {
                               style={{ width: `${data.totalJobs > 0 ? (industry.count / data.totalJobs) * 100 : 0}%` }}
                             />
                           </div>
-                          <span className="text-sm font-medium">{industry.count}</span>
+                          <span className="text-sm font-medium text-gray-900">{industry.count}</span>
                         </div>
                       </div>
                     ))}
@@ -340,9 +330,9 @@ const AdminAnalytics: React.FC = () => {
             </Card>
 
             {/* Jobs by Type */}
-            <Card>
+            <Card className="bg-white border border-gray-200">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-gray-900">
                   <Briefcase className="h-5 w-5" />
                   Jobs by Type
                 </CardTitle>
@@ -354,7 +344,7 @@ const AdminAnalytics: React.FC = () => {
                   <div className="space-y-3">
                     {data.jobsByType.map((type, i) => (
                       <div key={i} className="flex justify-between items-center">
-                        <span className="text-sm">{type.type}</span>
+                        <span className="text-sm text-gray-700">{type.type}</span>
                         <div className="flex items-center gap-3">
                           <div className="w-32 bg-gray-200 rounded-full h-2">
                             <div 
@@ -362,7 +352,7 @@ const AdminAnalytics: React.FC = () => {
                               style={{ width: `${data.totalJobs > 0 ? (type.count / data.totalJobs) * 100 : 0}%` }}
                             />
                           </div>
-                          <span className="text-sm font-medium">{type.count}</span>
+                          <span className="text-sm font-medium text-gray-900">{type.count}</span>
                         </div>
                       </div>
                     ))}
@@ -373,9 +363,9 @@ const AdminAnalytics: React.FC = () => {
           </div>
 
           {/* Top Employers */}
-          <Card>
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-gray-900">
                 <Award className="h-5 w-5" />
                 Top Employers
               </CardTitle>
@@ -389,9 +379,9 @@ const AdminAnalytics: React.FC = () => {
                     <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium text-gray-900">{employer.name}</p>
-                        <p className="text-sm text-gray-500">{employer.jobCount} jobs • {employer.views.toLocaleString()} views</p>
+                        <p className="text-sm text-gray-500">{employer.jobCount} jobs • {(employer.views || 0).toLocaleString()} views</p>
                       </div>
-                      <Badge variant="secondary">#{i + 1}</Badge>
+                      <Badge variant="secondary" className="bg-gray-200">#{i + 1}</Badge>
                     </div>
                   ))}
                 </div>
@@ -400,9 +390,9 @@ const AdminAnalytics: React.FC = () => {
           </Card>
 
           {/* Top Skills */}
-          <Card>
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-gray-900">
                 <TrendingUp className="h-5 w-5" />
                 In-Demand Skills
               </CardTitle>
@@ -413,7 +403,7 @@ const AdminAnalytics: React.FC = () => {
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {data.topSkills.slice(0, 10).map((skill, i) => (
-                    <Badge key={i} variant="secondary" className="text-sm py-1.5">
+                    <Badge key={i} variant="secondary" className="text-sm py-1.5 bg-gray-100 text-gray-700">
                       {skill.skill} ({skill.count})
                     </Badge>
                   ))}
@@ -426,9 +416,9 @@ const AdminAnalytics: React.FC = () => {
         {/* Jobs Analytics Tab */}
         <TabsContent value="jobs" className="space-y-6 mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
+            <Card className="bg-white border border-gray-200">
               <CardHeader>
-                <CardTitle>Job Statistics</CardTitle>
+                <CardTitle className="text-gray-900">Job Statistics</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -452,29 +442,29 @@ const AdminAnalytics: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-white border border-gray-200">
               <CardHeader>
-                <CardTitle>Engagement Metrics</CardTitle>
+                <CardTitle className="text-gray-900">Engagement Metrics</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span>Views to Applications</span>
-                    <span>{data.conversionRate}%</span>
+                    <span className="text-gray-700">Views to Applications</span>
+                    <span className="text-gray-900">{data.conversionRate}%</span>
                   </div>
                   <Progress value={data.conversionRate} className="h-2" />
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span>Applications per Job</span>
-                    <span>{data.averageApplicationsPerJob}</span>
+                    <span className="text-gray-700">Applications per Job</span>
+                    <span className="text-gray-900">{data.averageApplicationsPerJob}</span>
                   </div>
                   <Progress value={Math.min((data.averageApplicationsPerJob / 50) * 100, 100)} className="h-2" />
                 </div>
                 <Separator />
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div>
-                    <p className="text-2xl font-bold text-blue-600">{data.totalViews.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-blue-600">{(data.totalViews || 0).toLocaleString()}</p>
                     <p className="text-xs text-gray-500">Total Job Views</p>
                   </div>
                   <div>
@@ -490,20 +480,20 @@ const AdminAnalytics: React.FC = () => {
         {/* Applications Tab */}
         <TabsContent value="applications" className="space-y-6 mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card>
+            <Card className="bg-white border border-gray-200">
               <CardContent className="pt-4 text-center">
-                <p className="text-2xl font-bold text-gray-900">{data.totalApplications.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">{(data.totalApplications || 0).toLocaleString()}</p>
                 <p className="text-xs text-gray-500">Total Applications</p>
               </CardContent>
             </Card>
-            <Card className="border-green-200">
+            <Card className="bg-white border border-green-200">
               <CardContent className="pt-4 text-center">
                 <p className="text-2xl font-bold text-green-600">{data.acceptedApplications}</p>
                 <p className="text-xs text-gray-500">Accepted</p>
                 <CheckCircle className="h-4 w-4 text-green-500 mx-auto mt-1" />
               </CardContent>
             </Card>
-            <Card className="border-red-200">
+            <Card className="bg-white border border-red-200">
               <CardContent className="pt-4 text-center">
                 <p className="text-2xl font-bold text-red-600">{data.rejectedApplications}</p>
                 <p className="text-xs text-gray-500">Rejected</p>
@@ -512,28 +502,34 @@ const AdminAnalytics: React.FC = () => {
             </Card>
           </div>
 
-          <Card>
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
-              <CardTitle>Application Funnel</CardTitle>
+              <CardTitle className="text-gray-900">Application Funnel</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {applicationStats.map((stat, i) => (
-                  <div key={i}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${stat.color.replace('bg-', '') === 'yellow-500' ? 'bg-yellow-500' : 
-                          stat.color.replace('bg-', '') === 'blue-500' ? 'bg-blue-500' :
-                          stat.color.replace('bg-', '') === 'purple-500' ? 'bg-purple-500' :
-                          stat.color.replace('bg-', '') === 'indigo-500' ? 'bg-indigo-500' :
-                          stat.color.replace('bg-', '') === 'green-500' ? 'bg-green-500' : 'bg-red-500'}`} />
-                        {stat.label}
-                      </span>
-                      <span className="font-medium">{stat.count}</span>
+                {applicationStats.map((stat, i) => {
+                  let bgColor = ''
+                  if (stat.label === 'Pending') bgColor = 'bg-yellow-500'
+                  else if (stat.label === 'Reviewed') bgColor = 'bg-blue-500'
+                  else if (stat.label === 'Shortlisted') bgColor = 'bg-purple-500'
+                  else if (stat.label === 'Interview') bgColor = 'bg-indigo-500'
+                  else if (stat.label === 'Accepted') bgColor = 'bg-green-500'
+                  else bgColor = 'bg-red-500'
+                  
+                  return (
+                    <div key={i}>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${bgColor}`} />
+                          <span className="text-gray-700">{stat.label}</span>
+                        </span>
+                        <span className="font-medium text-gray-900">{stat.count.toLocaleString()}</span>
+                      </div>
+                      <Progress value={stat.percentage} className="h-2" />
                     </div>
-                    <Progress value={stat.percentage} className="h-2" />
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </CardContent>
           </Card>
@@ -542,27 +538,27 @@ const AdminAnalytics: React.FC = () => {
         {/* User Insights Tab */}
         <TabsContent value="users" className="space-y-6 mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
+            <Card className="bg-white border border-gray-200">
               <CardContent className="pt-4 text-center">
-                <p className="text-2xl font-bold text-blue-600">{data.totalJobSeekers.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-blue-600">{(data.totalJobSeekers || 0).toLocaleString()}</p>
                 <p className="text-xs text-gray-500">Job Seekers</p>
                 <UserCheck className="h-4 w-4 text-blue-500 mx-auto mt-1" />
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-white border border-gray-200">
               <CardContent className="pt-4 text-center">
-                <p className="text-2xl font-bold text-purple-600">{data.totalEmployers.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-purple-600">{(data.totalEmployers || 0).toLocaleString()}</p>
                 <p className="text-xs text-gray-500">Employers</p>
                 <Building2 className="h-4 w-4 text-purple-500 mx-auto mt-1" />
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-white border border-gray-200">
               <CardContent className="pt-4 text-center">
                 <p className="text-2xl font-bold text-gray-600">{data.totalAdmins}</p>
                 <p className="text-xs text-gray-500">Administrators</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-white border border-gray-200">
               <CardContent className="pt-4 text-center">
                 <p className="text-2xl font-bold text-green-600">{data.userGrowth}%</p>
                 <p className="text-xs text-gray-500">User Growth</p>
@@ -571,25 +567,25 @@ const AdminAnalytics: React.FC = () => {
             </Card>
           </div>
 
-          <Card>
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
-              <CardTitle>User Activity</CardTitle>
+              <CardTitle className="text-gray-900">User Activity</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span>Active Users</span>
-                    <span>{data.totalUsers > 0 ? ((data.activeUsers / data.totalUsers) * 100).toFixed(1) : 0}%</span>
+                    <span className="text-gray-700">Active Users</span>
+                    <span className="text-gray-900">{data.totalUsers > 0 ? ((data.activeUsers / data.totalUsers) * 100).toFixed(1) : 0}%</span>
                   </div>
                   <Progress value={data.totalUsers > 0 ? (data.activeUsers / data.totalUsers) * 100 : 0} className="h-2" />
-                  <p className="text-xs text-gray-500 mt-1">{data.activeUsers.toLocaleString()} out of {data.totalUsers.toLocaleString()} users active</p>
+                  <p className="text-xs text-gray-500 mt-1">{(data.activeUsers || 0).toLocaleString()} out of {(data.totalUsers || 0).toLocaleString()} users active</p>
                 </div>
                 <Separator />
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span>New Users (This Month)</span>
-                    <span>{data.newUsersThisMonth.toLocaleString()}</span>
+                    <span className="text-gray-700">New Users (This Month)</span>
+                    <span className="text-gray-900">{(data.newUsersThisMonth || 0).toLocaleString()}</span>
                   </div>
                   <Progress value={data.totalUsers > 0 ? (data.newUsersThisMonth / data.totalUsers) * 100 : 0} className="h-2" />
                 </div>

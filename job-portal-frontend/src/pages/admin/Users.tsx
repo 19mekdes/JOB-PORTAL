@@ -62,6 +62,10 @@ const UserManagement: React.FC = () => {
     total: 0, active: 0, suspended: 0, jobSeekers: 0, employers: 0, admins: 0, superAdmins: 0
   })
 
+  // Get current user role for permission checks
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
+  const isSuperAdmin = currentUser.user_type?.type_name === 'Super Admin'
+
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true)
@@ -75,11 +79,7 @@ const UserManagement: React.FC = () => {
       if (searchTerm) params.search = searchTerm
       if (apiRole !== 'all') params.role = apiRole
       
-      console.log('Fetching users with params:', params)
-      
       const response = await api.get('/admin/users', { params })
-      
-      console.log('API Response:', response.data)
       
       let usersData = []
       if (response.data?.data && Array.isArray(response.data.data)) {
@@ -90,42 +90,37 @@ const UserManagement: React.FC = () => {
       
       setUsers(usersData)
       
-      // TRY to get stats from API first
+      // Get stats from API response
       let statsData = response.data?.stats
       if (!statsData && response.data?.data?.stats) statsData = response.data.data.stats
       if (!statsData && response.data?.stats) statsData = response.data.stats
       
-      // If statsData is missing or has zeros, calculate from usersData
-      if (!statsData || statsData.total === 0) {
-        console.log('Calculating stats from users array...')
-        
-        let jobSeekersCount = 0
-        let employersCount = 0
-        let adminsCount = 0
-        let superAdminsCount = 0
-        let activeCount = 0
-        let suspendedCount = 0
+      if (statsData && statsData.total > 0) {
+        setStats({
+          total: statsData.total || 0,
+          active: statsData.active || 0,
+          suspended: statsData.suspended || 0,
+          jobSeekers: statsData.jobSeekers || 0,
+          employers: statsData.employers || 0,
+          admins: statsData.admins || 0,
+          superAdmins: statsData.superAdmins || 0
+        })
+      } else {
+        // Calculate stats from usersData as fallback
+        let jobSeekersCount = 0, employersCount = 0, adminsCount = 0, superAdminsCount = 0, activeCount = 0, suspendedCount = 0
         
         for (const user of usersData) {
-          if (user.is_active) {
-            activeCount++
-          } else {
-            suspendedCount++
-          }
+          if (user.is_active) activeCount++
+          else suspendedCount++
           
           const typeName = user.user_type?.type_name?.toLowerCase() || ''
-          if (typeName === 'job seeker') {
-            jobSeekersCount++
-          } else if (typeName === 'employer') {
-            employersCount++
-          } else if (typeName === 'admin') {
-            adminsCount++
-          } else if (typeName === 'super admin') {
-            superAdminsCount++
-          }
+          if (typeName === 'job seeker') jobSeekersCount++
+          else if (typeName === 'employer') employersCount++
+          else if (typeName === 'admin') adminsCount++
+          else if (typeName === 'super admin') superAdminsCount++
         }
         
-        statsData = {
+        setStats({
           total: usersData.length,
           active: activeCount,
           suspended: suspendedCount,
@@ -133,21 +128,8 @@ const UserManagement: React.FC = () => {
           employers: employersCount,
           admins: adminsCount,
           superAdmins: superAdminsCount
-        }
-        
-        console.log('Calculated stats:', statsData)
+        })
       }
-      
-      // Set stats with fallback values
-      setStats({
-        total: statsData?.total || usersData.length || 0,
-        active: statsData?.active || 0,
-        suspended: statsData?.suspended || 0,
-        jobSeekers: statsData?.jobSeekers || 0,
-        employers: statsData?.employers || 0,
-        admins: statsData?.admins || 0,
-        superAdmins: statsData?.superAdmins || 0
-      })
       
       const pages = response.data?.pagination?.pages || Math.ceil((statsData?.total || usersData.length) / 20) || 1
       setTotalPages(pages)
@@ -242,7 +224,7 @@ const UserManagement: React.FC = () => {
 
   if (loading && users.length === 0) {
     return (
-      <div className="flex justify-center items-center h-96 bg-white">
+      <div className="flex justify-center items-center h-96 bg-white rounded-xl">
         <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     )
@@ -251,8 +233,8 @@ const UserManagement: React.FC = () => {
   return (
     <div className="space-y-6 bg-white min-h-screen p-6 rounded-xl">
       {/* Header */}
-      <div className="flex justify-between items-center bg-white">
-        <div className="bg-white">
+      <div className="flex justify-between items-center">
+        <div>
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-500 mt-1">Manage and monitor platform users</p>
         </div>
@@ -263,45 +245,45 @@ const UserManagement: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 bg-white">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         <Card className="cursor-pointer hover:shadow-md transition bg-white border border-gray-200" onClick={() => handleTabChange('all')}>
-          <CardContent className="pt-4 text-center bg-white">
+          <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             <p className="text-xs text-gray-500">Total Users</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition bg-white border border-green-200" onClick={() => setStatusFilter('active')}>
-          <CardContent className="pt-4 text-center bg-white">
+          <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-green-600">{stats.active}</p>
             <p className="text-xs text-gray-500">Active</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition bg-white border border-red-200" onClick={() => setStatusFilter('suspended')}>
-          <CardContent className="pt-4 text-center bg-white">
+          <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-red-600">{stats.suspended}</p>
             <p className="text-xs text-gray-500">Suspended</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition bg-white border border-blue-200" onClick={() => handleTabChange('job_seekers')}>
-          <CardContent className="pt-4 text-center bg-white">
+          <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-blue-600">{stats.jobSeekers}</p>
             <p className="text-xs text-gray-500">Job Seekers</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition bg-white border border-purple-200" onClick={() => handleTabChange('employers')}>
-          <CardContent className="pt-4 text-center bg-white">
+          <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-purple-600">{stats.employers}</p>
             <p className="text-xs text-gray-500">Employers</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition bg-white border border-orange-200" onClick={() => handleTabChange('admins')}>
-          <CardContent className="pt-4 text-center bg-white">
+          <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-orange-600">{stats.admins + stats.superAdmins}</p>
             <p className="text-xs text-gray-500">Admins</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition bg-white border border-red-200" onClick={() => handleTabChange('admins')}>
-          <CardContent className="pt-4 text-center bg-white">
+          <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-red-600">{stats.superAdmins}</p>
             <p className="text-xs text-gray-500">Super Admins</p>
           </CardContent>
@@ -310,17 +292,17 @@ const UserManagement: React.FC = () => {
 
       {/* Filters */}
       <Card className="bg-white border border-gray-200 shadow-sm">
-        <CardHeader className="pb-3 bg-white">
-          <div className="flex justify-between items-center flex-wrap gap-4 bg-white">
-            <CardTitle className="bg-white text-gray-900">
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-center flex-wrap gap-4">
+            <CardTitle className="text-gray-900">
               {activeTab === 'all' ? 'All Users' : activeTab === 'job_seekers' ? 'Job Seekers' : activeTab === 'employers' ? 'Employers' : 'Admins'} 
               <span className="text-sm text-gray-500 ml-2">({users.length})</span>
             </CardTitle>
-            <div className="flex gap-3 flex-wrap bg-white">
-              <div className="relative w-64 bg-white">
+            <div className="flex gap-3 flex-wrap">
+              <div className="relative w-64">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input 
-                  placeholder="Search..." 
+                  placeholder="Search by email, name or company..." 
                   value={searchTerm} 
                   onChange={(e) => setSearchTerm(e.target.value)} 
                   className="pl-9 bg-white border-gray-300"
@@ -351,50 +333,53 @@ const UserManagement: React.FC = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="bg-white">
+        <CardContent>
           {users.length === 0 ? (
-            <div className="text-center py-12 bg-white">
+            <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-500">No users found</p>
             </div>
           ) : (
-            <div className="overflow-x-auto bg-white">
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-gray-50">
-                  <TableRow className="border-b border-gray-200 bg-gray-50">
-                    <TableHead className="text-gray-700 bg-gray-50">User</TableHead>
-                    <TableHead className="text-gray-700 bg-gray-50">Role</TableHead>
-                    <TableHead className="text-gray-700 bg-gray-50">Status</TableHead>
-                    <TableHead className="text-gray-700 bg-gray-50">Joined</TableHead>
-                    <TableHead className="text-gray-700 bg-gray-50">Activity</TableHead>
-                    <TableHead className="text-right text-gray-700 bg-gray-50">Actions</TableHead>
+                  <TableRow className="border-b border-gray-200">
+                    <TableHead className="text-gray-700">User</TableHead>
+                    <TableHead className="text-gray-700">Role</TableHead>
+                    <TableHead className="text-gray-700">Status</TableHead>
+                    <TableHead className="text-gray-700">Joined</TableHead>
+                    <TableHead className="text-gray-700">Activity</TableHead>
+                    <TableHead className="text-right text-gray-700">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.map((user) => (
-                    <TableRow key={user.id} className="hover:bg-gray-50 border-b border-gray-100 bg-white">
-                      <TableCell className="bg-white">
-                        <div className="flex items-center gap-3 bg-white">
+                    <TableRow key={user.id} className="hover:bg-gray-50 border-b border-gray-100">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9 bg-blue-100">
                             <AvatarFallback className="bg-blue-100 text-blue-600">
                               {getUserDisplayName(user).charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="bg-white">
+                          <div>
                             <p className="font-medium text-gray-900">{getUserDisplayName(user)}</p>
                             <p className="text-sm text-gray-500">{user.email}</p>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="bg-white">{getRoleBadge(user.user_type?.type_name)}</TableCell>
-                      <TableCell className="bg-white">{getStatusBadge(user.is_active)}</TableCell>
-                      <TableCell className="text-gray-500 text-sm bg-white">{formatDate(user.created_at)}</TableCell>
-                      <TableCell className="bg-white">
-                        {user.user_type?.type_name === 'Employer' ? `${user.stats?.jobs_count || 0} jobs` : 
-                         user.user_type?.type_name === 'Job Seeker' ? `${user.stats?.applications_count || 0} apps` : '-'}
+                      <TableCell>{getRoleBadge(user.user_type?.type_name)}</TableCell>
+                      <TableCell>{getStatusBadge(user.is_active)}</TableCell>
+                      <TableCell className="text-gray-500 text-sm">{formatDate(user.created_at)}</TableCell>
+                      <TableCell>
+                        {user.user_type?.type_name === 'Employer' ? (
+                          <span className="text-blue-600 font-medium">{user.stats?.jobs_count || 0} jobs</span>
+                        ) : user.user_type?.type_name === 'Job Seeker' ? (
+                          <span className="text-green-600 font-medium">{user.stats?.applications_count || 0} apps</span>
+                        ) : '-'}
                       </TableCell>
-                      <TableCell className="text-right bg-white">
-                        <div className="flex justify-end gap-2 bg-white">
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="sm" onClick={() => { setSelectedUser(user); setIsDetailOpen(true) }} className="hover:bg-gray-100">
                             <Eye className="h-4 w-4 text-gray-600" />
                           </Button>
@@ -410,9 +395,11 @@ const UserManagement: React.FC = () => {
                               <UserCheck className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => deleteUser(user.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {isSuperAdmin && (
+                            <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => deleteUser(user.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -422,11 +409,11 @@ const UserManagement: React.FC = () => {
             </div>
           )}
           {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-4 bg-white">
+            <div className="flex justify-center gap-2 mt-4">
               <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="bg-white border-gray-300">
                 Previous
               </Button>
-              <span className="px-4 py-2 text-sm text-gray-700 bg-white">Page {page} of {totalPages}</span>
+              <span className="px-4 py-2 text-sm text-gray-700">Page {page} of {totalPages}</span>
               <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="bg-white border-gray-300">
                 Next
               </Button>
@@ -437,16 +424,16 @@ const UserManagement: React.FC = () => {
 
       {/* User Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white border border-gray-200">
           {selectedUser && (
             <>
-              <DialogHeader className="bg-white">
-                <DialogTitle className="text-xl flex items-center gap-2 text-gray-900 bg-white">
+              <DialogHeader>
+                <DialogTitle className="text-xl flex items-center gap-2 text-gray-900">
                   <Users className="h-5 w-5" />
                   User Details
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-6 bg-white">
+              <div className="space-y-6">
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16 bg-blue-200">
@@ -507,10 +494,12 @@ const UserManagement: React.FC = () => {
                         Activate
                       </Button>
                     )}
-                    <Button variant="outline" className="text-red-600 border-red-600 hover:bg-red-50 bg-white" onClick={() => deleteUser(selectedUser.id)}>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
+                    {isSuperAdmin && (
+                      <Button variant="outline" className="text-red-600 border-red-600 hover:bg-red-50 bg-white" onClick={() => deleteUser(selectedUser.id)}>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -521,17 +510,17 @@ const UserManagement: React.FC = () => {
 
       {/* Reset Password Dialog */}
       <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
-        <DialogContent className="bg-white">
-          <DialogHeader className="bg-white">
+        <DialogContent className="bg-white border border-gray-200">
+          <DialogHeader>
             <DialogTitle className="text-gray-900">Reset Password</DialogTitle>
             <DialogDescription className="text-gray-500">New password for {selectedUser?.email}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 bg-white">
-            <div className="bg-white">
+          <div className="space-y-4">
+            <div>
               <Label className="text-gray-700">New Password</Label>
               <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="bg-white border-gray-300" />
             </div>
-            <div className="bg-white">
+            <div>
               <Label className="text-gray-700">Confirm Password</Label>
               <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="bg-white border-gray-300" />
             </div>
@@ -542,7 +531,7 @@ const UserManagement: React.FC = () => {
               </p>
             </div>
           </div>
-          <DialogFooter className="bg-white">
+          <DialogFooter>
             <Button variant="outline" onClick={() => setIsResetPasswordOpen(false)} className="bg-white border-gray-300">Cancel</Button>
             <Button onClick={() => selectedUser && resetUserPassword(selectedUser.id)} className="bg-blue-600 hover:bg-blue-700 text-white">Reset</Button>
           </DialogFooter>
@@ -551,15 +540,16 @@ const UserManagement: React.FC = () => {
 
       {/* Suspend User Dialog */}
       <Dialog open={isSuspendOpen} onOpenChange={setIsSuspendOpen}>
-        <DialogContent className="bg-white">
-          <DialogHeader className="bg-white">
+        <DialogContent className="bg-white border border-gray-200">
+          <DialogHeader>
             <DialogTitle className="text-gray-900">Suspend User</DialogTitle>
             <DialogDescription className="text-gray-500">Suspending {selectedUser?.email}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 bg-white">
-            <div className="bg-white">
+          <div className="space-y-4">
+            <div>
               <Label className="text-gray-700">Reason (Optional)</Label>
               <Textarea value={suspendReason} onChange={(e) => setSuspendReason(e.target.value)} rows={3} placeholder="Reason for suspension..." className="bg-white border-gray-300" />
+              <p className="text-xs text-gray-500 mt-1">This reason will be logged for audit purposes.</p>
             </div>
             <div className="bg-red-50 p-3 rounded-lg">
               <p className="text-sm text-red-800 flex items-center gap-2">
@@ -568,7 +558,7 @@ const UserManagement: React.FC = () => {
               </p>
             </div>
           </div>
-          <DialogFooter className="bg-white">
+          <DialogFooter>
             <Button variant="outline" onClick={() => setIsSuspendOpen(false)} className="bg-white border-gray-300">Cancel</Button>
             <Button variant="destructive" onClick={() => selectedUser && updateUserStatus(selectedUser.id, false, suspendReason)}>Suspend</Button>
           </DialogFooter>
