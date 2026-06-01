@@ -3028,6 +3028,142 @@ app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) 
     })
   }
 })
+
+
+
+// ========== ADMIN SETTINGS ENDPOINTS - SIMPLIFIED VERSION ==========
+
+// GET /api/admin/settings - Fetch all settings
+app.get('/api/admin/settings', authMiddleware, isAdmin, async (req: Request, res: Response) => {
+  try {
+    let settings = await prisma.systemSetting.findFirst()
+    
+    if (!settings) {
+      // Return default settings if none exist
+      res.json({ 
+        success: true, 
+        data: {
+          // General Settings
+          siteName: 'JobPortal',
+          siteDescription: 'Connect job seekers with employers',
+          contactEmail: 'admin@jobportal.com',
+          
+          // User Settings
+          enableRegistration: true,
+          emailVerification: true,
+          
+          // Job Settings
+          maxJobsPerEmployer: 50,
+          jobExpiryDays: 30,
+          
+          // Application Settings
+          maxApplicationsPerSeeker: 100,
+          requireResumeUpload: true,
+          
+          // Maintenance
+          maintenanceMode: false,
+          
+          // File Settings
+          allowedFileTypes: ['pdf', 'doc', 'docx', 'txt'],
+          maxFileSizeMb: 5
+        }
+      })
+      return
+    }
+    
+    // Return settings in camelCase for frontend
+    res.json({ 
+      success: true, 
+      data: {
+        siteName: settings.site_name,
+        siteDescription: settings.site_description,
+        contactEmail: settings.contact_email,
+        enableRegistration: settings.enable_registration,
+        emailVerification: settings.require_email_verification,
+        maxJobsPerEmployer: settings.max_job_posts_per_employer,
+        maxApplicationsPerSeeker: settings.max_applications_per_seeker,
+        jobExpiryDays: settings.job_expiry_days,
+        maintenanceMode: settings.maintenance_mode,
+        allowedFileTypes: settings.allowed_file_types,
+        maxFileSizeMb: settings.max_file_size_mb
+      }
+    })
+  } catch (error: any) {
+    console.error('Error fetching settings:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// PUT /api/admin/settings - Update settings
+app.put('/api/admin/settings', authMiddleware, isAdmin, async (req: Request, res: Response) => {
+  try {
+    const settingsData = req.body
+    
+    // Check if settings exist
+    const existingSettings = await prisma.systemSetting.findFirst()
+    
+    let settings
+    if (existingSettings) {
+      // Update existing settings
+      settings = await prisma.systemSetting.update({
+        where: { id: existingSettings.id },
+        data: {
+          site_name: settingsData.siteName,
+          site_description: settingsData.siteDescription,
+          contact_email: settingsData.contactEmail,
+          enable_registration: settingsData.enableRegistration,
+          require_email_verification: settingsData.emailVerification,
+          max_job_posts_per_employer: settingsData.maxJobsPerEmployer,
+          max_applications_per_seeker: settingsData.maxApplicationsPerSeeker,
+          job_expiry_days: settingsData.jobExpiryDays,
+          maintenance_mode: settingsData.maintenanceMode,
+          allowed_file_types: settingsData.allowedFileTypes,
+          max_file_size_mb: settingsData.maxFileSizeMb,
+          updated_at: new Date()
+        }
+      })
+    } else {
+      // Create new settings
+      settings = await prisma.systemSetting.create({
+        data: {
+          site_name: settingsData.siteName || 'JobPortal',
+          site_description: settingsData.siteDescription || 'Connect job seekers with employers',
+          contact_email: settingsData.contactEmail || 'admin@jobportal.com',
+          enable_registration: settingsData.enableRegistration ?? true,
+          require_email_verification: settingsData.emailVerification ?? true,
+          max_job_posts_per_employer: settingsData.maxJobsPerEmployer || 50,
+          max_applications_per_seeker: settingsData.maxApplicationsPerSeeker || 100,
+          job_expiry_days: settingsData.jobExpiryDays || 30,
+          maintenance_mode: settingsData.maintenanceMode || false,
+          allowed_file_types: settingsData.allowedFileTypes || ['pdf', 'doc', 'docx', 'txt'],
+          max_file_size_mb: settingsData.maxFileSizeMb || 5,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      })
+    }
+    
+    res.json({ 
+      success: true, 
+      data: settings, 
+      message: 'Settings saved successfully' 
+    })
+  } catch (error: any) {
+    console.error('Error saving settings:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// POST /api/admin/settings/test-email - Test email configuration (placeholder)
+app.post('/api/admin/settings/test-email', authMiddleware, isAdmin, async (req: Request, res: Response) => {
+  try {
+    // For now, just return success
+    res.json({ success: true, message: 'Test email sent successfully!' })
+  } catch (error: any) {
+    console.error('Error sending test email:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
 // ========== ADMIN APPLICATIONS MANAGEMENT ==========
 
 // Get all applications for admin

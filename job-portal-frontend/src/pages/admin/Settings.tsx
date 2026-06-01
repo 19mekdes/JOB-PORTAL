@@ -215,12 +215,24 @@ const AdminSettings: React.FC = () => {
     setLoading(true)
     try {
       const response = await api.get('/admin/settings')
-      if (response.data.success) {
+      console.log('Settings API Response:', response.data)
+      
+      if (response.data.success && response.data.data) {
+        // Merge fetched settings with defaults
         setSettings({ ...defaultSettings, ...response.data.data })
+      } else {
+        // If no settings in DB, use defaults
+        setSettings(defaultSettings)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching settings:', error)
-      toast({ variant: "destructive", title: "Error", description: "Failed to load settings" })
+      // If endpoint doesn't exist yet, use defaults
+      setSettings(defaultSettings)
+      toast({ 
+        variant: "destructive", 
+        title: "Info", 
+        description: "Using default settings. Configure and save to create settings." 
+      })
     } finally {
       setLoading(false)
     }
@@ -230,13 +242,19 @@ const AdminSettings: React.FC = () => {
     setSaving(true)
     setSaveSuccess(false)
     try {
-      await api.put('/admin/settings', settings)
-      setSaveSuccess(true)
-      toast({ title: "Success", description: "Settings saved successfully" })
-      setTimeout(() => setSaveSuccess(false), 3000)
-    } catch (error) {
+      const response = await api.put('/admin/settings', settings)
+      if (response.data.success) {
+        setSaveSuccess(true)
+        toast({ title: "Success", description: "Settings saved successfully" })
+        setTimeout(() => setSaveSuccess(false), 3000)
+      }
+    } catch (error: any) {
       console.error('Error saving settings:', error)
-      toast({ variant: "destructive", title: "Error", description: "Failed to save settings" })
+      toast({ 
+        variant: "destructive", 
+        title: "Error", 
+        description: error.response?.data?.message || "Failed to save settings" 
+      })
     } finally {
       setSaving(false)
     }
@@ -245,7 +263,7 @@ const AdminSettings: React.FC = () => {
   const handleReset = async () => {
     if (confirm('Are you sure you want to reset all settings to default? This action cannot be undone.')) {
       setSettings(defaultSettings)
-      toast({ title: "Reset", description: "Settings reset to default" })
+      toast({ title: "Reset", description: "Settings reset to default. Click Save to apply changes." })
     }
   }
 
@@ -263,9 +281,13 @@ const AdminSettings: React.FC = () => {
         }
       })
       toast({ title: "Success", description: "Test email sent successfully!" })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error testing email:', error)
-      toast({ variant: "destructive", title: "Error", description: "Failed to send test email" })
+      toast({ 
+        variant: "destructive", 
+        title: "Error", 
+        description: error.response?.data?.message || "Failed to send test email" 
+      })
     } finally {
       setTestingEmail(false)
     }
@@ -291,7 +313,7 @@ const AdminSettings: React.FC = () => {
         try {
           const imported = JSON.parse(e.target?.result as string)
           setSettings({ ...settings, ...imported })
-          toast({ title: "Import", description: "Settings imported successfully" })
+          toast({ title: "Import", description: "Settings imported successfully. Click Save to apply." })
         } catch (error) {
           toast({ variant: "destructive", title: "Error", description: "Invalid settings file" })
         }
@@ -312,7 +334,7 @@ const AdminSettings: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-white min-h-screen p-6 rounded-xl">
       {/* Header */}
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
@@ -320,22 +342,22 @@ const AdminSettings: React.FC = () => {
           <p className="text-gray-500 mt-1">Configure platform-wide settings and rules</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={exportSettings} className="border-gray-300">
+          <Button variant="outline" onClick={exportSettings} className="bg-white border-gray-300">
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
           <label className="cursor-pointer">
             <input type="file" accept=".json" onChange={importSettings} className="hidden" />
-            <Button variant="outline" onClick={() => document.querySelector('input[type="file"]')?.click()} className="border-gray-300">
+            <Button variant="outline" onClick={() => document.querySelector('input[type="file"]')?.click()} className="bg-white border-gray-300">
               <Upload className="h-4 w-4 mr-2" />
               Import
             </Button>
           </label>
-          <Button variant="outline" onClick={handleReset} className="border-gray-300">
+          <Button variant="outline" onClick={handleReset} className="bg-white border-gray-300">
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset
           </Button>
-          <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white">
             <Save className="h-4 w-4 mr-2" />
             {saving ? 'Saving...' : 'Save All'}
           </Button>
@@ -357,7 +379,7 @@ const AdminSettings: React.FC = () => {
             <AlertCircle className="h-5 w-5" />
             <span>Maintenance mode is ON. Only admins can access the site.</span>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setSettings({...settings, maintenanceMode: false})}>
+          <Button variant="outline" size="sm" onClick={() => setSettings({...settings, maintenanceMode: false})} className="bg-white">
             Turn Off
           </Button>
         </div>
@@ -366,62 +388,62 @@ const AdminSettings: React.FC = () => {
       {/* Tabs */}
       <Tabs defaultValue="general" className="space-y-4">
         <TabsList className="bg-gray-100 p-1 rounded-lg flex flex-wrap h-auto gap-1">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="jobs">Jobs</TabsTrigger>
-          <TabsTrigger value="applications">Applications</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="email">Email</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+          <TabsTrigger value="general" className="bg-white data-[state=active]:bg-blue-600 data-[state=active]:text-white">General</TabsTrigger>
+          <TabsTrigger value="users" className="bg-white data-[state=active]:bg-blue-600 data-[state=active]:text-white">Users</TabsTrigger>
+          <TabsTrigger value="jobs" className="bg-white data-[state=active]:bg-blue-600 data-[state=active]:text-white">Jobs</TabsTrigger>
+          <TabsTrigger value="applications" className="bg-white data-[state=active]:bg-blue-600 data-[state=active]:text-white">Applications</TabsTrigger>
+          <TabsTrigger value="security" className="bg-white data-[state=active]:bg-blue-600 data-[state=active]:text-white">Security</TabsTrigger>
+          <TabsTrigger value="notifications" className="bg-white data-[state=active]:bg-blue-600 data-[state=active]:text-white">Notifications</TabsTrigger>
+          <TabsTrigger value="email" className="bg-white data-[state=active]:bg-blue-600 data-[state=active]:text-white">Email</TabsTrigger>
+          <TabsTrigger value="integrations" className="bg-white data-[state=active]:bg-blue-600 data-[state=active]:text-white">Integrations</TabsTrigger>
+          <TabsTrigger value="maintenance" className="bg-white data-[state=active]:bg-blue-600 data-[state=active]:text-white">Maintenance</TabsTrigger>
         </TabsList>
 
-        {/* General Settings Tab */}
+        {/* General Settings Tab - Same as before but with bg-white */}
         <TabsContent value="general">
-          <Card>
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-gray-900">
                 <Globe className="h-5 w-5 text-blue-600" />
                 General Settings
               </CardTitle>
-              <CardDescription>Basic platform information and configuration</CardDescription>
+              <CardDescription className="text-gray-500">Basic platform information and configuration</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Site Name *</Label>
+                  <Label className="text-gray-700">Site Name *</Label>
                   <Input
                     value={settings.siteName}
                     onChange={(e) => setSettings({...settings, siteName: e.target.value})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>Contact Email *</Label>
+                  <Label className="text-gray-700">Contact Email *</Label>
                   <Input
                     type="email"
                     value={settings.contactEmail}
                     onChange={(e) => setSettings({...settings, contactEmail: e.target.value})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>Support Email</Label>
+                  <Label className="text-gray-700">Support Email</Label>
                   <Input
                     type="email"
                     value={settings.supportEmail}
                     onChange={(e) => setSettings({...settings, supportEmail: e.target.value})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>Timezone</Label>
+                  <Label className="text-gray-700">Timezone</Label>
                   <Select value={settings.timezone} onValueChange={(value) => setSettings({...settings, timezone: value})}>
-                    <SelectTrigger className="mt-1.5">
+                    <SelectTrigger className="mt-1.5 bg-white border-gray-300">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border-gray-200">
                       <SelectItem value="UTC">UTC</SelectItem>
                       <SelectItem value="Africa/Addis_Ababa">Africa/Addis Ababa</SelectItem>
                       <SelectItem value="America/New_York">America/New York</SelectItem>
@@ -431,12 +453,12 @@ const AdminSettings: React.FC = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label>Date Format</Label>
+                  <Label className="text-gray-700">Date Format</Label>
                   <Select value={settings.dateFormat} onValueChange={(value) => setSettings({...settings, dateFormat: value})}>
-                    <SelectTrigger className="mt-1.5">
+                    <SelectTrigger className="mt-1.5 bg-white border-gray-300">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border-gray-200">
                       <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
                       <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
                       <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
@@ -445,12 +467,12 @@ const AdminSettings: React.FC = () => {
                 </div>
               </div>
               <div>
-                <Label>Site Description</Label>
+                <Label className="text-gray-700">Site Description</Label>
                 <textarea
                   value={settings.siteDescription}
                   onChange={(e) => setSettings({...settings, siteDescription: e.target.value})}
                   rows={3}
-                  className="w-full mt-1.5 rounded-lg border border-gray-300 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full mt-1.5 rounded-lg border border-gray-300 bg-white p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
                 />
               </div>
             </CardContent>
@@ -459,19 +481,19 @@ const AdminSettings: React.FC = () => {
 
         {/* User Settings Tab */}
         <TabsContent value="users">
-          <Card>
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-gray-900">
                 <Users className="h-5 w-5 text-blue-600" />
                 User Management
               </CardTitle>
-              <CardDescription>Configure user registration and account settings</CardDescription>
+              <CardDescription className="text-gray-500">Configure user registration and account settings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <Label>Allow Registration</Label>
+                    <Label className="text-gray-700">Allow Registration</Label>
                     <p className="text-sm text-gray-500">Enable new user signups</p>
                   </div>
                   <Switch
@@ -481,7 +503,7 @@ const AdminSettings: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <Label>Email Verification</Label>
+                    <Label className="text-gray-700">Email Verification</Label>
                     <p className="text-sm text-gray-500">Require email verification</p>
                   </div>
                   <Switch
@@ -491,7 +513,7 @@ const AdminSettings: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <Label>Auto Approve Employers</Label>
+                    <Label className="text-gray-700">Auto Approve Employers</Label>
                     <p className="text-sm text-gray-500">Auto-approve employer accounts</p>
                   </div>
                   <Switch
@@ -501,7 +523,7 @@ const AdminSettings: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <Label>Social Login</Label>
+                    <Label className="text-gray-700">Social Login</Label>
                     <p className="text-sm text-gray-500">Allow login with Google/LinkedIn</p>
                   </div>
                   <Switch
@@ -512,24 +534,24 @@ const AdminSettings: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Default User Role</Label>
+                  <Label className="text-gray-700">Default User Role</Label>
                   <Select value={settings.defaultUserRole} onValueChange={(value) => setSettings({...settings, defaultUserRole: value})}>
-                    <SelectTrigger className="mt-1.5">
+                    <SelectTrigger className="mt-1.5 bg-white border-gray-300">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border-gray-200">
                       <SelectItem value="Job Seeker">Job Seeker</SelectItem>
                       <SelectItem value="Employer">Employer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>Maximum Users</Label>
+                  <Label className="text-gray-700">Maximum Users</Label>
                   <Input
                     type="number"
                     value={settings.maxUsers}
                     onChange={(e) => setSettings({...settings, maxUsers: parseInt(e.target.value)})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
               </div>
@@ -537,21 +559,109 @@ const AdminSettings: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {/* Job Settings Tab */}
-        <TabsContent value="jobs">
-          <Card>
+        {/* Notification Settings Tab */}
+        <TabsContent value="notifications">
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-blue-600" />
-                Job Posting Rules
+              <CardTitle className="flex items-center gap-2 text-gray-900">
+                <Bell className="h-5 w-5 text-blue-600" />
+                Notification Settings
               </CardTitle>
-              <CardDescription>Configure job posting limits and requirements</CardDescription>
+              <CardDescription className="text-gray-500">Configure email and push notification preferences</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <Label>Require Job Approval</Label>
+                    <Label className="text-gray-700">Email Notifications</Label>
+                    <p className="text-sm text-gray-500">Enable email notifications</p>
+                  </div>
+                  <Switch
+                    checked={settings.emailNotifications}
+                    onCheckedChange={(checked) => setSettings({...settings, emailNotifications: checked})}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <Label className="text-gray-700">Push Notifications</Label>
+                    <p className="text-sm text-gray-500">Enable browser push notifications</p>
+                  </div>
+                  <Switch
+                    checked={settings.pushNotifications}
+                    onCheckedChange={(checked) => setSettings({...settings, pushNotifications: checked})}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <Label className="text-gray-700">Notify on New Job</Label>
+                    <p className="text-sm text-gray-500">Send notification when new job posted</p>
+                  </div>
+                  <Switch
+                    checked={settings.notifyOnNewJob}
+                    onCheckedChange={(checked) => setSettings({...settings, notifyOnNewJob: checked})}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <Label className="text-gray-700">Notify on Application</Label>
+                    <p className="text-sm text-gray-500">Send notification on new application</p>
+                  </div>
+                  <Switch
+                    checked={settings.notifyOnApplication}
+                    onCheckedChange={(checked) => setSettings({...settings, notifyOnApplication: checked})}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <Label className="text-gray-700">Notify on Status Change</Label>
+                    <p className="text-sm text-gray-500">Send notification when status changes</p>
+                  </div>
+                  <Switch
+                    checked={settings.notifyOnStatusChange}
+                    onCheckedChange={(checked) => setSettings({...settings, notifyOnStatusChange: checked})}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <Label className="text-gray-700">Weekly Digest</Label>
+                    <p className="text-sm text-gray-500">Send weekly summary email</p>
+                  </div>
+                  <Switch
+                    checked={settings.weeklyDigest}
+                    onCheckedChange={(checked) => setSettings({...settings, weeklyDigest: checked})}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className="text-gray-700">Admin Alert Emails</Label>
+                <Input
+                  value={settings.adminAlertEmails}
+                  onChange={(e) => setSettings({...settings, adminAlertEmails: e.target.value})}
+                  placeholder="admin1@example.com, admin2@example.com"
+                  className="mt-1.5 bg-white border-gray-300"
+                />
+                <p className="text-xs text-gray-500 mt-1">Comma-separated list of email addresses to receive admin alerts</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Other tabs (Jobs, Applications, Security, Email, Integrations, Maintenance) remain similar structure */}
+        {/* Jobs Tab */}
+        <TabsContent value="jobs">
+          <Card className="bg-white border border-gray-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-gray-900">
+                <Briefcase className="h-5 w-5 text-blue-600" />
+                Job Posting Rules
+              </CardTitle>
+              <CardDescription className="text-gray-500">Configure job posting limits and requirements</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <Label className="text-gray-700">Require Job Approval</Label>
                     <p className="text-sm text-gray-500">Admin must approve jobs</p>
                   </div>
                   <Switch
@@ -561,7 +671,7 @@ const AdminSettings: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <Label>Allow Job Editing</Label>
+                    <Label className="text-gray-700">Allow Job Editing</Label>
                     <p className="text-sm text-gray-500">Employers can edit posted jobs</p>
                   </div>
                   <Switch
@@ -572,40 +682,40 @@ const AdminSettings: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <Label>Max Jobs Per Employer</Label>
+                  <Label className="text-gray-700">Max Jobs Per Employer</Label>
                   <Input
                     type="number"
                     value={settings.maxJobsPerEmployer}
                     onChange={(e) => setSettings({...settings, maxJobsPerEmployer: parseInt(e.target.value)})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>Job Expiry (days)</Label>
+                  <Label className="text-gray-700">Job Expiry (days)</Label>
                   <Input
                     type="number"
                     value={settings.jobExpiryDays}
                     onChange={(e) => setSettings({...settings, jobExpiryDays: parseInt(e.target.value)})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>Max Job Tags</Label>
+                  <Label className="text-gray-700">Max Job Tags</Label>
                   <Input
                     type="number"
                     value={settings.maxJobTags}
                     onChange={(e) => setSettings({...settings, maxJobTags: parseInt(e.target.value)})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>Featured Job Price ($)</Label>
+                  <Label className="text-gray-700">Featured Job Price ($)</Label>
                   <Input
                     type="number"
                     step="0.01"
                     value={settings.featuredJobPrice}
                     onChange={(e) => setSettings({...settings, featuredJobPrice: parseFloat(e.target.value)})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
               </div>
@@ -613,21 +723,21 @@ const AdminSettings: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {/* Application Settings Tab */}
+        {/* Applications Tab */}
         <TabsContent value="applications">
-          <Card>
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-gray-900">
                 <FileText className="h-5 w-5 text-blue-600" />
                 Application Rules
               </CardTitle>
-              <CardDescription>Configure application submission rules</CardDescription>
+              <CardDescription className="text-gray-500">Configure application submission rules</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <Label>Require Cover Letter</Label>
+                    <Label className="text-gray-700">Require Cover Letter</Label>
                     <p className="text-sm text-gray-500">Make cover letter mandatory</p>
                   </div>
                   <Switch
@@ -637,7 +747,7 @@ const AdminSettings: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <Label>Require Resume Upload</Label>
+                    <Label className="text-gray-700">Require Resume Upload</Label>
                     <p className="text-sm text-gray-500">Resume required for applications</p>
                   </div>
                   <Switch
@@ -647,7 +757,7 @@ const AdminSettings: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <Label>Allow Withdraw Application</Label>
+                    <Label className="text-gray-700">Allow Withdraw Application</Label>
                     <p className="text-sm text-gray-500">Users can withdraw applications</p>
                   </div>
                   <Switch
@@ -657,7 +767,7 @@ const AdminSettings: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <Label>Notify Employer</Label>
+                    <Label className="text-gray-700">Notify Employer</Label>
                     <p className="text-sm text-gray-500">Email employer on application</p>
                   </div>
                   <Switch
@@ -666,23 +776,23 @@ const AdminSettings: React.FC = () => {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Max Apps Per Job Seeker</Label>
+                  <Label className="text-gray-700">Max Apps Per Job Seeker</Label>
                   <Input
                     type="number"
                     value={settings.maxApplicationsPerSeeker}
                     onChange={(e) => setSettings({...settings, maxApplicationsPerSeeker: parseInt(e.target.value)})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>Application Cooldown (days)</Label>
+                  <Label className="text-gray-700">Application Cooldown (days)</Label>
                   <Input
                     type="number"
                     value={settings.applicationCooldown}
                     onChange={(e) => setSettings({...settings, applicationCooldown: parseInt(e.target.value)})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
               </div>
@@ -690,21 +800,21 @@ const AdminSettings: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {/* Security Settings Tab */}
+        {/* Security Tab */}
         <TabsContent value="security">
-          <Card>
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-gray-900">
                 <Shield className="h-5 w-5 text-blue-600" />
                 Security Settings
               </CardTitle>
-              <CardDescription>Configure security and password requirements</CardDescription>
+              <CardDescription className="text-gray-500">Configure security and password requirements</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <Label>Two-Factor Authentication</Label>
+                    <Label className="text-gray-700">Two-Factor Authentication</Label>
                     <p className="text-sm text-gray-500">Require 2FA for admin accounts</p>
                   </div>
                   <Switch
@@ -715,39 +825,39 @@ const AdminSettings: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <Label>Min Password Length</Label>
+                  <Label className="text-gray-700">Min Password Length</Label>
                   <Input
                     type="number"
                     value={settings.passwordMinLength}
                     onChange={(e) => setSettings({...settings, passwordMinLength: parseInt(e.target.value)})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>Session Timeout (minutes)</Label>
+                  <Label className="text-gray-700">Session Timeout (minutes)</Label>
                   <Input
                     type="number"
                     value={settings.sessionTimeout}
                     onChange={(e) => setSettings({...settings, sessionTimeout: parseInt(e.target.value)})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>Max Login Attempts</Label>
+                  <Label className="text-gray-700">Max Login Attempts</Label>
                   <Input
                     type="number"
                     value={settings.maxLoginAttempts}
                     onChange={(e) => setSettings({...settings, maxLoginAttempts: parseInt(e.target.value)})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>Lockout Duration (minutes)</Label>
+                  <Label className="text-gray-700">Lockout Duration (minutes)</Label>
                   <Input
                     type="number"
                     value={settings.lockoutDuration}
                     onChange={(e) => setSettings({...settings, lockoutDuration: parseInt(e.target.value)})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
               </div>
@@ -761,51 +871,51 @@ const AdminSettings: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {/* Email Settings Tab */}
+        {/* Email Tab */}
         <TabsContent value="email">
-          <Card>
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-gray-900">
                 <Mail className="h-5 w-5 text-blue-600" />
                 Email Configuration
               </CardTitle>
-              <CardDescription>Configure SMTP settings for sending emails</CardDescription>
+              <CardDescription className="text-gray-500">Configure SMTP settings for sending emails</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>SMTP Host</Label>
+                  <Label className="text-gray-700">SMTP Host</Label>
                   <Input
                     value={settings.smtpHost}
                     onChange={(e) => setSettings({...settings, smtpHost: e.target.value})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>SMTP Port</Label>
+                  <Label className="text-gray-700">SMTP Port</Label>
                   <Input
                     type="number"
                     value={settings.smtpPort}
                     onChange={(e) => setSettings({...settings, smtpPort: parseInt(e.target.value)})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>SMTP User</Label>
+                  <Label className="text-gray-700">SMTP User</Label>
                   <Input
                     value={settings.smtpUser}
                     onChange={(e) => setSettings({...settings, smtpUser: e.target.value})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>SMTP Password</Label>
+                  <Label className="text-gray-700">SMTP Password</Label>
                   <div className="relative mt-1.5">
                     <Input
                       type={showPassword ? 'text' : 'password'}
                       value={settings.smtpPassword}
                       onChange={(e) => setSettings({...settings, smtpPassword: e.target.value})}
-                      className="pr-10"
+                      className="pr-10 bg-white border-gray-300"
                     />
                     <button
                       type="button"
@@ -817,31 +927,31 @@ const AdminSettings: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <Label>From Email</Label>
+                  <Label className="text-gray-700">From Email</Label>
                   <Input
                     type="email"
                     value={settings.fromEmail}
                     onChange={(e) => setSettings({...settings, fromEmail: e.target.value})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                     placeholder="noreply@jobportal.com"
                   />
                 </div>
                 <div>
-                  <Label>From Name</Label>
+                  <Label className="text-gray-700">From Name</Label>
                   <Input
                     value={settings.fromName}
                     onChange={(e) => setSettings({...settings, fromName: e.target.value})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                     placeholder="Job Portal"
                   />
                 </div>
                 <div>
-                  <Label>Encryption</Label>
+                  <Label className="text-gray-700">Encryption</Label>
                   <Select value={settings.smtpEncryption} onValueChange={(value) => setSettings({...settings, smtpEncryption: value})}>
-                    <SelectTrigger className="mt-1.5">
+                    <SelectTrigger className="mt-1.5 bg-white border-gray-300">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border-gray-200">
                       <SelectItem value="TLS">TLS</SelectItem>
                       <SelectItem value="SSL">SSL</SelectItem>
                       <SelectItem value="None">None</SelectItem>
@@ -850,7 +960,7 @@ const AdminSettings: React.FC = () => {
                 </div>
               </div>
               <div className="flex gap-3">
-                <Button variant="outline" onClick={testEmailConfig} disabled={testingEmail}>
+                <Button variant="outline" onClick={testEmailConfig} disabled={testingEmail} className="bg-white border-gray-300">
                   {testingEmail ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Mail className="h-4 w-4 mr-2" />}
                   Send Test Email
                 </Button>
@@ -867,65 +977,65 @@ const AdminSettings: React.FC = () => {
 
         {/* Integrations Tab */}
         <TabsContent value="integrations">
-          <Card>
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-gray-900">
                 <Server className="h-5 w-5 text-blue-600" />
                 API & Integrations
               </CardTitle>
-              <CardDescription>Configure third-party API integrations</CardDescription>
+              <CardDescription className="text-gray-500">Configure third-party API integrations</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>Google Client ID</Label>
+                  <Label className="text-gray-700">Google Client ID</Label>
                   <Input
                     value={settings.googleClientId}
                     onChange={(e) => setSettings({...settings, googleClientId: e.target.value})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>Google Client Secret</Label>
+                  <Label className="text-gray-700">Google Client Secret</Label>
                   <Input
                     type="password"
                     value={settings.googleClientSecret}
                     onChange={(e) => setSettings({...settings, googleClientSecret: e.target.value})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>LinkedIn Client ID</Label>
+                  <Label className="text-gray-700">LinkedIn Client ID</Label>
                   <Input
                     value={settings.linkedinClientId}
                     onChange={(e) => setSettings({...settings, linkedinClientId: e.target.value})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>LinkedIn Client Secret</Label>
+                  <Label className="text-gray-700">LinkedIn Client Secret</Label>
                   <Input
                     type="password"
                     value={settings.linkedinClientSecret}
                     onChange={(e) => setSettings({...settings, linkedinClientSecret: e.target.value})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>reCAPTCHA Site Key</Label>
+                  <Label className="text-gray-700">reCAPTCHA Site Key</Label>
                   <Input
                     value={settings.recaptchaSiteKey}
                     onChange={(e) => setSettings({...settings, recaptchaSiteKey: e.target.value})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
                 <div>
-                  <Label>reCAPTCHA Secret Key</Label>
+                  <Label className="text-gray-700">reCAPTCHA Secret Key</Label>
                   <Input
                     type="password"
                     value={settings.recaptchaSecretKey}
                     onChange={(e) => setSettings({...settings, recaptchaSecretKey: e.target.value})}
-                    className="mt-1.5"
+                    className="mt-1.5 bg-white border-gray-300"
                   />
                 </div>
               </div>
@@ -935,18 +1045,18 @@ const AdminSettings: React.FC = () => {
 
         {/* Maintenance Tab */}
         <TabsContent value="maintenance">
-          <Card>
+          <Card className="bg-white border border-gray-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-gray-900">
                 <Database className="h-5 w-5 text-blue-600" />
                 Maintenance & Backup
               </CardTitle>
-              <CardDescription>Configure system maintenance and backup settings</CardDescription>
+              <CardDescription className="text-gray-500">Configure system maintenance and backup settings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
-                  <Label>Maintenance Mode</Label>
+                  <Label className="text-gray-700">Maintenance Mode</Label>
                   <p className="text-sm text-gray-500">Put the site into maintenance mode</p>
                 </div>
                 <Switch
@@ -956,19 +1066,19 @@ const AdminSettings: React.FC = () => {
               </div>
               {settings.maintenanceMode && (
                 <div>
-                  <Label>Maintenance Message</Label>
+                  <Label className="text-gray-700">Maintenance Message</Label>
                   <textarea
                     value={settings.maintenanceMessage}
                     onChange={(e) => setSettings({...settings, maintenanceMessage: e.target.value})}
                     rows={3}
-                    className="w-full mt-1.5 rounded-lg border border-gray-300 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full mt-1.5 rounded-lg border border-gray-300 bg-white p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
                   />
                 </div>
               )}
               <Separator />
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
-                  <Label>Auto Backup</Label>
+                  <Label className="text-gray-700">Auto Backup</Label>
                   <p className="text-sm text-gray-500">Automatically backup database</p>
                 </div>
                 <Switch
@@ -979,12 +1089,12 @@ const AdminSettings: React.FC = () => {
               {settings.autoBackup && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>Backup Frequency</Label>
+                    <Label className="text-gray-700">Backup Frequency</Label>
                     <Select value={settings.backupFrequency} onValueChange={(value) => setSettings({...settings, backupFrequency: value})}>
-                      <SelectTrigger className="mt-1.5">
+                      <SelectTrigger className="mt-1.5 bg-white border-gray-300">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white border-gray-200">
                         <SelectItem value="daily">Daily</SelectItem>
                         <SelectItem value="weekly">Weekly</SelectItem>
                         <SelectItem value="monthly">Monthly</SelectItem>
@@ -992,23 +1102,23 @@ const AdminSettings: React.FC = () => {
                     </Select>
                   </div>
                   <div>
-                    <Label>Backup Retention (days)</Label>
+                    <Label className="text-gray-700">Backup Retention (days)</Label>
                     <Input
                       type="number"
                       value={settings.backupRetention}
                       onChange={(e) => setSettings({...settings, backupRetention: parseInt(e.target.value)})}
-                      className="mt-1.5"
+                      className="mt-1.5 bg-white border-gray-300"
                     />
                   </div>
                 </div>
               )}
               <div>
-                <Label>Log Retention (days)</Label>
+                <Label className="text-gray-700">Log Retention (days)</Label>
                 <Input
                   type="number"
                   value={settings.logRetentionDays}
                   onChange={(e) => setSettings({...settings, logRetentionDays: parseInt(e.target.value)})}
-                  className="mt-1.5"
+                  className="mt-1.5 bg-white border-gray-300"
                 />
               </div>
             </CardContent>
@@ -1019,7 +1129,7 @@ const AdminSettings: React.FC = () => {
       {/* Sticky Save Button */}
       <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 rounded-lg shadow-lg">
         <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 min-w-32">
+          <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white min-w-32">
             {saving ? (
               <>
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />

@@ -40,21 +40,89 @@ model User {
   @@index([user_type_id])
 }
 
-// ========== SYSTEM SETTINGS ==========
-
 model SystemSetting {
   id                          Int      @id @default(autoincrement())
-  site_name                   String   @default("Job Portal")
+  site_name                   String   @default("JobPortal")
   site_description            String   @default("Connect job seekers with employers")
+  site_logo                   String   @default("")
+  site_favicon                String   @default("")
   contact_email               String   @default("admin@jobportal.com")
+  support_email               String   @default("support@jobportal.com")
+  timezone                    String   @default("UTC")
+  date_format                 String   @default("MM/DD/YYYY")
+  maintenance_mode            Boolean  @default(false)
+  maintenance_message         String   @default("")
+  
+  // User Settings
   enable_registration         Boolean  @default(true)
   require_email_verification  Boolean  @default(true)
+  default_user_role           String   @default("Job Seeker")
+  max_users                   Int      @default(10000)
+  auto_approve_employers      Boolean  @default(false)
+  allow_social_login          Boolean  @default(false)
+  
+  // Job Settings
+  require_job_approval        Boolean  @default(true)
   max_job_posts_per_employer  Int      @default(50)
-  max_applications_per_seeker Int      @default(100)
   job_expiry_days             Int      @default(30)
-  maintenance_mode            Boolean  @default(false)
+  allow_job_editing           Boolean  @default(true)
+  featured_job_price          Float    @default(49.99)
+  allow_free_jobs             Boolean  @default(true)
+  max_job_tags                Int      @default(10)
+  
+  // Application Settings
+  max_applications_per_seeker Int      @default(100)
+  require_cover_letter        Boolean  @default(false)
+  require_resume_upload       Boolean  @default(true)
+  application_cooldown        Int      @default(7)
+  allow_withdraw_application  Boolean  @default(true)
+  notify_employer_on_application Boolean @default(true)
+  
+  // Security Settings
+  password_min_length         Int      @default(8)
+  require_uppercase           Boolean  @default(true)
+  require_numbers             Boolean  @default(true)
+  require_special_chars       Boolean  @default(false)
+  session_timeout             Int      @default(30)
+  max_login_attempts          Int      @default(5)
+  two_factor_auth             Boolean  @default(false)
+  lockout_duration            Int      @default(30)
+  
+  // Notification Settings
+  email_notifications         Boolean  @default(true)
+  push_notifications          Boolean  @default(true)
+  notify_on_new_job           Boolean  @default(true)
+  notify_on_application       Boolean  @default(true)
+  notify_on_status_change     Boolean  @default(true)
+  weekly_digest               Boolean  @default(true)
+  admin_alert_emails          String   @default("")
+  
+  // Email Settings
+  smtp_host                   String   @default("smtp.gmail.com")
+  smtp_port                   Int      @default(587)
+  smtp_user                   String   @default("")
+  smtp_password               String   @default("")
+  smtp_encryption             String   @default("TLS")
+  from_email                  String   @default("")
+  from_name                   String   @default("")
+  
+  // API & Integration Settings
+  google_client_id            String   @default("")
+  google_client_secret        String   @default("")
+  linkedin_client_id          String   @default("")
+  linkedin_client_secret      String   @default("")
+  recaptcha_site_key          String   @default("")
+  recaptcha_secret_key        String   @default("")
+  
+  // Backup & Maintenance
+  auto_backup                 Boolean  @default(false)
+  backup_frequency            String   @default("weekly")
+  backup_retention            Int      @default(30)
+  log_retention_days          Int      @default(90)
+  
   allowed_file_types          String[] @default(["pdf", "doc", "docx", "txt"])
   max_file_size_mb            Int      @default(5)
+  
   created_at                  DateTime @default(now())
   updated_at                  DateTime @updatedAt
 }
