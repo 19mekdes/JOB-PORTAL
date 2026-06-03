@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux'
 import { RootState } from '../redux/store'
 import { 
   Search, Briefcase, Users, TrendingUp, Clock, Building2,
-  Shield, Sparkles, ArrowRight, Star, CheckCircle, Award, MapPin, DollarSign
+  Shield, Sparkles, ArrowRight, Star, CheckCircle, Award, MapPin, DollarSign, Play, Pause
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -38,6 +38,7 @@ const Home: React.FC = () => {
     successRate: 92
   })
   const [loading, setLoading] = useState(true)
+  const [videoPlaying, setVideoPlaying] = useState(true)
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -64,7 +65,6 @@ const Home: React.FC = () => {
     fetchAllData()
   }, [])
 
-  // Handle company click - search for jobs at that company
   const handleCompanyClick = (companyName: string) => {
     navigate(`/jobs?search=${encodeURIComponent(companyName)}`)
   }
@@ -129,7 +129,7 @@ const Home: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <div className="relative min-h-[90vh] bg-gradient-to-r from-gray-900 to-gray-800">
+        <div className="relative min-h-[80vh] bg-gradient-to-r from-gray-900 to-gray-800">
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
             <div className="text-center">
               <div className="h-8 w-32 sm:w-48 bg-gray-700 rounded-full mx-auto mb-6 animate-pulse"></div>
@@ -145,39 +145,67 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-      {/* Hero Section */}
+      {/* Hero Section with Video Background */}
       <section className="relative min-h-[80vh] sm:min-h-[90vh] flex items-center overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url("https://images.pexels.com/photos/3184416/pexels-photo-3184416.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&dpr=2")`,
-            backgroundColor: '#1e40af'
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/50"></div>
+        {/* Video Background */}
+        <div className="absolute inset-0 w-full h-full">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute top-0 left-0 w-full h-full object-cover"
+            style={{ opacity: videoPlaying ? 1 : 0.8 }}
+          >
+            <source src="https://www.pexels.com/download/video/6325851/" type="video/mp4" />
+
+            
+            {/* Fallback image if video doesn't load */}
+            <img 
+              src="https://images.pexels.com/photos/3184416/pexels-photo-3184416.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&dpr=2"
+              alt="Office background"
+              className="absolute top-0 left-0 w-full h-full object-cover"
+            />
+          </video>
+          
+          {/* Dark Overlay for text readability */}
+          <div className="absolute inset-0 bg-black/60"></div>
+          
+          {/* Optional: Video control button */}
+          <button
+            onClick={() => setVideoPlaying(!videoPlaying)}
+            className="absolute bottom-6 right-6 z-20 bg-white/20 backdrop-blur-sm p-2 rounded-full hover:bg-white/30 transition-all duration-300"
+            aria-label={videoPlaying ? "Pause video" : "Play video"}
+          >
+            {videoPlaying ? (
+              <Pause className="h-4 w-4 text-white" />
+            ) : (
+              <Play className="h-4 w-4 text-white" />
+            )}
+          </button>
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-28 w-full">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-28 w-full">
           <div className="text-center max-w-4xl mx-auto">
-            <Badge className="mb-4 sm:mb-6 bg-white/20 text-white border-0 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm backdrop-blur-sm">
+            <Badge className="mb-4 sm:mb-6 bg-white/20 text-white border-0 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm backdrop-blur-sm animate-fade-in">
               <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 inline" />
-              #1 Job Portal Platform
+              #1 Job Portal Platform 2026
             </Badge>
             
-            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6 text-white leading-tight">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6 text-white leading-tight animate-slide-up">
               Find Your
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">
                 Dream Job Today
               </span>
             </h1>
             
-            <p className="text-base sm:text-xl md:text-2xl mb-6 sm:mb-10 text-gray-200 max-w-2xl mx-auto px-2">
-              Connect with {stats.totalCompanies.toLocaleString()}+ top employers and discover opportunities
+            <p className="text-base sm:text-xl md:text-2xl mb-6 sm:mb-10 text-gray-200 max-w-2xl mx-auto px-2 animate-slide-up animation-delay-100">
+              Connect with {stats.totalCompanies.toLocaleString()}+ top employers and discover opportunities that match your skills
             </p>
             
-            {/* Search Bar - Mobile Responsive */}
-            <div className="max-w-3xl mx-auto mb-6 sm:mb-8 px-2 sm:px-0">
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 bg-white rounded-xl sm:rounded-2xl p-1.5 sm:p-2 shadow-xl">
+            {/* Search Bar */}
+            <div className="max-w-3xl mx-auto mb-6 sm:mb-8 px-2 sm:px-0 animate-slide-up animation-delay-200">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 bg-white rounded-xl sm:rounded-2xl p-1.5 sm:p-2 shadow-2xl">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 sm:h-5 sm:w-5" />
                   <input
@@ -192,7 +220,7 @@ const Home: React.FC = () => {
                 
                 <Button 
                   onClick={handleSearch}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-8 py-3 sm:py-8 rounded-lg sm:rounded-xl text-sm sm:text-lg font-semibold w-full sm:w-auto transition-all duration-300 hover:scale-105"
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 sm:px-8 py-3 sm:py-8 rounded-lg sm:rounded-xl text-sm sm:text-lg font-semibold w-full sm:w-auto transition-all duration-300 hover:scale-105 shadow-lg"
                 >
                   <Search className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
                   Find Jobs
@@ -200,26 +228,26 @@ const Home: React.FC = () => {
               </div>
             </div>
 
-           
+            
 
-            {/* Trust Badges - Mobile Responsive */}
-            <div className="flex flex-wrap justify-center gap-3 sm:gap-6 mt-6 sm:mt-8 text-white text-xs sm:text-sm px-2">
+            {/* Trust Badges */}
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-6 mt-6 sm:mt-8 text-white text-xs sm:text-sm px-2 animate-slide-up animation-delay-400">
               <div className="flex items-center gap-1 sm:gap-2"><CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" /><span>Verified Companies</span></div>
               <div className="flex items-center gap-1 sm:gap-2"><Shield className="h-3 w-3 sm:h-4 sm:w-4" /><span>Secure Platform</span></div>
-              <div className="flex items-center gap-1 sm:gap-2"><Star className="h-3 w-3 sm:h-4 sm:w-4" /><span>Real Jobs</span></div>
+              <div className="flex items-center gap-1 sm:gap-2"><Star className="h-3 w-3 sm:h-4 sm:w-4" /><span>4.9/5 Rating</span></div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Section - Mobile Responsive */}
+      {/* Stats Section */}
       <section className="py-10 sm:py-16 bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
-            {statsData.map((stat) => {
+            {statsData.map((stat, idx) => {
               const Icon = stat.icon
               return (
-                <div key={stat.label} className="text-center group cursor-pointer transition-all duration-300 hover:transform hover:-translate-y-1">
+                <div key={stat.label} className="text-center group cursor-pointer transition-all duration-300 hover:transform hover:-translate-y-1 animate-fade-in" style={{ animationDelay: `${idx * 100}ms` }}>
                   <div className="inline-flex p-2 sm:p-4 bg-blue-50 rounded-xl sm:rounded-2xl mb-2 sm:mb-4 group-hover:bg-blue-100 transition-colors">
                     <Icon className="h-5 w-5 sm:h-7 sm:w-7 text-blue-600" />
                   </div>
@@ -232,7 +260,8 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Recent Jobs Section - Mobile Responsive */}
+      {/* Rest of the sections remain the same as previous responsive version */}
+      {/* Recent Jobs Section */}
       <section className="py-12 sm:py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center mb-8 sm:mb-12 gap-4">
@@ -252,8 +281,8 @@ const Home: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {recentJobs.map((job) => (
-                <Link key={job.id} to={`/jobs/${job.id}`} className="group">
+              {recentJobs.map((job, idx) => (
+                <Link key={job.id} to={`/jobs/${job.id}`} className="group animate-fade-in" style={{ animationDelay: `${idx * 100}ms` }}>
                   <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                     <div className="flex items-start justify-between mb-3 sm:mb-4">
                       <div className="flex items-center gap-2 sm:gap-3">
@@ -295,7 +324,7 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Top Companies Section - Mobile Responsive */}
+      {/* Top Companies Section */}
       {topCompanies.length > 0 && (
         <section className="py-12 sm:py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -306,11 +335,12 @@ const Home: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-              {topCompanies.map((company) => (
+              {topCompanies.map((company, idx) => (
                 <button
                   key={company.id}
                   onClick={() => handleCompanyClick(company.name)}
-                  className="cursor-pointer text-left w-full group"
+                  className="cursor-pointer text-left w-full group animate-fade-in"
+                  style={{ animationDelay: `${idx * 50}ms` }}
                 >
                   <div className="bg-gray-50 rounded-xl p-3 sm:p-6 text-center hover:shadow-lg transition-all duration-300 hover:transform hover:-translate-y-1 hover:bg-blue-50">
                     <div className="w-14 h-14 sm:w-20 sm:h-20 mx-auto bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-4 group-hover:from-blue-200 group-hover:to-blue-300 transition-all">
@@ -330,7 +360,7 @@ const Home: React.FC = () => {
         </section>
       )}
 
-      {/* CTA Section - Mobile Responsive */}
+      {/* CTA Section */}
       <section className="py-12 sm:py-20 bg-gradient-to-r from-blue-600 to-blue-800">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4">Ready to Start Your Journey?</h2>
@@ -356,6 +386,57 @@ const Home: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Add animation styles in your global CSS or add this style tag */}
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @keyframes slide-up {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fade-in {
+          animation: fade-in 0.6s ease-out forwards;
+        }
+        
+        .animate-slide-up {
+          animation: slide-up 0.6s ease-out forwards;
+        }
+        
+        .animation-delay-100 {
+          animation-delay: 0.1s;
+          opacity: 0;
+          animation-fill-mode: forwards;
+        }
+        
+        .animation-delay-200 {
+          animation-delay: 0.2s;
+          opacity: 0;
+          animation-fill-mode: forwards;
+        }
+        
+        .animation-delay-300 {
+          animation-delay: 0.3s;
+          opacity: 0;
+          animation-fill-mode: forwards;
+        }
+        
+        .animation-delay-400 {
+          animation-delay: 0.4s;
+          opacity: 0;
+          animation-fill-mode: forwards;
+        }
+      `}</style>
     </div>
   )
 }
