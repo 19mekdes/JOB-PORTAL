@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select'
 import {
   BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line
 } from 'recharts'
 import {
   Users, Briefcase, FileText, TrendingUp, Building,
@@ -27,6 +27,7 @@ import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
 interface AnalyticsData {
+  // User Statistics
   totalUsers: number
   totalJobSeekers: number
   totalEmployers: number
@@ -34,6 +35,8 @@ interface AnalyticsData {
   activeUsers: number
   newUsersThisMonth: number
   userGrowth: number
+  
+  // Job Statistics
   totalJobs: number
   activeJobs: number
   closedJobs: number
@@ -42,6 +45,9 @@ interface AnalyticsData {
   jobGrowth: number
   averageViewsPerJob: number
   averageApplicationsPerJob: number
+  conversionRate: number
+  
+  // Application Statistics
   totalApplications: number
   pendingApplications: number
   reviewedApplications: number
@@ -49,20 +55,26 @@ interface AnalyticsData {
   interviewApplications: number
   acceptedApplications: number
   rejectedApplications: number
-  conversionRate: number
+  
+  // Views
   totalViews: number
-  jobsByIndustry: Array<{ name: string; count: number }>
-  jobsByType: Array<{ type: string; count: number }>
-  topEmployers: Array<{ name: string; jobCount: number; views: number }>
-  topSkills: Array<{ skill: string; count: number }>
-  jobsByMonth: Array<{ month: string; jobs: number; applications: number }>
+  
+  // Monthly Trends
+  jobsByMonth: Array<{ month: string; jobs: number }>
+  applicationsByMonth: Array<{ month: string; applications: number }>
+  
+  // Distribution
   applicationsByStatus: Array<{ status: string; count: number }>
+  jobsByIndustry: Array<{ name: string; count: number }>
+  
+  // Top Lists
+  topSkills: Array<{ skill: string; count: number }>
+  topEmployers: Array<{ name: string; jobCount: number; views: number }>
 }
 
 const Analytics: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [period, setPeriod] = useState('30d')
   const [activeTab, setActiveTab] = useState('overview')
   const [data, setData] = useState<AnalyticsData | null>(null)
 
@@ -70,35 +82,16 @@ const Analytics: React.FC = () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await api.get(`/admin/analytics?period=${period}`)
+      // Fixed endpoint URL - matching your backend
+      const response = await api.get('/super-admin/analytics')
       console.log('Analytics response:', response.data)
       
       if (response.data?.success && response.data?.data) {
         const apiData = response.data.data
         
-        // Handle both data structures
-        const jobsByIndustry = (apiData.jobsByIndustry || []).map((item: any) => ({
-          name: item.name || item.industry,
-          count: item.count || 0
-        }))
-        
-        const topEmployers = (apiData.topEmployers || []).map((emp: any) => ({
-          name: emp.name || 'Unknown',
-          jobCount: emp.jobCount || 0,
-          views: emp.views || 0
-        }))
-        
-        const topSkills = (apiData.topSkills || []).map((skill: any) => ({
-          skill: skill.skill,
-          count: skill.count || 0
-        }))
-        
-        const applicationsByStatus = (apiData.applicationsByStatus || []).map((status: any) => ({
-          status: status.status,
-          count: status.count || 0
-        }))
-        
+        // Map the backend data to our frontend structure
         setData({
+          // User Statistics
           totalUsers: apiData.totalUsers || 0,
           totalJobSeekers: apiData.totalJobSeekers || 0,
           totalEmployers: apiData.totalEmployers || 0,
@@ -106,6 +99,8 @@ const Analytics: React.FC = () => {
           activeUsers: apiData.activeUsers || apiData.totalUsers || 0,
           newUsersThisMonth: apiData.newUsersThisMonth || 0,
           userGrowth: apiData.userGrowth || 0,
+          
+          // Job Statistics
           totalJobs: apiData.totalJobs || 0,
           activeJobs: apiData.activeJobs || 0,
           closedJobs: apiData.closedJobs || 0,
@@ -114,6 +109,9 @@ const Analytics: React.FC = () => {
           jobGrowth: apiData.jobGrowth || 0,
           averageViewsPerJob: apiData.averageViewsPerJob || 0,
           averageApplicationsPerJob: apiData.averageApplicationsPerJob || 0,
+          conversionRate: apiData.conversionRate || 0,
+          
+          // Application Statistics
           totalApplications: apiData.totalApplications || 0,
           pendingApplications: apiData.pendingApplications || 0,
           reviewedApplications: apiData.reviewedApplications || 0,
@@ -121,17 +119,40 @@ const Analytics: React.FC = () => {
           interviewApplications: apiData.interviewApplications || 0,
           acceptedApplications: apiData.acceptedApplications || 0,
           rejectedApplications: apiData.rejectedApplications || 0,
-          conversionRate: apiData.conversionRate || 0,
+          
+          // Views
           totalViews: apiData.totalViews || 0,
-          jobsByIndustry: jobsByIndustry,
-          jobsByType: apiData.jobsByType || [],
-          topEmployers: topEmployers,
-          topSkills: topSkills,
+          
+          // Monthly Trends - backend has separate arrays
           jobsByMonth: apiData.jobsByMonth || [],
-          applicationsByStatus: applicationsByStatus
+          applicationsByMonth: apiData.applicationsByMonth || [],
+          
+          // Distribution
+          applicationsByStatus: (apiData.applicationsByStatus || []).map((status: any) => ({
+            status: status.status,
+            count: status.count || 0
+          })),
+          jobsByIndustry: (apiData.jobsByIndustry || []).map((item: any) => ({
+            name: item.name,
+            count: item.count || 0
+          })),
+          
+          // Top Lists
+          topSkills: (apiData.topSkills || []).map((skill: any) => ({
+            skill: skill.skill,
+            count: skill.count || 0
+          })),
+          topEmployers: (apiData.topEmployers || []).map((emp: any) => ({
+            name: emp.name || 'Unknown',
+            jobCount: emp.jobCount || 0,
+            views: emp.views || 0
+          }))
         })
       } else {
         setData(getDefaultData())
+        if (response.data?.message) {
+          setError(response.data.message)
+        }
       }
     } catch (err: any) {
       console.error('Failed to fetch analytics:', err)
@@ -140,7 +161,7 @@ const Analytics: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }, [period])
+  }, [])
 
   useEffect(() => {
     fetchAnalytics()
@@ -171,12 +192,12 @@ const Analytics: React.FC = () => {
     rejectedApplications: 0,
     conversionRate: 0,
     totalViews: 0,
-    jobsByIndustry: [],
-    jobsByType: [],
-    topEmployers: [],
-    topSkills: [],
     jobsByMonth: [],
-    applicationsByStatus: []
+    applicationsByMonth: [],
+    applicationsByStatus: [],
+    jobsByIndustry: [],
+    topSkills: [],
+    topEmployers: []
   })
 
   const formatNumber = (num: number | undefined) => {
@@ -190,17 +211,26 @@ const Analytics: React.FC = () => {
     if (!data) return
     const exportData = {
       generatedAt: new Date().toISOString(),
-      period: period,
       ...data
     }
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `analytics_${period}_${new Date().toISOString().split('T')[0]}.json`
+    a.download = `analytics_${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
     toast({ title: "Export Complete", description: "Analytics data has been exported" })
+  }
+
+  // Prepare combined monthly data for line chart
+  const getMonthlyTrendData = () => {
+    if (!data?.jobsByMonth) return []
+    return data.jobsByMonth.map((item, index) => ({
+      month: item.month,
+      jobs: item.jobs,
+      applications: data.applicationsByMonth[index]?.applications || 0
+    }))
   }
 
   // Calculate max skill count safely
@@ -210,6 +240,8 @@ const Analytics: React.FC = () => {
 
   // Prepare application status data for pie chart
   const applicationStatusData = data?.applicationsByStatus || []
+
+  const statusColors = ['#f59e0b', '#3b82f6', '#8b5cf6', '#06b6d4', '#10b981', '#ef4444']
 
   if (loading) {
     return (
@@ -234,28 +266,15 @@ const Analytics: React.FC = () => {
     )
   }
 
-  const statusColors = ['#f59e0b', '#3b82f6', '#8b5cf6', '#06b6d4', '#10b981', '#ef4444']
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Super Admin Analytics Dashboard</h1>
           <p className="text-gray-500 mt-1">Platform insights and performance metrics</p>
         </div>
         <div className="flex gap-2">
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-32 border-gray-300">
-              <SelectValue placeholder="Period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-              <SelectItem value="365d">Last Year</SelectItem>
-            </SelectContent>
-          </Select>
           <Button variant="outline" onClick={fetchAnalytics} className="border-gray-300">
             <RefreshCw className="h-4 w-4 mr-2" /> Refresh
           </Button>
@@ -294,7 +313,9 @@ const Analytics: React.FC = () => {
                     <p className="text-2xl font-bold">{formatNumber(data.totalUsers)}</p>
                     <div className="flex items-center gap-1 mt-1">
                       <TrendingUp className="h-3 w-3 text-green-600" />
-                      <span className="text-xs text-green-600">+{data.userGrowth}%</span>
+                      <span className={`text-xs ${data.userGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {data.userGrowth >= 0 ? '+' : ''}{data.userGrowth}%
+                      </span>
                     </div>
                   </div>
                   <div className="p-3 rounded-full bg-blue-100"><Users className="h-6 w-6 text-blue-600" /></div>
@@ -309,7 +330,9 @@ const Analytics: React.FC = () => {
                     <p className="text-2xl font-bold">{formatNumber(data.totalJobs)}</p>
                     <div className="flex items-center gap-1 mt-1">
                       <TrendingUp className="h-3 w-3 text-green-600" />
-                      <span className="text-xs text-green-600">+{data.jobGrowth}%</span>
+                      <span className={`text-xs ${data.jobGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {data.jobGrowth >= 0 ? '+' : ''}{data.jobGrowth}%
+                      </span>
                     </div>
                   </div>
                   <div className="p-3 rounded-full bg-purple-100"><Briefcase className="h-6 w-6 text-purple-600" /></div>
@@ -347,8 +370,30 @@ const Analytics: React.FC = () => {
             <Card><CardContent className="p-3"><div className="flex justify-between items-center"><div><p className="text-xs text-gray-500">Job Seekers</p><p className="text-lg font-bold">{formatNumber(data.totalJobSeekers)}</p></div><Users className="h-4 w-4 text-gray-400" /></div></CardContent></Card>
             <Card><CardContent className="p-3"><div className="flex justify-between items-center"><div><p className="text-xs text-gray-500">Employers</p><p className="text-lg font-bold">{formatNumber(data.totalEmployers)}</p></div><Building className="h-4 w-4 text-gray-400" /></div></CardContent></Card>
             <Card><CardContent className="p-3"><div className="flex justify-between items-center"><div><p className="text-xs text-gray-500">Active Jobs</p><p className="text-lg font-bold text-green-600">{formatNumber(data.activeJobs)}</p></div><CheckCircle className="h-4 w-4 text-green-500" /></div></CardContent></Card>
-            <Card><CardContent className="p-3"><div className="flex justify-between items-center"><div><p className="text-xs text-gray-500">Pending Jobs</p><p className="text-lg font-bold text-yellow-600">{formatNumber(data.pendingJobs)}</p></div><Clock className="h-4 w-4 text-yellow-500" /></div></CardContent></Card>
+            <Card><CardContent className="p-3"><div className="flex justify-between items-center"><div><p className="text-xs text-gray-500">Total Views</p><p className="text-lg font-bold text-blue-600">{formatNumber(data.totalViews)}</p></div><Eye className="h-4 w-4 text-blue-500" /></div></CardContent></Card>
           </div>
+
+          {/* Monthly Trends Line Chart */}
+          <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+            <CardHeader><CardTitle className="text-lg">Monthly Trends (Jobs vs Applications)</CardTitle></CardHeader>
+            <CardContent>
+              {getMonthlyTrendData().length === 0 ? (
+                <div className="text-center py-8 text-gray-500">No monthly data available</div>
+              ) : (
+                <ResponsiveContainer width="100%" height={350}>
+                  <LineChart data={getMonthlyTrendData()}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="month" />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <Tooltip />
+                    <Line yAxisId="left" type="monotone" dataKey="jobs" stroke="#3b82f6" name="Jobs" strokeWidth={2} />
+                    <Line yAxisId="right" type="monotone" dataKey="applications" stroke="#10b981" name="Applications" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -382,8 +427,19 @@ const Analytics: React.FC = () => {
                   <>
                     <ResponsiveContainer width="100%" height={250}>
                       <PieChart>
-                        <Pie data={applicationStatusData} cx="50%" cy="50%" labelLine={false} outerRadius={80} dataKey="count" nameKey="status" label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`}>
-                          {applicationStatusData.map((entry, index) => (<Cell key={`cell-${index}`} fill={statusColors[index % statusColors.length]} />))}
+                        <Pie 
+                          data={applicationStatusData} 
+                          cx="50%" 
+                          cy="50%" 
+                          labelLine={false} 
+                          outerRadius={80} 
+                          dataKey="count" 
+                          nameKey="status" 
+                          label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {applicationStatusData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={statusColors[index % statusColors.length]} />
+                          ))}
                         </Pie>
                         <Tooltip />
                       </PieChart>
@@ -418,7 +474,7 @@ const Analytics: React.FC = () => {
                           <p className="font-medium">{employer.name}</p>
                           <p className="text-xs text-gray-500">{employer.jobCount} jobs • {(employer.views || 0).toLocaleString()} views</p>
                         </div>
-                        <Badge className="bg-gray-200">#{idx + 1}</Badge>
+                        <Badge variant="secondary">#{idx + 1}</Badge>
                       </div>
                     ))}
                   </div>
@@ -454,33 +510,158 @@ const Analytics: React.FC = () => {
         {/* Users Tab */}
         <TabsContent value="users" className="space-y-6 mt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card><CardContent className="p-4"><div className="text-center"><Users className="h-8 w-8 text-blue-500 mx-auto mb-2" /><p className="text-2xl font-bold">{formatNumber(data.totalUsers)}</p><p className="text-sm text-gray-500">Total Users</p></div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="text-center"><UserPlus className="h-8 w-8 text-green-500 mx-auto mb-2" /><p className="text-2xl font-bold">{formatNumber(data.newUsersThisMonth)}</p><p className="text-sm text-gray-500">New Users ({period})</p></div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="text-center"><Activity className="h-8 w-8 text-purple-500 mx-auto mb-2" /><p className="text-2xl font-bold">{data.userGrowth}%</p><p className="text-sm text-gray-500">Growth Rate</p></div></CardContent></Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <Users className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold">{formatNumber(data.totalUsers)}</p>
+                  <p className="text-sm text-gray-500">Total Users</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <UserPlus className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold">{formatNumber(data.newUsersThisMonth)}</p>
+                  <p className="text-sm text-gray-500">New Users (This Month)</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <Activity className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+                  <p className={`text-2xl font-bold ${data.userGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {data.userGrowth >= 0 ? '+' : ''}{data.userGrowth}%
+                  </p>
+                  <p className="text-sm text-gray-500">Growth Rate</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          <Card><CardContent className="p-4"><div className="flex justify-between items-center"><div><p className="text-sm text-gray-500">Job Seekers</p><p className="text-2xl font-bold">{formatNumber(data.totalJobSeekers)}</p></div><div><p className="text-sm text-gray-500">Employers</p><p className="text-2xl font-bold">{formatNumber(data.totalEmployers)}</p></div><div><p className="text-sm text-gray-500">Admins</p><p className="text-2xl font-bold">{formatNumber(data.totalAdmins)}</p></div></div></CardContent></Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-sm text-gray-500">Job Seekers</p>
+                  <p className="text-2xl font-bold">{formatNumber(data.totalJobSeekers)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Employers</p>
+                  <p className="text-2xl font-bold">{formatNumber(data.totalEmployers)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Admins</p>
+                  <p className="text-2xl font-bold">{formatNumber(data.totalAdmins)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Jobs Tab */}
         <TabsContent value="jobs" className="space-y-6 mt-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card><CardContent className="p-4"><div className="text-center"><Briefcase className="h-8 w-8 mx-auto mb-2" /><p className="text-2xl font-bold">{formatNumber(data.totalJobs)}</p><p className="text-sm text-gray-500">Total Jobs</p></div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="text-center"><CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" /><p className="text-2xl font-bold text-green-600">{formatNumber(data.activeJobs)}</p><p className="text-sm text-gray-500">Active Jobs</p></div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="text-center"><XCircle className="h-8 w-8 text-red-500 mx-auto mb-2" /><p className="text-2xl font-bold text-red-600">{formatNumber(data.closedJobs)}</p><p className="text-sm text-gray-500">Closed Jobs</p></div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="text-center"><Eye className="h-8 w-8 text-blue-500 mx-auto mb-2" /><p className="text-2xl font-bold">{formatNumber(data.averageViewsPerJob)}</p><p className="text-sm text-gray-500">Avg Views/Job</p></div></CardContent></Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <Briefcase className="h-8 w-8 text-gray-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold">{formatNumber(data.totalJobs)}</p>
+                  <p className="text-sm text-gray-500">Total Jobs</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-green-600">{formatNumber(data.activeJobs)}</p>
+                  <p className="text-sm text-gray-500">Active Jobs</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <Clock className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-yellow-600">{formatNumber(data.pendingJobs)}</p>
+                  <p className="text-sm text-gray-500">Pending Jobs</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <Eye className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                  <p className="text-2xl font-bold">{formatNumber(data.averageViewsPerJob)}</p>
+                  <p className="text-sm text-gray-500">Avg Views/Job</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
+          
+          {/* Jobs by Month Bar Chart */}
+          <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+            <CardHeader><CardTitle className="text-lg">Jobs Posted by Month</CardTitle></CardHeader>
+            <CardContent>
+              {!data.jobsByMonth || data.jobsByMonth.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">No monthly job data available</div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={data.jobsByMonth}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="jobs" fill="#3b82f6" name="Jobs Posted" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Applications Tab */}
         <TabsContent value="applications" className="space-y-6 mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold">{formatNumber(data.totalApplications)}</p><p className="text-xs text-gray-500">Total</p></CardContent></Card>
-            <Card className="border-yellow-200"><CardContent className="p-3 text-center"><p className="text-2xl font-bold text-yellow-600">{formatNumber(data.pendingApplications)}</p><p className="text-xs text-gray-500">Pending</p></CardContent></Card>
-            <Card className="border-blue-200"><CardContent className="p-3 text-center"><p className="text-2xl font-bold text-blue-600">{formatNumber(data.reviewedApplications)}</p><p className="text-xs text-gray-500">Reviewed</p></CardContent></Card>
-            <Card className="border-purple-200"><CardContent className="p-3 text-center"><p className="text-2xl font-bold text-purple-600">{formatNumber(data.shortlistedApplications)}</p><p className="text-xs text-gray-500">Shortlisted</p></CardContent></Card>
-            <Card className="border-green-200"><CardContent className="p-3 text-center"><p className="text-2xl font-bold text-green-600">{formatNumber(data.acceptedApplications)}</p><p className="text-xs text-gray-500">Accepted</p></CardContent></Card>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <Card><CardContent className="p-3 text-center"><p className="text-xl font-bold">{formatNumber(data.totalApplications)}</p><p className="text-xs text-gray-500">Total</p></CardContent></Card>
+            <Card className="border-yellow-200 bg-yellow-50"><CardContent className="p-3 text-center"><p className="text-xl font-bold text-yellow-600">{formatNumber(data.pendingApplications)}</p><p className="text-xs text-gray-500">Pending</p></CardContent></Card>
+            <Card className="border-blue-200 bg-blue-50"><CardContent className="p-3 text-center"><p className="text-xl font-bold text-blue-600">{formatNumber(data.reviewedApplications)}</p><p className="text-xs text-gray-500">Reviewed</p></CardContent></Card>
+            <Card className="border-purple-200 bg-purple-50"><CardContent className="p-3 text-center"><p className="text-xl font-bold text-purple-600">{formatNumber(data.shortlistedApplications)}</p><p className="text-xs text-gray-500">Shortlisted</p></CardContent></Card>
+            <Card className="border-cyan-200 bg-cyan-50"><CardContent className="p-3 text-center"><p className="text-xl font-bold text-cyan-600">{formatNumber(data.interviewApplications)}</p><p className="text-xs text-gray-500">Interview</p></CardContent></Card>
+            <Card className="border-green-200 bg-green-50"><CardContent className="p-3 text-center"><p className="text-xl font-bold text-green-600">{formatNumber(data.acceptedApplications)}</p><p className="text-xs text-gray-500">Accepted</p></CardContent></Card>
           </div>
-          <Card><CardContent className="p-4"><p className="text-center text-gray-600">Average {data.averageApplicationsPerJob} applications per job • {data.conversionRate}% conversion rate</p></CardContent></Card>
+          
+          {/* Applications by Month */}
+          <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+            <CardHeader><CardTitle className="text-lg">Applications by Month</CardTitle></CardHeader>
+            <CardContent>
+              {!data.applicationsByMonth || data.applicationsByMonth.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">No monthly application data available</div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={data.applicationsByMonth}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="applications" fill="#10b981" name="Applications" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center">
+                <p className="text-gray-600">Average <span className="font-semibold">{data.averageApplicationsPerJob}</span> applications per job</p>
+                <p className="text-gray-600 mt-1"><span className="font-semibold text-green-600">{data.conversionRate}%</span> conversion rate (applications to accepted)</p>
+                <p className="text-gray-500 text-sm mt-2">Total Views: {formatNumber(data.totalViews)}</p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

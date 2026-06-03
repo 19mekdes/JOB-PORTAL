@@ -5944,10 +5944,11 @@ app.get('/api/admin/analytics', authMiddleware, async (req: Request, res: Respon
   }
 })
 
-
-// ========== SUPER ADMIN DASHBOARD ANALYTICS ==========
+// ========== SUPER ADMIN DASHBOARD ANALYTICS - CORRECT VERSION ==========
 app.get('/api/super-admin/analytics', authMiddleware, async (req: Request, res: Response) => {
   try {
+    console.log('📊 Super Admin Analytics endpoint called - CORRECT VERSION')
+    
     // Check if user is Super Admin
     const currentUser = await prisma.user.findUnique({
       where: { id: req.user!.id },
@@ -5958,7 +5959,7 @@ app.get('/api/super-admin/analytics', authMiddleware, async (req: Request, res: 
       return res.status(403).json({ success: false, message: 'Access denied. Super Admin only.' })
     }
     
-    // ========== USER STATISTICS ==========
+    // ========== BASIC COUNTS ==========
     const totalUsers = await prisma.user.count()
     const totalJobSeekers = await prisma.user.count({ 
       where: { user_type: { type_name: 'Job Seeker' } } 
@@ -5970,7 +5971,6 @@ app.get('/api/super-admin/analytics', authMiddleware, async (req: Request, res: 
       where: { user_type: { type_name: { in: ['Admin', 'Super Admin'] } } } 
     })
     
-    // ========== JOB STATISTICS ==========
     const totalJobs = await prisma.jobPost.count()
     const activeJobs = await prisma.jobPost.count({ 
       where: { status: { status_name: 'Open' } } 
@@ -5982,10 +5982,18 @@ app.get('/api/super-admin/analytics', authMiddleware, async (req: Request, res: 
       where: { status: { status_name: 'Pending' } } 
     })
     
-    // ========== APPLICATION STATISTICS ==========
     const totalApplications = await prisma.jobApplication.count()
     const pendingApplications = await prisma.jobApplication.count({ 
       where: { status: { status_name: 'Pending' } } 
+    })
+    const reviewedApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Reviewed' } } 
+    })
+    const shortlistedApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Shortlisted' } } 
+    })
+    const interviewApplications = await prisma.jobApplication.count({ 
+      where: { status: { status_name: 'Interview' } } 
     })
     const acceptedApplications = await prisma.jobApplication.count({ 
       where: { status: { status_name: 'Accepted' } } 
@@ -5993,11 +6001,40 @@ app.get('/api/super-admin/analytics', authMiddleware, async (req: Request, res: 
     const rejectedApplications = await prisma.jobApplication.count({ 
       where: { status: { status_name: 'Rejected' } } 
     })
-    const interviewApplications = await prisma.jobApplication.count({ 
-      where: { status: { status_name: 'Interview' } } 
+    
+    // ========== NEW THIS MONTH ==========
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+    
+    const newUsersThisMonth = await prisma.user.count({
+      where: { created_at: { gte: startOfMonth } }
+    })
+    const newJobsThisMonth = await prisma.jobPost.count({
+      where: { created_at: { gte: startOfMonth } }
     })
     
-    // ========== VIEWS ==========
+    // ========== GROWTH CALCULATIONS ==========
+    const startOfLastMonth = new Date()
+    startOfLastMonth.setMonth(startOfLastMonth.getMonth() - 1)
+    startOfLastMonth.setDate(1)
+    startOfLastMonth.setHours(0, 0, 0, 0)
+    
+    const lastMonthUsers = await prisma.user.count({
+      where: { created_at: { gte: startOfLastMonth, lt: startOfMonth } }
+    })
+    const userGrowth = lastMonthUsers > 0 
+      ? Math.round(((newUsersThisMonth - lastMonthUsers) / lastMonthUsers) * 100) 
+      : newUsersThisMonth > 0 ? 100 : 0
+    
+    const lastMonthJobs = await prisma.jobPost.count({
+      where: { created_at: { gte: startOfLastMonth, lt: startOfMonth } }
+    })
+    const jobGrowth = lastMonthJobs > 0 
+      ? Math.round(((newJobsThisMonth - lastMonthJobs) / lastMonthJobs) * 100) 
+      : newJobsThisMonth > 0 ? 100 : 0
+    
+    // ========== ENGAGEMENT METRICS ==========
     const totalViewsResult = await prisma.jobPost.aggregate({
       _sum: { views_count: true }
     })
@@ -6006,7 +6043,74 @@ app.get('/api/super-admin/analytics', authMiddleware, async (req: Request, res: 
     const averageApplicationsPerJob = totalJobs > 0 ? parseFloat((totalApplications / totalJobs).toFixed(1)) : 0
     const conversionRate = totalApplications > 0 ? Math.round((acceptedApplications / totalApplications) * 100) : 0
     
-    // ========== MONTHLY DATA (Last 6 months) ==========
+    // ========== JOBS BY INDUSTRY ==========
+    const jobsByIndustryRaw = await prisma.$queryRaw`
+      SELECT i.industry_name as name, COUNT(j.id) as count
+      FROM "JobIndustry" i
+      LEFT JOIN "JobPost" j ON j.industry_id = i.id
+      GROUP BY i.id, i.industry_name
+      HAVING COUNT(j.id) > 0
+      ORDER BY count DESC
+      LIMIT 10
+    `
+    
+    const jobsByIndustry = (jobsByIndustryRaw as any[]).map(item => ({
+      name: item.name,
+      count: Number(item.count)
+    }))
+    
+    // ========== TOP EMPLOYERS ==========
+    const topEmployersRaw = await prisma.$queryRaw`
+      SELECT 
+        ep.company_name as name, 
+        COUNT(j.id) as "jobCount", 
+        COALESCE(SUM(j.views_count), 0) as views
+      FROM "EmployerProfile" ep
+      LEFT JOIN "JobPost" j ON j.employer_id = ep.id
+      GROUP BY ep.id, ep.company_name
+      HAVING COUNT(j.id) > 0
+      ORDER BY "jobCount" DESC
+      LIMIT 10
+    `
+    
+    const topEmployers = (topEmployersRaw as any[]).map(item => ({
+      name: item.name,
+      jobCount: Number(item.jobCount),
+      views: Number(item.views)
+    }))
+    
+    // ========== TOP SKILLS ==========
+    const allSkills = await prisma.jobSeekerProfile.findMany({
+      select: { skills: true }
+    })
+    
+    const skillCount: Record<string, number> = {}
+    for (const profile of allSkills) {
+      if (profile.skills && Array.isArray(profile.skills)) {
+        for (const skill of profile.skills) {
+          if (skill && skill.trim()) {
+            skillCount[skill] = (skillCount[skill] || 0) + 1
+          }
+        }
+      }
+    }
+    
+    const topSkills = Object.entries(skillCount)
+      .map(([skill, count]) => ({ skill, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+    
+    // ========== APPLICATION STATUS DISTRIBUTION ==========
+    const applicationsByStatus = [
+      { status: 'Pending', count: pendingApplications },
+      { status: 'Reviewed', count: reviewedApplications },
+      { status: 'Shortlisted', count: shortlistedApplications },
+      { status: 'Interview', count: interviewApplications },
+      { status: 'Accepted', count: acceptedApplications },
+      { status: 'Rejected', count: rejectedApplications }
+    ].filter(s => s.count > 0)
+    
+    // ========== MONTHLY TRENDS ==========
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
     const jobsByMonth = []
     const applicationsByMonth = []
@@ -6031,97 +6135,45 @@ app.get('/api/super-admin/analytics', authMiddleware, async (req: Request, res: 
       applicationsByMonth.push({ month: monthName, applications: applicationsCount })
     }
     
-    // ========== APPLICATION STATUS DISTRIBUTION ==========
-    const applicationsByStatus = [
-      { status: 'Pending', count: pendingApplications },
-      { status: 'Interview', count: interviewApplications },
-      { status: 'Accepted', count: acceptedApplications },
-      { status: 'Rejected', count: rejectedApplications }
-    ].filter(s => s.count > 0)
-    
-    // ========== JOBS BY INDUSTRY ==========
-    const jobsByIndustryRaw = await prisma.$queryRaw`
-      SELECT i.industry_name as name, COUNT(j.id) as count
-      FROM "JobIndustry" i
-      LEFT JOIN "JobPost" j ON j.industry_id = i.id
-      GROUP BY i.id, i.industry_name
-      ORDER BY count DESC
-      LIMIT 5
-    `
-    
-    const jobsByIndustry = (jobsByIndustryRaw as any[]).map(item => ({
-      name: item.name,
-      count: Number(item.count)
-    }))
-    
-    // ========== TOP SKILLS ==========
-    const allSkills = await prisma.jobSeekerProfile.findMany({
-      select: { skills: true }
-    })
-    
-    const skillCount: Record<string, number> = {}
-    for (const profile of allSkills) {
-      if (profile.skills && Array.isArray(profile.skills)) {
-        for (const skill of profile.skills) {
-          if (skill && skill.trim()) {
-            skillCount[skill] = (skillCount[skill] || 0) + 1
-          }
-        }
-      }
-    }
-    
-    const topSkills = Object.entries(skillCount)
-      .map(([skill, count]) => ({ skill, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10)
-    
-    // ========== TOP EMPLOYERS ==========
-    const topEmployersRaw = await prisma.$queryRaw`
-      SELECT ep.company_name as name, COUNT(j.id) as jobCount, COALESCE(SUM(j.views_count), 0) as views
-      FROM "EmployerProfile" ep
-      LEFT JOIN "JobPost" j ON j.employer_id = ep.id
-      GROUP BY ep.id, ep.company_name
-      ORDER BY jobCount DESC
-      LIMIT 5
-    `
-    
-    const topEmployers = (topEmployersRaw as any[]).map(item => ({
-      name: item.name,
-      jobCount: Number(item.jobCount),
-      views: Number(item.views)
-    }))
-    
-    console.log('📊 Super Admin Analytics:', {
+    console.log('📊 Super Admin Analytics Summary:', {
       totalUsers,
       totalJobs,
       totalApplications,
-      conversionRate
+      jobsByIndustry: jobsByIndustry.length,
+      topEmployers: topEmployers.length
     })
     
     res.json({
       success: true,
       data: {
-        // User Stats
+        // User Statistics
         totalUsers,
         totalJobSeekers,
         totalEmployers,
         totalAdmins,
+        activeUsers: totalUsers,
+        newUsersThisMonth,
+        userGrowth,
         
-        // Job Stats
+        // Job Statistics
         totalJobs,
         activeJobs,
         closedJobs,
         pendingJobs,
+        newJobsThisMonth,
+        jobGrowth,
         averageViewsPerJob,
         averageApplicationsPerJob,
         conversionRate,
         
-        // Application Stats
+        // Application Statistics
         totalApplications,
         pendingApplications,
+        reviewedApplications,
+        shortlistedApplications,
+        interviewApplications,
         acceptedApplications,
         rejectedApplications,
-        interviewApplications,
         
         // Views
         totalViews,
@@ -6150,16 +6202,26 @@ app.get('/api/super-admin/analytics', authMiddleware, async (req: Request, res: 
         totalJobSeekers: 0,
         totalEmployers: 0,
         totalAdmins: 0,
+        activeUsers: 0,
+        newUsersThisMonth: 0,
+        userGrowth: 0,
         totalJobs: 0,
         activeJobs: 0,
         closedJobs: 0,
-        totalApplications: 0,
-        pendingApplications: 0,
-        acceptedApplications: 0,
-        totalViews: 0,
+        pendingJobs: 0,
+        newJobsThisMonth: 0,
+        jobGrowth: 0,
         averageViewsPerJob: 0,
         averageApplicationsPerJob: 0,
+        totalApplications: 0,
+        pendingApplications: 0,
+        reviewedApplications: 0,
+        shortlistedApplications: 0,
+        interviewApplications: 0,
+        acceptedApplications: 0,
+        rejectedApplications: 0,
         conversionRate: 0,
+        totalViews: 0,
         jobsByMonth: [],
         applicationsByMonth: [],
         applicationsByStatus: [],
