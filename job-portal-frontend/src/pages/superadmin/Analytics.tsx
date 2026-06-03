@@ -7,19 +7,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line
 } from 'recharts'
 import {
   Users, Briefcase, FileText, TrendingUp, Building,
-  Download, RefreshCw, Eye, CheckCircle, XCircle, Clock,
+  Download, RefreshCw, Eye, CheckCircle, Clock,
   UserPlus, Award, Activity, AlertCircle
 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'

@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from 'react'
 import {
   Users, Search, RefreshCw, UserCheck, UserX, Trash2, Eye, Mail, Phone,
-  MapPin, Calendar, Briefcase, GraduationCap, AlertCircle, CheckCircle, XCircle, Key
+  MapPin, Calendar, AlertCircle, CheckCircle, XCircle, Key
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -143,6 +144,7 @@ const UserManagement: React.FC = () => {
     }
   }, [page, searchTerm, roleFilter, statusFilter, activeTab])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchUsers() }, [fetchUsers])
 
   const handleTabChange = (tab: string) => {
@@ -204,7 +206,7 @@ const UserManagement: React.FC = () => {
   const getRoleBadge = (role: string | undefined) => {
     if (!role) return <Badge className="bg-gray-100 text-gray-700 border-gray-200">Unknown</Badge>
     switch (role.toLowerCase()) {
-      case 'super admin': return <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0">Super Admin</Badge>
+      case 'super admin': return <Badge className="bg-linear-to-r from-red-500 to-red-600 text-white border-0">Super Admin</Badge>
       case 'admin': return <Badge className="bg-purple-100 text-purple-800 border-purple-200">Admin</Badge>
       case 'employer': return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Employer</Badge>
       case 'job seeker': return <Badge className="bg-green-100 text-green-800 border-green-200">Job Seeker</Badge>
@@ -466,7 +468,7 @@ const UserManagement: React.FC = () => {
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-6">
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
+                <div className="bg-linear-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16 bg-blue-200">
                       <AvatarFallback className="bg-blue-200 text-blue-700 text-xl">

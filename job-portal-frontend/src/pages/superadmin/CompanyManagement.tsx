@@ -10,14 +10,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { 
   Search, Trash2, MoreVertical, Shield,
   CheckCircle, XCircle, RefreshCw, AlertCircle,
-  Building, Briefcase, Eye
-  } from 'lucide-react'
+  Building, Briefcase, Eye, Mail, Phone, MapPin, Globe, Calendar
+} from 'lucide-react'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import {
   Select,
@@ -69,15 +70,13 @@ interface Company {
   jobs_count: number
 }
 
-// Helper function to get token from multiple possible locations
+// Helper function to get token
 const getAuthToken = (): string | null => {
-  // Try multiple possible token locations
   const token = localStorage.getItem('token') || 
                 localStorage.getItem('admin_token') || 
                 localStorage.getItem('accessToken') ||
                 sessionStorage.getItem('token')
   
-  // Also check if token is stored inside user object
   if (!token) {
     const userStr = localStorage.getItem('user')
     if (userStr) {
@@ -102,21 +101,11 @@ const CompanyManagement: React.FC = () => {
   const [filterVerification, setFilterVerification] = useState('all')
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  // eslint-disable-next-line no-empty-pattern
-  const [] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isSuspendDialogOpen, setIsSuspendDialogOpen] = useState(false)
   const [isVerifyDialogOpen, setIsVerifyDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  // eslint-disable-next-line no-empty-pattern
-  const [] = useState({
-    company_name: '',
-    company_description: '',
-    website: '',
-    location: '',
-    company_size: ''
-  })
-  const [, setTokenDebug] = useState<string>('Checking...')
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null)
 
   // API helper function
   const apiRequest = async (method: string, url: string, data?: any) => {
@@ -133,7 +122,7 @@ const CompanyManagement: React.FC = () => {
         'Authorization': `Bearer ${token}`,
       },
     }
-    if (data && (method === 'POST' || method === 'PUT')) {
+    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
       options.body = JSON.stringify(data)
     }
     
@@ -146,18 +135,6 @@ const CompanyManagement: React.FC = () => {
     return result
   }
 
-  // Check token status
-  const checkToken = () => {
-    const token = getAuthToken()
-    if (token) {
-      setTokenDebug(`✅ Token found (length: ${token.length})`)
-      return true
-    } else {
-      setTokenDebug('❌ No token found in localStorage')
-      return false
-    }
-  }
-
   // Fetch companies from backend
   const fetchCompanies = useCallback(async () => {
     setLoading(true)
@@ -168,48 +145,47 @@ const CompanyManagement: React.FC = () => {
         throw new Error('Please login first. No authentication token found.')
       }
 
-      console.log('Fetching companies from /admin/users...')
-      console.log('Using token:', token.substring(0, 50) + '...')
+      console.log('Fetching companies from /super-admin/companies...')
       
-      const response = await apiRequest('GET', '/admin/users')
-      console.log('API Response:', response)
-      
-      let allUsers: any[] = []
-      if (response.data && Array.isArray(response.data)) {
-        allUsers = response.data
-      } else if (response.users && Array.isArray(response.users)) {
-        allUsers = response.users
-      } else if (Array.isArray(response)) {
-        allUsers = response
+      // Try the super admin endpoint first
+      let response
+      try {
+        response = await apiRequest('GET', '/super-admin/companies')
+      } catch (err: any) {
+        console.log('Super admin endpoint failed, trying admin endpoint...')
+        response = await apiRequest('GET', '/admin/companies')
       }
       
-      console.log(`Total users found: ${allUsers.length}`)
+      console.log('API Response:', response)
       
-      // Filter only Employer users
-      const employerUsers = allUsers.filter(user => {
-        const userType = user.user_type?.type_name || user.role
-        return userType === 'Employer'
-      })
+      let allCompanies: any[] = []
+      if (response.data && Array.isArray(response.data)) {
+        allCompanies = response.data
+      } else if (response.companies && Array.isArray(response.companies)) {
+        allCompanies = response.companies
+      } else if (Array.isArray(response)) {
+        allCompanies = response
+      }
       
-      console.log(`Employers found: ${employerUsers.length}`)
+      console.log(`Total companies found: ${allCompanies.length}`)
       
       // Map to Company interface
-      const mappedCompanies: Company[] = employerUsers.map((user: any) => ({
-        id: user.id,
-        user_id: user.id,
-        company_name: user.employer_profile?.company_name || user.full_name || 'Unnamed Company',
-        company_description: user.employer_profile?.company_description || null,
-        website: user.employer_profile?.website || null,
-        location: user.employer_profile?.location || null,
-        company_size: user.employer_profile?.company_size || null,
-        logo_url: user.employer_profile?.logo_url || null,
-        is_verified: user.employer_profile?.is_verified || false,
-        is_active: user.is_active !== undefined ? user.is_active : true,
-        created_at: user.created_at,
-        industry_name: user.employer_profile?.industry?.industry_name || null,
-        email: user.email,
-        phone: user.employer_profile?.phone || null,
-        jobs_count: user.employer_profile?.jobs_count || 0
+      const mappedCompanies: Company[] = allCompanies.map((company: any) => ({
+        id: company.id || company.user_id,
+        user_id: company.user_id || company.id,
+        company_name: company.company_name || company.name || 'Unnamed Company',
+        company_description: company.company_description || company.description || null,
+        website: company.website || null,
+        location: company.location || null,
+        company_size: company.company_size || company.size || null,
+        logo_url: company.logo_url || null,
+        is_verified: company.is_verified || false,
+        is_active: company.is_active !== undefined ? company.is_active : true,
+        created_at: company.created_at || new Date().toISOString(),
+        industry_name: company.industry_name || company.industry || null,
+        email: company.email,
+        phone: company.phone || null,
+        jobs_count: company.jobs_count || company.jobCount || 0
       }))
       
       setCompanies(mappedCompanies)
@@ -217,20 +193,71 @@ const CompanyManagement: React.FC = () => {
     } catch (err: any) {
       console.error('Failed to fetch companies:', err)
       setError(err.message || 'Failed to fetch companies')
-      setCompanies([])
+      // Set demo data for testing if no data
+      setCompanies(getDemoCompanies())
     } finally {
       setLoading(false)
     }
   }, [])
 
+  // Demo data for testing
+  const getDemoCompanies = (): Company[] => {
+    return [
+      {
+        id: '1',
+        user_id: '1',
+        company_name: 'Mekdi Software Developer PLC',
+        company_description: 'Software development company',
+        website: 'https://mekdi.com',
+        location: 'Addis Ababa, Ethiopia',
+        company_size: '50-100',
+        logo_url: null,
+        is_verified: false,
+        is_active: true,
+        created_at: '2025-05-25T00:00:00Z',
+        industry_name: 'Technology',
+        email: 'mekdiwale59@gmail.com',
+        phone: '+251911234567',
+        jobs_count: 0
+      },
+      {
+        id: '2',
+        user_id: '2',
+        company_name: 'Alpha Line Engineering PLC',
+        company_description: 'Engineering and construction',
+        website: 'https://alphaline.com',
+        location: 'Addis Ababa, Ethiopia',
+        company_size: '100-250',
+        logo_url: null,
+        is_verified: false,
+        is_active: true,
+        created_at: '2025-05-22T00:00:00Z',
+        industry_name: 'Engineering',
+        email: 'info@alphaline.com',
+        phone: '+251911123456',
+        jobs_count: 0
+      },
+      {
+        id: '3',
+        user_id: '3',
+        company_name: 'TechCorp Solutions',
+        company_description: 'Tech solutions provider',
+        website: 'https://techcorp.com',
+        location: 'San Francisco, CA',
+        company_size: '10-50',
+        logo_url: null,
+        is_verified: false,
+        is_active: true,
+        created_at: '2025-04-24T00:00:00Z',
+        industry_name: 'Technology',
+        email: 'employer@techcorp.com',
+        phone: '+1234567890',
+        jobs_count: 0
+      }
+    ]
+  }
+
   useEffect(() => {
-    checkToken()
-    const token = getAuthToken()
-    if (!token) {
-      setError('No authentication token found. Please login first.')
-      setLoading(false)
-      return
-    }
     fetchCompanies()
   }, [fetchCompanies])
 
@@ -239,14 +266,32 @@ const CompanyManagement: React.FC = () => {
     if (!selectedCompany) return
     setSubmitting(true)
     try {
-      await apiRequest('PUT', `/admin/users/${selectedCompany.user_id}/status`, { 
-        is_verified: true 
+      await apiRequest('PUT', `/super-admin/companies/${selectedCompany.id}/verify`, {})
+      toast({ 
+        title: "Success", 
+        description: `${selectedCompany.company_name} has been verified!` 
       })
-      toast({ title: "Success", description: `${selectedCompany.company_name} has been verified!` })
       setIsVerifyDialogOpen(false)
+      setDropdownOpen(null)
       fetchCompanies()
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.message })
+      // If super admin endpoint fails, try admin endpoint
+      try {
+        await apiRequest('PUT', `/admin/companies/${selectedCompany.id}/verify`, {})
+        toast({ 
+          title: "Success", 
+          description: `${selectedCompany.company_name} has been verified!` 
+        })
+        setIsVerifyDialogOpen(false)
+        setDropdownOpen(null)
+        fetchCompanies()
+      } catch (err2: any) {
+        toast({ 
+          variant: "destructive", 
+          title: "Error", 
+          description: err.message || 'Failed to verify company' 
+        })
+      }
     } finally {
       setSubmitting(false)
     }
@@ -257,28 +302,68 @@ const CompanyManagement: React.FC = () => {
     if (!selectedCompany) return
     setSubmitting(true)
     try {
-      await apiRequest('PUT', `/admin/users/${selectedCompany.user_id}/status`, { is_active: false })
-      toast({ title: "Success", description: `${selectedCompany.company_name} has been suspended` })
+      await apiRequest('PUT', `/super-admin/companies/${selectedCompany.id}/status`, { 
+        status: 'suspended'
+      })
+      toast({ 
+        title: "Success", 
+        description: `${selectedCompany.company_name} has been suspended` 
+      })
       setIsSuspendDialogOpen(false)
+      setDropdownOpen(null)
       fetchCompanies()
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.message })
+      // Try alternative endpoint
+      try {
+        await apiRequest('PUT', `/admin/companies/${selectedCompany.id}/suspend`, {})
+        toast({ 
+          title: "Success", 
+          description: `${selectedCompany.company_name} has been suspended` 
+        })
+        setIsSuspendDialogOpen(false)
+        setDropdownOpen(null)
+        fetchCompanies()
+      } catch (err2: any) {
+        toast({ 
+          variant: "destructive", 
+          title: "Error", 
+          description: err.message || 'Failed to suspend company' 
+        })
+      }
     } finally {
       setSubmitting(false)
     }
   }
 
   // Activate company
-  const handleActivateCompany = async (companyId: string) => {
-    const company = companies.find(c => c.id === companyId)
-    if (!company) return
+  const handleActivateCompany = async (company: Company) => {
     setSubmitting(true)
     try {
-      await apiRequest('PUT', `/admin/users/${company.user_id}/status`, { is_active: true })
-      toast({ title: "Success", description: `${company.company_name} has been activated` })
+      await apiRequest('PUT', `/super-admin/companies/${company.id}/status`, { 
+        status: 'active'
+      })
+      toast({ 
+        title: "Success", 
+        description: `${company.company_name} has been activated` 
+      })
+      setDropdownOpen(null)
       fetchCompanies()
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.message })
+      try {
+        await apiRequest('PUT', `/admin/companies/${company.id}/activate`, {})
+        toast({ 
+          title: "Success", 
+          description: `${company.company_name} has been activated` 
+        })
+        setDropdownOpen(null)
+        fetchCompanies()
+      } catch (err2: any) {
+        toast({ 
+          variant: "destructive", 
+          title: "Error", 
+          description: err.message || 'Failed to activate company' 
+        })
+      }
     } finally {
       setSubmitting(false)
     }
@@ -289,12 +374,31 @@ const CompanyManagement: React.FC = () => {
     if (!selectedCompany) return
     setSubmitting(true)
     try {
-      await apiRequest('DELETE', `/admin/users/${selectedCompany.user_id}`)
-      toast({ title: "Success", description: `${selectedCompany.company_name} has been deleted` })
+      await apiRequest('DELETE', `/super-admin/companies/${selectedCompany.id}`)
+      toast({ 
+        title: "Success", 
+        description: `${selectedCompany.company_name} has been deleted` 
+      })
       setIsDeleteDialogOpen(false)
+      setDropdownOpen(null)
       fetchCompanies()
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.message })
+      try {
+        await apiRequest('DELETE', `/admin/companies/${selectedCompany.id}`)
+        toast({ 
+          title: "Success", 
+          description: `${selectedCompany.company_name} has been deleted` 
+        })
+        setIsDeleteDialogOpen(false)
+        setDropdownOpen(null)
+        fetchCompanies()
+      } catch (err2: any) {
+        toast({ 
+          variant: "destructive", 
+          title: "Error", 
+          description: err.message || 'Failed to delete company' 
+        })
+      }
     } finally {
       setSubmitting(false)
     }
@@ -303,21 +407,25 @@ const CompanyManagement: React.FC = () => {
   const openViewDialog = (company: Company) => {
     setSelectedCompany(company)
     setIsViewDialogOpen(true)
+    setDropdownOpen(null)
   }
 
   const openSuspendDialog = (company: Company) => {
     setSelectedCompany(company)
     setIsSuspendDialogOpen(true)
+    setDropdownOpen(null)
   }
 
   const openVerifyDialog = (company: Company) => {
     setSelectedCompany(company)
     setIsVerifyDialogOpen(true)
+    setDropdownOpen(null)
   }
 
   const openDeleteDialog = (company: Company) => {
     setSelectedCompany(company)
     setIsDeleteDialogOpen(true)
+    setDropdownOpen(null)
   }
 
   const getInitials = (name: string) => {
@@ -327,16 +435,16 @@ const CompanyManagement: React.FC = () => {
 
   const getStatusBadge = (is_active: boolean) => {
     if (is_active) {
-      return <Badge className="bg-green-100 text-green-700"><CheckCircle className="h-3 w-3 mr-1" /> Active</Badge>
+      return <Badge className="bg-green-100 text-green-700 hover:bg-green-100"><CheckCircle className="h-3 w-3 mr-1" /> Active</Badge>
     }
-    return <Badge className="bg-red-100 text-red-700"><XCircle className="h-3 w-3 mr-1" /> Suspended</Badge>
+    return <Badge className="bg-red-100 text-red-700 hover:bg-red-100"><XCircle className="h-3 w-3 mr-1" /> Suspended</Badge>
   }
 
   const getVerificationBadge = (is_verified: boolean) => {
     if (is_verified) {
-      return <Badge className="bg-blue-100 text-blue-700"><Shield className="h-3 w-3 mr-1" /> Verified</Badge>
+      return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100"><Shield className="h-3 w-3 mr-1" /> Verified</Badge>
     }
-    return <Badge className="bg-yellow-100 text-yellow-700"><AlertCircle className="h-3 w-3 mr-1" /> Pending</Badge>
+    return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100"><AlertCircle className="h-3 w-3 mr-1" /> Pending</Badge>
   }
 
   const formatDate = (dateString: string | null) => {
@@ -373,6 +481,10 @@ const CompanyManagement: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Company Management</h1>
           <p className="text-gray-500 mt-1">Manage employer companies and verification status</p>
         </div>
+        <Button onClick={() => fetchCompanies()} variant="outline" disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -434,8 +546,6 @@ const CompanyManagement: React.FC = () => {
         </Card>
       </div>
 
-      
-
       {/* Filters */}
       <Card>
         <CardHeader>
@@ -471,17 +581,16 @@ const CompanyManagement: React.FC = () => {
                   <SelectItem value="unverified">Unverified</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" onClick={fetchCompanies} disabled={loading}>
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {error && (
-            <Alert className="mb-4 bg-red-50 border-red-200">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">{error}</AlertDescription>
+            <Alert className="mb-4 bg-yellow-50 border-yellow-200">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800">
+                {error} - Showing demo data
+              </AlertDescription>
             </Alert>
           )}
           
@@ -494,9 +603,9 @@ const CompanyManagement: React.FC = () => {
             <div className="text-center py-12">
               <Building className="h-12 w-12 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-500">No companies found</p>
-              {!getAuthToken() && (
-                <p className="text-sm text-red-500 mt-2">Click "Force Login & Save Token" button above</p>
-              )}
+              <Button onClick={fetchCompanies} variant="outline" className="mt-4">
+                <RefreshCw className="h-4 w-4 mr-2" /> Retry
+              </Button>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -511,7 +620,7 @@ const CompanyManagement: React.FC = () => {
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Verification</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Joined</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
-                  </tr>
+                  </td>
                 </thead>
                 <tbody>
                   {filteredCompanies.map((company) => (
@@ -540,7 +649,7 @@ const CompanyManagement: React.FC = () => {
                       <td className="py-3 px-4">{getVerificationBadge(company.is_verified)}</td>
                       <td className="py-3 px-4 text-sm">{formatDate(company.created_at)}</td>
                       <td className="py-3 px-4">
-                        <DropdownMenu>
+                        <DropdownMenu open={dropdownOpen === company.id} onOpenChange={(open) => setDropdownOpen(open ? company.id : null)}>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                               <MoreVertical className="h-4 w-4" />
@@ -563,7 +672,7 @@ const CompanyManagement: React.FC = () => {
                                 <XCircle className="h-4 w-4 mr-2" /> Suspend
                               </DropdownMenuItem>
                             ) : (
-                              <DropdownMenuItem onClick={() => handleActivateCompany(company.id)} className="text-green-600">
+                              <DropdownMenuItem onClick={() => handleActivateCompany(company)} className="text-green-600">
                                 <CheckCircle className="h-4 w-4 mr-2" /> Activate
                               </DropdownMenuItem>
                             )}
@@ -587,30 +696,86 @@ const CompanyManagement: React.FC = () => {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Company Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about the company
+            </DialogDescription>
           </DialogHeader>
           {selectedCompany && (
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarFallback className="text-lg">{getInitials(selectedCompany.company_name)}</AvatarFallback>
+                  <AvatarFallback className="text-lg bg-blue-100 text-blue-600">
+                    {getInitials(selectedCompany.company_name)}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <h2 className="text-xl font-bold">{selectedCompany.company_name}</h2>
-                  <p className="text-gray-500">{selectedCompany.email}</p>
+                  <p className="text-gray-500 flex items-center gap-1">
+                    <Mail className="h-3 w-3" /> {selectedCompany.email}
+                  </p>
                 </div>
               </div>
+              
               <div className="grid grid-cols-2 gap-4">
-                <div><Label className="text-gray-500">Industry</Label><p>{selectedCompany.industry_name || '-'}</p></div>
-                <div><Label className="text-gray-500">Location</Label><p>{selectedCompany.location || '-'}</p></div>
-                <div><Label className="text-gray-500">Company Size</Label><p>{selectedCompany.company_size || '-'}</p></div>
-                <div><Label className="text-gray-500">Website</Label><p>{selectedCompany.website || '-'}</p></div>
-                <div><Label className="text-gray-500">Total Jobs</Label><p>{selectedCompany.jobs_count}</p></div>
-                <div><Label className="text-gray-500">Joined Date</Label><p>{formatDate(selectedCompany.created_at)}</p></div>
+                <div>
+                  <Label className="text-gray-500">Industry</Label>
+                  <p className="mt-1">{selectedCompany.industry_name || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Location</Label>
+                  <p className="mt-1 flex items-center gap-1">
+                    <MapPin className="h-3 w-3" /> {selectedCompany.location || '-'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Company Size</Label>
+                  <p className="mt-1">{selectedCompany.company_size || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Phone</Label>
+                  <p className="mt-1 flex items-center gap-1">
+                    <Phone className="h-3 w-3" /> {selectedCompany.phone || '-'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Website</Label>
+                  <p className="mt-1">
+                    {selectedCompany.website ? (
+                      <a href={selectedCompany.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                        <Globe className="h-3 w-3" /> {selectedCompany.website}
+                      </a>
+                    ) : '-'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Total Jobs</Label>
+                  <p className="mt-1 flex items-center gap-1">
+                    <Briefcase className="h-3 w-3" /> {selectedCompany.jobs_count}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Joined Date</Label>
+                  <p className="mt-1 flex items-center gap-1">
+                    <Calendar className="h-3 w-3" /> {formatDate(selectedCompany.created_at)}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Status</Label>
+                  <div className="mt-1">{getStatusBadge(selectedCompany.is_active)}</div>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Verification</Label>
+                  <div className="mt-1">{getVerificationBadge(selectedCompany.is_verified)}</div>
+                </div>
               </div>
+              
               <div>
                 <Label className="text-gray-500">Description</Label>
-                <p className="mt-1">{selectedCompany.company_description || 'No description provided'}</p>
+                <p className="mt-1 p-3 bg-gray-50 rounded-lg">
+                  {selectedCompany.company_description || 'No description provided'}
+                </p>
               </div>
+              
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
               </DialogFooter>
@@ -626,12 +791,12 @@ const CompanyManagement: React.FC = () => {
             <AlertDialogTitle>Verify Company</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to verify <span className="font-semibold">{selectedCompany?.company_name}</span>?
-              <br />Verified companies receive a trust badge.
+              <br />Verified companies receive a trust badge on their profile.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleVerifyCompany} className="bg-blue-600">
+            <AlertDialogAction onClick={handleVerifyCompany} className="bg-blue-600 hover:bg-blue-700" disabled={submitting}>
               {submitting ? 'Verifying...' : 'Verify Company'}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -645,12 +810,12 @@ const CompanyManagement: React.FC = () => {
             <AlertDialogTitle>Suspend Company</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to suspend <span className="font-semibold">{selectedCompany?.company_name}</span>?
-              <br />Suspended companies cannot post jobs.
+              <br />Suspended companies cannot post jobs and their listings will be hidden.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSuspendCompany} className="bg-yellow-600">
+            <AlertDialogAction onClick={handleSuspendCompany} className="bg-yellow-600 hover:bg-yellow-700" disabled={submitting}>
               {submitting ? 'Suspending...' : 'Suspend'}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -664,12 +829,12 @@ const CompanyManagement: React.FC = () => {
             <AlertDialogTitle>Delete Company</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete <span className="font-semibold">{selectedCompany?.company_name}</span>
-              and remove all associated data.
+              and remove all associated data including jobs and applications.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteCompany} className="bg-red-600">
+            <AlertDialogAction onClick={handleDeleteCompany} className="bg-red-600 hover:bg-red-700" disabled={submitting}>
               {submitting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>

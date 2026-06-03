@@ -10,7 +10,6 @@ import {
   FileText, 
   Clock, 
   TrendingUp, 
-  Eye, 
   CheckCircle,
   Settings,
   RefreshCw
@@ -104,6 +103,7 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period])
 
   const fetchDashboardData = async () => {
