@@ -44,6 +44,7 @@ import EmployerSettings from '@/pages/employer/Settings'
 import EditJob from '@/pages/employer/EditJob'
 import ApplicationDetails from '@/components/employer/ApplicationDetails'
 import PostJobPage from './pages/PostJobPage'
+import CompanyDetailsPage from '@/pages/CompanyDetailsPage'
 
 // Notification Pages
 import NotificationList from '@/components/notifications/NotificationList'
@@ -100,6 +101,7 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="/jobs" element={<JobsPage />} />
             <Route path="/jobs/:id" element={<JobDetailsPage />} />
+            <Route path="/companies/:id" element={<CompanyDetailsPage />} />
           </Route>
 
           {/* ========== AUTH ROUTES ========== */}

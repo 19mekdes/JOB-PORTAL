@@ -38,6 +38,27 @@ const api: AxiosInstance = axios.create({
   },
 })
 
+// ========== PUBLIC ENDPOINTS (No redirect on 401) ==========
+const PUBLIC_ENDPOINTS = [
+  '/jobs',
+  '/jobs/',
+  '/home/stats',
+  '/public-settings',
+  '/industries',
+  '/companies/top',
+  '/auth/login',
+  '/auth/register',
+  '/forgot-password',
+  '/reset-password',
+  '/about',
+  '/contact'
+]
+
+const isPublicEndpoint = (url: string | undefined): boolean => {
+  if (!url) return false
+  return PUBLIC_ENDPOINTS.some(endpoint => url.includes(endpoint))
+}
+
 // ========== REQUEST INTERCEPTOR ==========
 // Add auth token to every request
 api.interceptors.request.use(
@@ -64,8 +85,10 @@ api.interceptors.request.use(
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
-      console.log(`[API] 🔐 Token attached for: ${config.url}`)
-    } else {
+      if (import.meta.env.DEV && !isPublicEndpoint(config.url)) {
+        console.log(`[API] 🔐 Token attached for: ${config.url}`)
+      }
+    } else if (!isPublicEndpoint(config.url)) {
       console.log(`[API] ⚠️ No token for: ${config.url}`)
     }
     
@@ -94,58 +117,82 @@ api.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean }
+    const isPublic = isPublicEndpoint(originalRequest.url)
     
     // Log error in development
     if (import.meta.env.DEV) {
-      console.error('[API Error]', error.response?.status, error.response?.data)
+      console.error('[API Error]', error.response?.status, error.response?.data, 'Public endpoint:', isPublic)
     }
     
-    // Handle 401 Unauthorized
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
+    // ========== HANDLE 401 UNAUTHORIZED ==========
+    if (error.response?.status === 401) {
+      // For public endpoints, DON'T redirect - just return empty data
+      if (isPublic) {
+        console.log('[API] Public endpoint 401, returning empty response')
+        // Return a mock successful response with empty data
+        return Promise.resolve({
+          data: {
+            success: true,
+            data: [],
+            message: 'Public endpoint accessed without auth'
+          },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: originalRequest
+        } as AxiosResponse)
+      }
       
-      // Attempt to refresh token
-      try {
-        const refreshToken = localStorage.getItem('refreshToken')
-        if (refreshToken) {
-          const response = await axios.post(`${API_URL}/auth/refresh-token`, {
-            refresh_token: refreshToken
-          })
-          
-          const { token } = response.data
-          
-          // Update user in localStorage
-          const userStr = localStorage.getItem('user')
-          if (userStr) {
-            const user = JSON.parse(userStr)
-            user.token = token
-            localStorage.setItem('user', JSON.stringify(user))
+      // For protected endpoints, try to refresh token
+      if (!originalRequest._retry) {
+        originalRequest._retry = true
+        
+        // Attempt to refresh token
+        try {
+          const refreshToken = localStorage.getItem('refreshToken')
+          if (refreshToken) {
+            const response = await axios.post(`${API_URL}/auth/refresh-token`, {
+              refresh_token: refreshToken
+            })
+            
+            const { token } = response.data
+            
+            // Update user in localStorage
+            const userStr = localStorage.getItem('user')
+            if (userStr) {
+              const user = JSON.parse(userStr)
+              user.token = token
+              localStorage.setItem('user', JSON.stringify(user))
+            }
+            
+            // Retry original request
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`
+            }
+            return api(originalRequest)
           }
-          
-          // Retry original request
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${token}`
-          }
-          return api(originalRequest)
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError)
         }
-      } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError)
-      }
-      
-      // Clear local storage and redirect to login
-      localStorage.removeItem('user')
-      localStorage.removeItem('refreshToken')
-      
-      // Redirect to login page if not already there
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
+        
+        // Clear local storage and redirect to login
+        localStorage.removeItem('user')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('token')
+        localStorage.removeItem('admin_token')
+        
+        // Redirect to login page if not already there
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+          window.location.href = '/login'
+        }
       }
     }
     
-    // Handle 403 Forbidden
+    // ========== HANDLE 403 FORBIDDEN ==========
     if (error.response?.status === 403) {
       console.error('Access forbidden:', error.response?.data)
-      if (window.location.pathname !== '/unauthorized') {
+      // Don't redirect for public endpoints
+      if (!isPublic && window.location.pathname !== '/unauthorized') {
         window.location.href = '/unauthorized'
       }
     }

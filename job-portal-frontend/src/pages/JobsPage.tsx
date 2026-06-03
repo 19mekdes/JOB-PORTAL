@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { MapPin, DollarSign, Briefcase, Clock, Eye, Building2, Search, X, Bookmark, BookmarkCheck } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -12,10 +12,16 @@ import api from '@/services/api'
 import { Job, BookmarkedJob } from '@/types'
 
 const JobsPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams()
+  
+  // Get search parameters from URL
+  const initialSearch = searchParams.get('search') || ''
+  const initialLocation = searchParams.get('location') || ''
+  
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [locationFilter, setLocationFilter] = useState('')
+  const [searchTerm, setSearchTerm] = useState(initialSearch)
+  const [locationFilter, setLocationFilter] = useState(initialLocation)
   const [typeFilter, setTypeFilter] = useState('')
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set())
   const [savingId, setSavingId] = useState<string | null>(null)
@@ -30,6 +36,15 @@ const JobsPage: React.FC = () => {
     loadSavedJobs()
   }, [])
 
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (searchTerm) params.set('search', searchTerm)
+    if (locationFilter) params.set('location', locationFilter)
+    if (typeFilter) params.set('type', typeFilter)
+    setSearchParams(params, { replace: true })
+  }, [searchTerm, locationFilter, typeFilter, setSearchParams])
+
   const loadJobs = async () => {
     try {
       setLoading(true)
@@ -39,7 +54,7 @@ const JobsPage: React.FC = () => {
         jobsData = []
       }
       
-      // ✅ FILTER: Only show jobs with status_name === 'Open'
+      // Only show jobs with status_name === 'Open'
       const openJobs = jobsData.filter((job: Job) => job.status?.status_name === 'Open')
       
       setJobs(openJobs)
@@ -171,13 +186,29 @@ const JobsPage: React.FC = () => {
     return `${Math.floor(diff / 30)} months ago`
   }
 
+  const formatSalary = (min: number | null, max: number | null) => {
+    if (!min && !max) return null
+    if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`
+    if (min) return `From $${min.toLocaleString()}`
+    if (max) return `Up to $${max.toLocaleString()}`
+    return null
+  }
+
+  // Filter jobs based on search criteria
   const filteredJobs = jobs.filter(job => {
-    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         job.employer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = searchTerm === '' || 
+      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.employer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    
     const matchesLocation = locationFilter === '' || 
-                           job.location?.toLowerCase().includes(locationFilter.toLowerCase())
+      job.location?.toLowerCase().includes(locationFilter.toLowerCase()) ||
+      (locationFilter.toLowerCase() === 'remote' && job.is_remote)
+    
     const matchesType = typeFilter === '' || 
-                       job.employment_type?.type_name?.toLowerCase().includes(typeFilter.toLowerCase())
+      job.employment_type?.type_name?.toLowerCase().includes(typeFilter.toLowerCase()) ||
+      (typeFilter.toLowerCase() === 'remote' && job.is_remote)
+    
     return matchesSearch && matchesLocation && matchesType
   })
 
@@ -198,7 +229,25 @@ const JobsPage: React.FC = () => {
         
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Find Your Dream Job</h1>
-          <p className="text-gray-500 mt-2">Explore {filteredJobs.length} opportunities from top employers</p>
+          <p className="text-gray-500 mt-2">
+            {filteredJobs.length > 0 
+              ? `Found ${filteredJobs.length} opportunities matching your criteria`
+              : 'Explore opportunities from top employers'}
+          </p>
+          {(initialSearch || initialLocation) && (
+            <div className="mt-2 flex gap-2">
+              {initialSearch && (
+                <Badge className="bg-blue-100 text-blue-700">
+                  Search: {initialSearch}
+                </Badge>
+              )}
+              {initialLocation && (
+                <Badge className="bg-green-100 text-green-700">
+                  Location: {initialLocation}
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
         
         {/* Search Filters */}
@@ -208,7 +257,7 @@ const JobsPage: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Job title or company..."
+                placeholder="Job title, skills, or company..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 rounded-lg border-gray-200"
@@ -218,7 +267,7 @@ const JobsPage: React.FC = () => {
               <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Location..."
+                placeholder="City, region, or Remote..."
                 value={locationFilter}
                 onChange={(e) => setLocationFilter(e.target.value)}
                 className="pl-9 rounded-lg border-gray-200"
@@ -227,7 +276,7 @@ const JobsPage: React.FC = () => {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-700"
+              className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Job Types</option>
               <option value="full-time">Full-time</option>
@@ -266,8 +315,8 @@ const JobsPage: React.FC = () => {
         {filteredJobs.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-xl border border-gray-200 shadow-sm">
             <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-500">No open positions available at the moment.</p>
-            <p className="text-sm text-gray-400 mt-1">Check back later for new opportunities!</p>
+            <p className="text-gray-500">No jobs found matching your criteria.</p>
+            <p className="text-sm text-gray-400 mt-1">Try adjusting your search filters!</p>
             <button
               onClick={() => { setSearchTerm(''); setLocationFilter(''); setTypeFilter('') }}
               className="mt-3 text-blue-600 hover:text-blue-700 text-sm font-medium"
@@ -279,10 +328,9 @@ const JobsPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredJobs.map((job) => {
               const isSaved = savedJobIds.has(job.id)
-              // Check if job is Open (should be already filtered, but double-check)
               const isOpen = job.status?.status_name === 'Open'
+              const salaryRange = formatSalary(job.salary_min, job.salary_max)
               
-              // Don't render if not Open (safety check)
               if (!isOpen) return null
               
               return (
@@ -298,7 +346,7 @@ const JobsPage: React.FC = () => {
                           <div className="flex items-center gap-2 mt-1">
                             <Building2 className="h-3.5 w-3.5 text-gray-400" />
                             <p className="text-sm text-gray-500 truncate">
-                              {job.employer?.company_name}
+                              {job.employer?.company_name || 'Company'}
                             </p>
                           </div>
                         </div>
@@ -323,7 +371,7 @@ const JobsPage: React.FC = () => {
                       <div className="space-y-2 mb-4 flex-1">
                         <div className="flex items-center gap-2 text-sm text-gray-500">
                           <MapPin className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                          <span className="truncate">{job.location || 'Remote'}</span>
+                          <span className="truncate">{job.location || 'Location not specified'}</span>
                           {job.is_remote && (
                             <Badge className="bg-blue-50 text-blue-700 border-0 text-xs rounded-full px-2 py-0.5">
                               Remote
@@ -339,10 +387,10 @@ const JobsPage: React.FC = () => {
                           </Badge>
                         </div>
                         
-                        {job.salary_range && (
+                        {salaryRange && (
                           <div className="flex items-center gap-2 text-sm">
                             <DollarSign className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                            <span className="font-medium text-emerald-600">{job.salary_range}</span>
+                            <span className="font-medium text-emerald-600">{salaryRange}</span>
                           </div>
                         )}
                         

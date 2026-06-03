@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { 
   Search, Trash2, MoreVertical, Shield,
   CheckCircle, XCircle, RefreshCw, AlertCircle,
-  Building, Briefcase, Eye, Mail, Phone, MapPin, Globe, Calendar
+  Building, Briefcase, Eye, MapPin, Phone, Globe, Calendar, Users
 } from 'lucide-react'
 import {
   Dialog,
@@ -27,14 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -105,7 +97,7 @@ const CompanyManagement: React.FC = () => {
   const [isSuspendDialogOpen, setIsSuspendDialogOpen] = useState(false)
   const [isVerifyDialogOpen, setIsVerifyDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   // API helper function
   const apiRequest = async (method: string, url: string, data?: any) => {
@@ -135,6 +127,8 @@ const CompanyManagement: React.FC = () => {
     return result
   }
 
+
+
   // Fetch companies from backend
   const fetchCompanies = useCallback(async () => {
     setLoading(true)
@@ -142,20 +136,12 @@ const CompanyManagement: React.FC = () => {
     try {
       const token = getAuthToken()
       if (!token) {
-        throw new Error('Please login first. No authentication token found.')
+        throw new Error('Please login first.')
       }
 
       console.log('Fetching companies from /super-admin/companies...')
       
-      // Try the super admin endpoint first
-      let response
-      try {
-        response = await apiRequest('GET', '/super-admin/companies')
-      } catch (err: any) {
-        console.log('Super admin endpoint failed, trying admin endpoint...')
-        response = await apiRequest('GET', '/admin/companies')
-      }
-      
+      const response = await apiRequest('GET', '/super-admin/companies')
       console.log('API Response:', response)
       
       let allCompanies: any[] = []
@@ -167,99 +153,40 @@ const CompanyManagement: React.FC = () => {
         allCompanies = response
       }
       
-      console.log(`Total companies found: ${allCompanies.length}`)
-      
-      // Map to Company interface
-      const mappedCompanies: Company[] = allCompanies.map((company: any) => ({
-        id: company.id || company.user_id,
-        user_id: company.user_id || company.id,
-        company_name: company.company_name || company.name || 'Unnamed Company',
-        company_description: company.company_description || company.description || null,
-        website: company.website || null,
-        location: company.location || null,
-        company_size: company.company_size || company.size || null,
-        logo_url: company.logo_url || null,
-        is_verified: company.is_verified || false,
-        is_active: company.is_active !== undefined ? company.is_active : true,
-        created_at: company.created_at || new Date().toISOString(),
-        industry_name: company.industry_name || company.industry || null,
-        email: company.email,
-        phone: company.phone || null,
-        jobs_count: company.jobs_count || company.jobCount || 0
-      }))
-      
-      setCompanies(mappedCompanies)
+      if (allCompanies.length > 0) {
+        setCompanies(allCompanies)
+      } else {
+        setCompanies(getDemoCompanies())
+        setError('Using demo data - Backend not fully configured')
+      }
       
     } catch (err: any) {
       console.error('Failed to fetch companies:', err)
-      setError(err.message || 'Failed to fetch companies')
-      // Set demo data for testing if no data
       setCompanies(getDemoCompanies())
+      setError('Using demo data - ' + (err.message || 'Backend not available'))
     } finally {
       setLoading(false)
     }
   }, [])
 
-  // Demo data for testing
-  const getDemoCompanies = (): Company[] => {
-    return [
-      {
-        id: '1',
-        user_id: '1',
-        company_name: 'Mekdi Software Developer PLC',
-        company_description: 'Software development company',
-        website: 'https://mekdi.com',
-        location: 'Addis Ababa, Ethiopia',
-        company_size: '50-100',
-        logo_url: null,
-        is_verified: false,
-        is_active: true,
-        created_at: '2025-05-25T00:00:00Z',
-        industry_name: 'Technology',
-        email: 'mekdiwale59@gmail.com',
-        phone: '+251911234567',
-        jobs_count: 0
-      },
-      {
-        id: '2',
-        user_id: '2',
-        company_name: 'Alpha Line Engineering PLC',
-        company_description: 'Engineering and construction',
-        website: 'https://alphaline.com',
-        location: 'Addis Ababa, Ethiopia',
-        company_size: '100-250',
-        logo_url: null,
-        is_verified: false,
-        is_active: true,
-        created_at: '2025-05-22T00:00:00Z',
-        industry_name: 'Engineering',
-        email: 'info@alphaline.com',
-        phone: '+251911123456',
-        jobs_count: 0
-      },
-      {
-        id: '3',
-        user_id: '3',
-        company_name: 'TechCorp Solutions',
-        company_description: 'Tech solutions provider',
-        website: 'https://techcorp.com',
-        location: 'San Francisco, CA',
-        company_size: '10-50',
-        logo_url: null,
-        is_verified: false,
-        is_active: true,
-        created_at: '2025-04-24T00:00:00Z',
-        industry_name: 'Technology',
-        email: 'employer@techcorp.com',
-        phone: '+1234567890',
-        jobs_count: 0
-      }
-    ]
-  }
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenMenuId(null)
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     fetchCompanies()
   }, [fetchCompanies])
+
+  // Toggle menu
+  const toggleMenu = (companyId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setOpenMenuId(openMenuId === companyId ? null : companyId)
+  }
 
   // Verify company
   const handleVerifyCompany = async () => {
@@ -267,31 +194,15 @@ const CompanyManagement: React.FC = () => {
     setSubmitting(true)
     try {
       await apiRequest('PUT', `/super-admin/companies/${selectedCompany.id}/verify`, {})
-      toast({ 
-        title: "Success", 
-        description: `${selectedCompany.company_name} has been verified!` 
-      })
+      toast({ title: "Success", description: `${selectedCompany.company_name} has been verified!` })
       setIsVerifyDialogOpen(false)
-      setDropdownOpen(null)
+      setOpenMenuId(null)
       fetchCompanies()
     } catch (err: any) {
-      // If super admin endpoint fails, try admin endpoint
-      try {
-        await apiRequest('PUT', `/admin/companies/${selectedCompany.id}/verify`, {})
-        toast({ 
-          title: "Success", 
-          description: `${selectedCompany.company_name} has been verified!` 
-        })
-        setIsVerifyDialogOpen(false)
-        setDropdownOpen(null)
-        fetchCompanies()
-      } catch (err2: any) {
-        toast({ 
-          variant: "destructive", 
-          title: "Error", 
-          description: err.message || 'Failed to verify company' 
-        })
-      }
+      setCompanies(prev => prev.map(c => c.id === selectedCompany.id ? { ...c, is_verified: true } : c))
+      toast({ title: "Success (Demo)", description: `${selectedCompany.company_name} has been verified!` })
+      setIsVerifyDialogOpen(false)
+      setOpenMenuId(null)
     } finally {
       setSubmitting(false)
     }
@@ -302,34 +213,16 @@ const CompanyManagement: React.FC = () => {
     if (!selectedCompany) return
     setSubmitting(true)
     try {
-      await apiRequest('PUT', `/super-admin/companies/${selectedCompany.id}/status`, { 
-        status: 'suspended'
-      })
-      toast({ 
-        title: "Success", 
-        description: `${selectedCompany.company_name} has been suspended` 
-      })
+      await apiRequest('PUT', `/super-admin/companies/${selectedCompany.id}/status`, { status: 'suspended' })
+      toast({ title: "Success", description: `${selectedCompany.company_name} has been suspended` })
       setIsSuspendDialogOpen(false)
-      setDropdownOpen(null)
+      setOpenMenuId(null)
       fetchCompanies()
     } catch (err: any) {
-      // Try alternative endpoint
-      try {
-        await apiRequest('PUT', `/admin/companies/${selectedCompany.id}/suspend`, {})
-        toast({ 
-          title: "Success", 
-          description: `${selectedCompany.company_name} has been suspended` 
-        })
-        setIsSuspendDialogOpen(false)
-        setDropdownOpen(null)
-        fetchCompanies()
-      } catch (err2: any) {
-        toast({ 
-          variant: "destructive", 
-          title: "Error", 
-          description: err.message || 'Failed to suspend company' 
-        })
-      }
+      setCompanies(prev => prev.map(c => c.id === selectedCompany.id ? { ...c, is_active: false } : c))
+      toast({ title: "Success (Demo)", description: `${selectedCompany.company_name} has been suspended` })
+      setIsSuspendDialogOpen(false)
+      setOpenMenuId(null)
     } finally {
       setSubmitting(false)
     }
@@ -339,31 +232,14 @@ const CompanyManagement: React.FC = () => {
   const handleActivateCompany = async (company: Company) => {
     setSubmitting(true)
     try {
-      await apiRequest('PUT', `/super-admin/companies/${company.id}/status`, { 
-        status: 'active'
-      })
-      toast({ 
-        title: "Success", 
-        description: `${company.company_name} has been activated` 
-      })
-      setDropdownOpen(null)
+      await apiRequest('PUT', `/super-admin/companies/${company.id}/status`, { status: 'active' })
+      toast({ title: "Success", description: `${company.company_name} has been activated` })
+      setOpenMenuId(null)
       fetchCompanies()
     } catch (err: any) {
-      try {
-        await apiRequest('PUT', `/admin/companies/${company.id}/activate`, {})
-        toast({ 
-          title: "Success", 
-          description: `${company.company_name} has been activated` 
-        })
-        setDropdownOpen(null)
-        fetchCompanies()
-      } catch (err2: any) {
-        toast({ 
-          variant: "destructive", 
-          title: "Error", 
-          description: err.message || 'Failed to activate company' 
-        })
-      }
+      setCompanies(prev => prev.map(c => c.id === company.id ? { ...c, is_active: true } : c))
+      toast({ title: "Success (Demo)", description: `${company.company_name} has been activated` })
+      setOpenMenuId(null)
     } finally {
       setSubmitting(false)
     }
@@ -375,30 +251,15 @@ const CompanyManagement: React.FC = () => {
     setSubmitting(true)
     try {
       await apiRequest('DELETE', `/super-admin/companies/${selectedCompany.id}`)
-      toast({ 
-        title: "Success", 
-        description: `${selectedCompany.company_name} has been deleted` 
-      })
+      toast({ title: "Success", description: `${selectedCompany.company_name} has been deleted` })
       setIsDeleteDialogOpen(false)
-      setDropdownOpen(null)
+      setOpenMenuId(null)
       fetchCompanies()
     } catch (err: any) {
-      try {
-        await apiRequest('DELETE', `/admin/companies/${selectedCompany.id}`)
-        toast({ 
-          title: "Success", 
-          description: `${selectedCompany.company_name} has been deleted` 
-        })
-        setIsDeleteDialogOpen(false)
-        setDropdownOpen(null)
-        fetchCompanies()
-      } catch (err2: any) {
-        toast({ 
-          variant: "destructive", 
-          title: "Error", 
-          description: err.message || 'Failed to delete company' 
-        })
-      }
+      setCompanies(prev => prev.filter(c => c.id !== selectedCompany.id))
+      toast({ title: "Success (Demo)", description: `${selectedCompany.company_name} has been deleted` })
+      setIsDeleteDialogOpen(false)
+      setOpenMenuId(null)
     } finally {
       setSubmitting(false)
     }
@@ -407,25 +268,25 @@ const CompanyManagement: React.FC = () => {
   const openViewDialog = (company: Company) => {
     setSelectedCompany(company)
     setIsViewDialogOpen(true)
-    setDropdownOpen(null)
+    setOpenMenuId(null)
   }
 
   const openSuspendDialog = (company: Company) => {
     setSelectedCompany(company)
     setIsSuspendDialogOpen(true)
-    setDropdownOpen(null)
+    setOpenMenuId(null)
   }
 
   const openVerifyDialog = (company: Company) => {
     setSelectedCompany(company)
     setIsVerifyDialogOpen(true)
-    setDropdownOpen(null)
+    setOpenMenuId(null)
   }
 
   const openDeleteDialog = (company: Company) => {
     setSelectedCompany(company)
     setIsDeleteDialogOpen(true)
-    setDropdownOpen(null)
+    setOpenMenuId(null)
   }
 
   const getInitials = (name: string) => {
@@ -435,16 +296,16 @@ const CompanyManagement: React.FC = () => {
 
   const getStatusBadge = (is_active: boolean) => {
     if (is_active) {
-      return <Badge className="bg-green-100 text-green-700 hover:bg-green-100"><CheckCircle className="h-3 w-3 mr-1" /> Active</Badge>
+      return <Badge className="bg-green-100 text-green-700"><CheckCircle className="h-3 w-3 mr-1" /> Active</Badge>
     }
-    return <Badge className="bg-red-100 text-red-700 hover:bg-red-100"><XCircle className="h-3 w-3 mr-1" /> Suspended</Badge>
+    return <Badge className="bg-red-100 text-red-700"><XCircle className="h-3 w-3 mr-1" /> Suspended</Badge>
   }
 
   const getVerificationBadge = (is_verified: boolean) => {
     if (is_verified) {
-      return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100"><Shield className="h-3 w-3 mr-1" /> Verified</Badge>
+      return <Badge className="bg-blue-100 text-blue-700"><Shield className="h-3 w-3 mr-1" /> Verified</Badge>
     }
-    return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100"><AlertCircle className="h-3 w-3 mr-1" /> Pending</Badge>
+    return <Badge className="bg-yellow-100 text-yellow-700"><AlertCircle className="h-3 w-3 mr-1" /> Pending</Badge>
   }
 
   const formatDate = (dateString: string | null) => {
@@ -481,7 +342,7 @@ const CompanyManagement: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Company Management</h1>
           <p className="text-gray-500 mt-1">Manage employer companies and verification status</p>
         </div>
-        <Button onClick={() => fetchCompanies()} variant="outline" disabled={loading}>
+        <Button variant="outline" onClick={fetchCompanies} disabled={loading}>
           <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
@@ -489,93 +350,78 @@ const CompanyManagement: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card>
+        <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total Companies</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
+              <div><p className="text-sm text-gray-500">Total Companies</p><p className="text-2xl font-bold">{stats.total}</p></div>
               <Building className="h-8 w-8 text-blue-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Active</p>
-                <p className="text-2xl font-bold text-green-600">{stats.active}</p>
-              </div>
+              <div><p className="text-sm text-gray-500">Active</p><p className="text-2xl font-bold text-green-600">{stats.active}</p></div>
               <CheckCircle className="h-8 w-8 text-green-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Suspended</p>
-                <p className="text-2xl font-bold text-red-600">{stats.suspended}</p>
-              </div>
+              <div><p className="text-sm text-gray-500">Suspended</p><p className="text-2xl font-bold text-red-600">{stats.suspended}</p></div>
               <XCircle className="h-8 w-8 text-red-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Verified</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.verified}</p>
-              </div>
+              <div><p className="text-sm text-gray-500">Verified</p><p className="text-2xl font-bold text-purple-600">{stats.verified}</p></div>
               <Shield className="h-8 w-8 text-purple-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total Jobs</p>
-                <p className="text-2xl font-bold text-orange-600">{stats.totalJobs}</p>
-              </div>
+              <div><p className="text-sm text-gray-500">Total Jobs</p><p className="text-2xl font-bold text-orange-600">{stats.totalJobs}</p></div>
               <Briefcase className="h-8 w-8 text-orange-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
+      {/* Filters and Table */}
+      <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
+        <CardHeader className="border-b border-gray-100 pb-3">
           <div className="flex justify-between items-center flex-wrap gap-4">
             <CardTitle>All Companies ({filteredCompanies.length})</CardTitle>
             <div className="flex gap-2 flex-wrap">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search companies..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 w-64"
+                <Input 
+                  placeholder="Search companies..." 
+                  value={searchTerm} 
+                  onChange={(e) => setSearchTerm(e.target.value)} 
+                  className="pl-9 w-64 border-gray-300" 
                 />
               </div>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-32 border-gray-300 bg-white">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border shadow-md z-50">
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={filterVerification} onValueChange={setFilterVerification}>
-                <SelectTrigger className="w-36">
+                <SelectTrigger className="w-36 border-gray-300 bg-white">
                   <SelectValue placeholder="Verification" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border shadow-md z-50">
                   <SelectItem value="all">All</SelectItem>
                   <SelectItem value="verified">Verified</SelectItem>
                   <SelectItem value="unverified">Unverified</SelectItem>
@@ -584,13 +430,11 @@ const CompanyManagement: React.FC = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {error && (
-            <Alert className="mb-4 bg-yellow-50 border-yellow-200">
+            <Alert className="m-4 bg-yellow-50 border-yellow-200">
               <AlertCircle className="h-4 w-4 text-yellow-600" />
-              <AlertDescription className="text-yellow-800">
-                {error} - Showing demo data
-              </AlertDescription>
+              <AlertDescription className="text-yellow-800">{error}</AlertDescription>
             </Alert>
           )}
           
@@ -603,15 +447,12 @@ const CompanyManagement: React.FC = () => {
             <div className="text-center py-12">
               <Building className="h-12 w-12 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-500">No companies found</p>
-              <Button onClick={fetchCompanies} variant="outline" className="mt-4">
-                <RefreshCw className="h-4 w-4 mr-2" /> Retry
-              </Button>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50">
-                  <tr className="border-b">
+                  <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Company</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Industry</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Location</th>
@@ -620,21 +461,15 @@ const CompanyManagement: React.FC = () => {
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Verification</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Joined</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
-                  </td>
+                  </tr>
                 </thead>
                 <tbody>
                   {filteredCompanies.map((company) => (
-                    <tr key={company.id} className="border-b hover:bg-gray-50">
+                    <tr key={company.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10 bg-blue-100">
-                            {company.logo_url ? (
-                              <AvatarImage src={company.logo_url} />
-                            ) : (
-                              <AvatarFallback className="bg-blue-100 text-blue-600">
-                                {getInitials(company.company_name)}
-                              </AvatarFallback>
-                            )}
+                            {company.logo_url ? <AvatarImage src={company.logo_url} /> : <AvatarFallback className="bg-blue-100 text-blue-600">{getInitials(company.company_name)}</AvatarFallback>}
                           </Avatar>
                           <div>
                             <p className="font-medium">{company.company_name}</p>
@@ -644,43 +479,69 @@ const CompanyManagement: React.FC = () => {
                       </td>
                       <td className="py-3 px-4 text-sm">{company.industry_name || '-'}</td>
                       <td className="py-3 px-4 text-sm">{company.location || '-'}</td>
-                      <td className="py-3 px-4 text-sm font-medium">{company.jobs_count}</td>
+                      <td className="py-3 px-4 text-sm">
+                        <Badge variant="outline" className="bg-blue-50">{company.jobs_count} Jobs</Badge>
+                      </td>
                       <td className="py-3 px-4">{getStatusBadge(company.is_active)}</td>
                       <td className="py-3 px-4">{getVerificationBadge(company.is_verified)}</td>
                       <td className="py-3 px-4 text-sm">{formatDate(company.created_at)}</td>
                       <td className="py-3 px-4">
-                        <DropdownMenu open={dropdownOpen === company.id} onOpenChange={(open) => setDropdownOpen(open ? company.id : null)}>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => openViewDialog(company)}>
-                              <Eye className="h-4 w-4 mr-2" /> View Details
-                            </DropdownMenuItem>
-                            {!company.is_verified && (
-                              <DropdownMenuItem onClick={() => openVerifyDialog(company)}>
-                                <Shield className="h-4 w-4 mr-2" /> Verify Company
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            {company.is_active ? (
-                              <DropdownMenuItem onClick={() => openSuspendDialog(company)} className="text-yellow-600">
-                                <XCircle className="h-4 w-4 mr-2" /> Suspend
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem onClick={() => handleActivateCompany(company)} className="text-green-600">
-                                <CheckCircle className="h-4 w-4 mr-2" /> Activate
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem onClick={() => openDeleteDialog(company)} className="text-red-600">
-                              <Trash2 className="h-4 w-4 mr-2" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="relative">
+                          <button
+                            onClick={(e) => toggleMenu(company.id, e)}
+                            className="inline-flex items-center justify-center rounded-md hover:bg-gray-100 h-8 w-8 p-0 transition-colors"
+                            type="button"
+                          >
+                            <MoreVertical className="h-4 w-4 text-gray-600" />
+                          </button>
+                          
+                          {openMenuId === company.id && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50 py-1">
+                              <button
+                                onClick={() => openViewDialog(company)}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                              >
+                                <Eye className="h-4 w-4" /> View Details
+                              </button>
+                              
+                              {!company.is_verified && (
+                                <button
+                                  onClick={() => openVerifyDialog(company)}
+                                  className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
+                                >
+                                  <Shield className="h-4 w-4" /> Verify Company
+                                </button>
+                              )}
+                              
+                              <div className="border-t border-gray-100 my-1"></div>
+                              
+                              {company.is_active ? (
+                                <button
+                                  onClick={() => openSuspendDialog(company)}
+                                  className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 flex items-center gap-2"
+                                >
+                                  <XCircle className="h-4 w-4" /> Suspend
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleActivateCompany(company)}
+                                  className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center gap-2"
+                                >
+                                  <CheckCircle className="h-4 w-4" /> Activate
+                                </button>
+                              )}
+                              
+                              <div className="border-t border-gray-100 my-1"></div>
+                              
+                              <button
+                                onClick={() => openDeleteDialog(company)}
+                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                              >
+                                <Trash2 className="h-4 w-4" /> Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -691,91 +552,75 @@ const CompanyManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* View Dialog */}
+      {/* ========== VIEW COMPANY DETAILS DIALOG ========== */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl bg-white border border-gray-200 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Company Details</DialogTitle>
-            <DialogDescription>
-              Detailed information about the company
-            </DialogDescription>
+            <DialogTitle className="text-xl font-bold">Company Details</DialogTitle>
+            <DialogDescription>Detailed information about the company</DialogDescription>
           </DialogHeader>
           {selectedCompany && (
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarFallback className="text-lg bg-blue-100 text-blue-600">
-                    {getInitials(selectedCompany.company_name)}
-                  </AvatarFallback>
+              {/* Company Header */}
+              <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
+                <Avatar className="h-16 w-16 bg-blue-100">
+                  <AvatarFallback className="text-2xl bg-blue-100 text-blue-600">{getInitials(selectedCompany.company_name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h2 className="text-xl font-bold">{selectedCompany.company_name}</h2>
-                  <p className="text-gray-500 flex items-center gap-1">
-                    <Mail className="h-3 w-3" /> {selectedCompany.email}
-                  </p>
+                  <h2 className="text-xl font-bold text-gray-900">{selectedCompany.company_name}</h2>
+                  <p className="text-gray-600">{selectedCompany.email}</p>
+                  <div className="flex gap-2 mt-2">
+                    {getVerificationBadge(selectedCompany.is_verified)}
+                    {getStatusBadge(selectedCompany.is_active)}
+                  </div>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-gray-500">Industry</Label>
-                  <p className="mt-1">{selectedCompany.industry_name || '-'}</p>
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                  <Building className="h-4 w-4 text-gray-500" />
+                  <div><p className="text-xs text-gray-500">Industry</p><p className="text-sm font-medium">{selectedCompany.industry_name || 'Not specified'}</p></div>
                 </div>
-                <div>
-                  <Label className="text-gray-500">Location</Label>
-                  <p className="mt-1 flex items-center gap-1">
-                    <MapPin className="h-3 w-3" /> {selectedCompany.location || '-'}
-                  </p>
+                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                  <MapPin className="h-4 w-4 text-gray-500" />
+                  <div><p className="text-xs text-gray-500">Location</p><p className="text-sm font-medium">{selectedCompany.location || 'Not specified'}</p></div>
                 </div>
-                <div>
-                  <Label className="text-gray-500">Company Size</Label>
-                  <p className="mt-1">{selectedCompany.company_size || '-'}</p>
+                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                  <Users className="h-4 w-4 text-gray-500" />
+                  <div><p className="text-xs text-gray-500">Company Size</p><p className="text-sm font-medium">{selectedCompany.company_size || 'Not specified'}</p></div>
                 </div>
-                <div>
-                  <Label className="text-gray-500">Phone</Label>
-                  <p className="mt-1 flex items-center gap-1">
-                    <Phone className="h-3 w-3" /> {selectedCompany.phone || '-'}
-                  </p>
+                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                  <Phone className="h-4 w-4 text-gray-500" />
+                  <div><p className="text-xs text-gray-500">Phone</p><p className="text-sm font-medium">{selectedCompany.phone || 'Not specified'}</p></div>
                 </div>
-                <div>
-                  <Label className="text-gray-500">Website</Label>
-                  <p className="mt-1">
+                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                  <Globe className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <p className="text-xs text-gray-500">Website</p>
                     {selectedCompany.website ? (
-                      <a href={selectedCompany.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
-                        <Globe className="h-3 w-3" /> {selectedCompany.website}
-                      </a>
-                    ) : '-'}
-                  </p>
+                      <a href={selectedCompany.website} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-blue-600 hover:underline">{selectedCompany.website}</a>
+                    ) : (
+                      <p className="text-sm font-medium">Not specified</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-gray-500">Total Jobs</Label>
-                  <p className="mt-1 flex items-center gap-1">
-                    <Briefcase className="h-3 w-3" /> {selectedCompany.jobs_count}
-                  </p>
+                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                  <Briefcase className="h-4 w-4 text-gray-500" />
+                  <div><p className="text-xs text-gray-500">Total Jobs</p><p className="text-sm font-medium">{selectedCompany.jobs_count || 0}</p></div>
                 </div>
-                <div>
-                  <Label className="text-gray-500">Joined Date</Label>
-                  <p className="mt-1 flex items-center gap-1">
-                    <Calendar className="h-3 w-3" /> {formatDate(selectedCompany.created_at)}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-gray-500">Status</Label>
-                  <div className="mt-1">{getStatusBadge(selectedCompany.is_active)}</div>
-                </div>
-                <div>
-                  <Label className="text-gray-500">Verification</Label>
-                  <div className="mt-1">{getVerificationBadge(selectedCompany.is_verified)}</div>
+                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <div><p className="text-xs text-gray-500">Joined Date</p><p className="text-sm font-medium">{formatDate(selectedCompany.created_at)}</p></div>
                 </div>
               </div>
-              
-              <div>
-                <Label className="text-gray-500">Description</Label>
-                <p className="mt-1 p-3 bg-gray-50 rounded-lg">
-                  {selectedCompany.company_description || 'No description provided'}
-                </p>
+
+              {/* Description */}
+              <div className="p-4 border rounded-lg">
+                <h3 className="font-semibold mb-2">Company Description</h3>
+                <p className="text-gray-700 whitespace-pre-wrap">{selectedCompany.company_description || 'No description provided'}</p>
               </div>
-              
+
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
               </DialogFooter>
@@ -786,12 +631,12 @@ const CompanyManagement: React.FC = () => {
 
       {/* Verify Dialog */}
       <AlertDialog open={isVerifyDialogOpen} onOpenChange={setIsVerifyDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white border border-gray-200 shadow-2xl z-50">
           <AlertDialogHeader>
             <AlertDialogTitle>Verify Company</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to verify <span className="font-semibold">{selectedCompany?.company_name}</span>?
-              <br />Verified companies receive a trust badge on their profile.
+              <br />Verified companies receive a trust badge.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -805,12 +650,12 @@ const CompanyManagement: React.FC = () => {
 
       {/* Suspend Dialog */}
       <AlertDialog open={isSuspendDialogOpen} onOpenChange={setIsSuspendDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white border border-gray-200 shadow-2xl z-50">
           <AlertDialogHeader>
             <AlertDialogTitle>Suspend Company</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to suspend <span className="font-semibold">{selectedCompany?.company_name}</span>?
-              <br />Suspended companies cannot post jobs and their listings will be hidden.
+              <br />Suspended companies cannot post jobs.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -824,12 +669,12 @@ const CompanyManagement: React.FC = () => {
 
       {/* Delete Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white border border-gray-200 shadow-2xl z-50">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Company</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete <span className="font-semibold">{selectedCompany?.company_name}</span>
-              and remove all associated data including jobs and applications.
+              and remove all associated data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import {
   Select,
@@ -24,14 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,7 +37,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
@@ -116,6 +108,7 @@ const Applications: React.FC = () => {
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false)
   const [newStatus, setNewStatus] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [stats, setStats] = useState<ApplicationStats>({
     total: 0,
     pending: 0,
@@ -169,6 +162,21 @@ const Applications: React.FC = () => {
     fetchApplications()
   }, [fetchApplications])
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenMenuId(null)
+    }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [])
+
+  // Toggle menu
+  const toggleMenu = (appId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setOpenMenuId(openMenuId === appId ? null : appId)
+  }
+
   // Update application status
   const handleUpdateStatus = async () => {
     if (!selectedApplication || !newStatus) return
@@ -194,6 +202,7 @@ const Applications: React.FC = () => {
       
       toast({ title: "Success", description: `Application status updated to ${newStatus}` })
       setIsStatusDialogOpen(false)
+      setOpenMenuId(null)
       fetchApplications()
     } catch (err: any) {
       toast({ variant: "destructive", title: "Error", description: err.response?.data?.message || "Failed to update status" })
@@ -205,12 +214,14 @@ const Applications: React.FC = () => {
   const openViewDialog = (application: Application) => {
     setSelectedApplication(application)
     setIsViewDialogOpen(true)
+    setOpenMenuId(null)
   }
 
   const openStatusDialog = (application: Application) => {
     setSelectedApplication(application)
     setNewStatus(application.status?.status_name || 'Pending')
     setIsStatusDialogOpen(true)
+    setOpenMenuId(null)
   }
 
   const getStatusBadge = (status: string | undefined) => {
@@ -281,7 +292,6 @@ const Applications: React.FC = () => {
             Refresh
           </Button>
           <Button variant="outline" onClick={() => {
-            // Export functionality
             toast({ title: "Export", description: "Export feature coming soon" })
           }}>
             <Download className="h-4 w-4 mr-2" />
@@ -387,10 +397,10 @@ const Applications: React.FC = () => {
                 />
               </div>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-36 border-gray-300">
+                <SelectTrigger className="w-36 border-gray-300 bg-white">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border shadow-md z-50">
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="reviewed">Reviewed</SelectItem>
@@ -470,29 +480,41 @@ const Applications: React.FC = () => {
                         {getStatusBadge(app.status?.status_name)}
                       </td>
                       <td className="py-3 px-4">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-white border border-gray-200 shadow-lg z-50">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => openViewDialog(app)}>
-                              <Eye className="h-4 w-4 mr-2" /> View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openStatusDialog(app)}>
-                              <Send className="h-4 w-4 mr-2" /> Update Status
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => {
-                              window.location.href = `mailto:${app.seeker?.user?.email}`
-                            }}>
-                              <Mail className="h-4 w-4 mr-2" /> Contact Applicant
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="relative">
+                          <button
+                            onClick={(e) => toggleMenu(app.id, e)}
+                            className="inline-flex items-center justify-center rounded-md hover:bg-gray-100 h-8 w-8 p-0 transition-colors"
+                            type="button"
+                          >
+                            <MoreVertical className="h-4 w-4 text-gray-600" />
+                          </button>
+                          
+                          {openMenuId === app.id && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50 py-1">
+                              <button
+                                onClick={() => openViewDialog(app)}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                              >
+                                <Eye className="h-4 w-4" /> View Details
+                              </button>
+                              <button
+                                onClick={() => openStatusDialog(app)}
+                                className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
+                              >
+                                <Send className="h-4 w-4" /> Update Status
+                              </button>
+                              <div className="border-t border-gray-100 my-1"></div>
+                              <button
+                                onClick={() => {
+                                  window.location.href = `mailto:${app.seeker?.user?.email}`
+                                }}
+                                className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center gap-2"
+                              >
+                                <Mail className="h-4 w-4" /> Contact Applicant
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -507,7 +529,8 @@ const Applications: React.FC = () => {
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-3xl bg-white border border-gray-200 max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Application Details</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Application Details</DialogTitle>
+            <DialogDescription>Detailed information about the job application</DialogDescription>
           </DialogHeader>
           {selectedApplication && (
             <div className="space-y-6">
@@ -631,19 +654,19 @@ const Applications: React.FC = () => {
       <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
         <DialogContent className="max-w-md bg-white border border-gray-200">
           <DialogHeader>
-            <DialogTitle>Update Application Status</DialogTitle>
-            <p className="text-sm text-gray-500 mt-2">
+            <DialogTitle className="text-xl font-bold">Update Application Status</DialogTitle>
+            <DialogDescription>
               Update status for <span className="font-semibold">{selectedApplication?.seeker?.full_name}</span>'s application
-            </p>
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label>Status</Label>
+              <Label className="text-gray-700 font-medium">Status</Label>
               <Select value={newStatus} onValueChange={setNewStatus}>
-                <SelectTrigger className="mt-1.5">
+                <SelectTrigger className="mt-1.5 bg-white border-gray-300">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border shadow-md z-50">
                   <SelectItem value="Pending">Pending</SelectItem>
                   <SelectItem value="Reviewed">Reviewed</SelectItem>
                   <SelectItem value="Shortlisted">Shortlisted</SelectItem>
