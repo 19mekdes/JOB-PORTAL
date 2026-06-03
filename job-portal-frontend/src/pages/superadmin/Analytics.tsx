@@ -50,12 +50,14 @@ interface AnalyticsData {
   acceptedApplications: number
   rejectedApplications: number
   conversionRate: number
-  jobsByIndustry: Array<{ industry: string; count: number }>
+  totalViews: number
+  jobsByIndustry: Array<{ name: string; count: number }>
   jobsByType: Array<{ type: string; count: number }>
   topEmployers: Array<{ name: string; jobCount: number; views: number }>
   topSkills: Array<{ skill: string; count: number }>
+  jobsByMonth: Array<{ month: string; jobs: number; applications: number }>
+  applicationsByStatus: Array<{ status: string; count: number }>
 }
-
 
 const Analytics: React.FC = () => {
   const [loading, setLoading] = useState(true)
@@ -74,11 +76,26 @@ const Analytics: React.FC = () => {
       if (response.data?.success && response.data?.data) {
         const apiData = response.data.data
         
-        // Ensure topEmployers has views property with default value
+        // Handle both data structures
+        const jobsByIndustry = (apiData.jobsByIndustry || []).map((item: any) => ({
+          name: item.name || item.industry,
+          count: item.count || 0
+        }))
+        
         const topEmployers = (apiData.topEmployers || []).map((emp: any) => ({
           name: emp.name || 'Unknown',
           jobCount: emp.jobCount || 0,
           views: emp.views || 0
+        }))
+        
+        const topSkills = (apiData.topSkills || []).map((skill: any) => ({
+          skill: skill.skill,
+          count: skill.count || 0
+        }))
+        
+        const applicationsByStatus = (apiData.applicationsByStatus || []).map((status: any) => ({
+          status: status.status,
+          count: status.count || 0
         }))
         
         setData({
@@ -105,10 +122,13 @@ const Analytics: React.FC = () => {
           acceptedApplications: apiData.acceptedApplications || 0,
           rejectedApplications: apiData.rejectedApplications || 0,
           conversionRate: apiData.conversionRate || 0,
-          jobsByIndustry: apiData.jobsByIndustry || [],
+          totalViews: apiData.totalViews || 0,
+          jobsByIndustry: jobsByIndustry,
           jobsByType: apiData.jobsByType || [],
           topEmployers: topEmployers,
-          topSkills: apiData.topSkills || []
+          topSkills: topSkills,
+          jobsByMonth: apiData.jobsByMonth || [],
+          applicationsByStatus: applicationsByStatus
         })
       } else {
         setData(getDefaultData())
@@ -150,10 +170,13 @@ const Analytics: React.FC = () => {
     acceptedApplications: 0,
     rejectedApplications: 0,
     conversionRate: 0,
+    totalViews: 0,
     jobsByIndustry: [],
     jobsByType: [],
     topEmployers: [],
-    topSkills: []
+    topSkills: [],
+    jobsByMonth: [],
+    applicationsByStatus: []
   })
 
   const formatNumber = (num: number | undefined) => {
@@ -185,15 +208,8 @@ const Analytics: React.FC = () => {
     ? Math.max(...data.topSkills.map(s => s.count)) 
     : 1
 
-  // Prepare application status data
-  const applicationStatusData = data ? [
-    { name: 'Pending', value: data.pendingApplications, color: '#f59e0b' },
-    { name: 'Reviewed', value: data.reviewedApplications, color: '#3b82f6' },
-    { name: 'Shortlisted', value: data.shortlistedApplications, color: '#8b5cf6' },
-    { name: 'Interview', value: data.interviewApplications, color: '#06b6d4' },
-    { name: 'Accepted', value: data.acceptedApplications, color: '#10b981' },
-    { name: 'Rejected', value: data.rejectedApplications, color: '#ef4444' }
-  ].filter(s => s.value > 0) : []
+  // Prepare application status data for pie chart
+  const applicationStatusData = data?.applicationsByStatus || []
 
   if (loading) {
     return (
@@ -217,6 +233,8 @@ const Analytics: React.FC = () => {
       </div>
     )
   }
+
+  const statusColors = ['#f59e0b', '#3b82f6', '#8b5cf6', '#06b6d4', '#10b981', '#ef4444']
 
   return (
     <div className="space-y-6">
@@ -345,7 +363,7 @@ const Analytics: React.FC = () => {
                     <BarChart data={data.jobsByIndustry} layout="vertical" margin={{ left: 80 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                       <XAxis type="number" />
-                      <YAxis type="category" dataKey="industry" width={80} />
+                      <YAxis type="category" dataKey="name" width={80} />
                       <Tooltip />
                       <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} name="Jobs" />
                     </BarChart>
@@ -364,18 +382,18 @@ const Analytics: React.FC = () => {
                   <>
                     <ResponsiveContainer width="100%" height={250}>
                       <PieChart>
-                        <Pie data={applicationStatusData} cx="50%" cy="50%" labelLine={false} outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                          {applicationStatusData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
+                        <Pie data={applicationStatusData} cx="50%" cy="50%" labelLine={false} outerRadius={80} dataKey="count" nameKey="status" label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`}>
+                          {applicationStatusData.map((entry, index) => (<Cell key={`cell-${index}`} fill={statusColors[index % statusColors.length]} />))}
                         </Pie>
                         <Tooltip />
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="flex flex-wrap justify-center gap-3 mt-4">
-                      {applicationStatusData.map((status) => (
-                        <div key={status.name} className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: status.color }} />
-                          <span className="text-xs text-gray-600">{status.name}</span>
-                          <span className="text-xs font-semibold">{status.value}</span>
+                      {applicationStatusData.map((status, index) => (
+                        <div key={status.status} className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: statusColors[index % statusColors.length] }} />
+                          <span className="text-xs text-gray-600">{status.status}</span>
+                          <span className="text-xs font-semibold">{status.count}</span>
                         </div>
                       ))}
                     </div>

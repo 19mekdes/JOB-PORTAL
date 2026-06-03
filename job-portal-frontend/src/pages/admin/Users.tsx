@@ -75,9 +75,10 @@ const UserManagement: React.FC = () => {
       else if (activeTab === 'employers') apiRole = 'Employer'
       else if (activeTab === 'all') apiRole = roleFilter
       
-      const params: any = { page, limit: 20, status: statusFilter }
+      const params: any = { page, limit: 20 }
       if (searchTerm) params.search = searchTerm
       if (apiRole !== 'all') params.role = apiRole
+      if (statusFilter !== 'all') params.status = statusFilter
       
       const response = await api.get('/admin/users', { params })
       
@@ -222,6 +223,37 @@ const UserManagement: React.FC = () => {
   const getUserPhone = (user: User) => user.phone || user.seeker_profile?.phone || null
   const getUserLocation = (user: User) => user.location || user.seeker_profile?.location || user.employer_profile?.location || null
 
+  // Apply all filters
+  const filteredUsers = users.filter(user => {
+    const userTypeName = user.user_type?.type_name || ''
+    
+    // Search filter
+    const matchesSearch = searchTerm === '' || 
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getUserDisplayName(user).toLowerCase().includes(searchTerm.toLowerCase())
+    
+    // Role filter
+    const matchesRole = roleFilter === 'all' || userTypeName === roleFilter
+    
+    // Status filter - FIXED
+    let matchesStatus = true
+    if (statusFilter === 'active') {
+      matchesStatus = user.is_active === true
+    } else if (statusFilter === 'suspended') {
+      matchesStatus = user.is_active === false
+    } else {
+      matchesStatus = true
+    }
+    
+    // Tab filter
+    const matchesTab = activeTab === 'all' || 
+      (activeTab === 'job_seekers' && userTypeName === 'Job Seeker') ||
+      (activeTab === 'employers' && userTypeName === 'Employer') ||
+      (activeTab === 'admins' && (userTypeName === 'Admin' || userTypeName === 'Super Admin'))
+    
+    return matchesSearch && matchesRole && matchesStatus && matchesTab
+  })
+
   if (loading && users.length === 0) {
     return (
       <div className="flex justify-center items-center h-96 bg-white rounded-xl">
@@ -252,13 +284,13 @@ const UserManagement: React.FC = () => {
             <p className="text-xs text-gray-500">Total Users</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md transition bg-white border border-green-200" onClick={() => setStatusFilter('active')}>
+        <Card className="cursor-pointer hover:shadow-md transition bg-white border border-green-200" onClick={() => { setStatusFilter('active'); setPage(1); }}>
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-green-600">{stats.active}</p>
             <p className="text-xs text-gray-500">Active</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md transition bg-white border border-red-200" onClick={() => setStatusFilter('suspended')}>
+        <Card className="cursor-pointer hover:shadow-md transition bg-white border border-red-200" onClick={() => { setStatusFilter('suspended'); setPage(1); }}>
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-red-600">{stats.suspended}</p>
             <p className="text-xs text-gray-500">Suspended</p>
@@ -296,7 +328,7 @@ const UserManagement: React.FC = () => {
           <div className="flex justify-between items-center flex-wrap gap-4">
             <CardTitle className="text-gray-900">
               {activeTab === 'all' ? 'All Users' : activeTab === 'job_seekers' ? 'Job Seekers' : activeTab === 'employers' ? 'Employers' : 'Admins'} 
-              <span className="text-sm text-gray-500 ml-2">({users.length})</span>
+              <span className="text-sm text-gray-500 ml-2">({filteredUsers.length})</span>
             </CardTitle>
             <div className="flex gap-3 flex-wrap">
               <div className="relative w-64">
@@ -334,7 +366,7 @@ const UserManagement: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {users.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-500">No users found</p>
@@ -353,7 +385,7 @@ const UserManagement: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
+                  {filteredUsers.map((user) => (
                     <TableRow key={user.id} className="hover:bg-gray-50 border-b border-gray-100">
                       <TableCell>
                         <div className="flex items-center gap-3">

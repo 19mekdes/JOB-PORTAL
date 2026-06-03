@@ -294,7 +294,7 @@ const AdminLayout: React.FC = () => {
             </div>
           )}
 
-          {/* Navigation Links - Icons only when collapsed */}
+          {/* Navigation Links */}
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             {navItems.map((item) => {
               const Icon = item.icon
@@ -405,7 +405,7 @@ const AdminLayout: React.FC = () => {
         </div>
       </div>
       
-      {/* Main Content Area - Margin adjusts with sidebar state */}
+      {/* Main Content Area */}
       <div className={`transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'}`}>
         {/* Header */}
         <header className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">

@@ -21,31 +21,25 @@ interface DashboardStats {
   totalJobSeekers: number
   totalEmployers: number
   totalAdmins: number
-  activeUsers: number
-  newUsersThisMonth: number
-  userGrowth: number
   totalJobs: number
   activeJobs: number
   closedJobs: number
   pendingJobs: number
-  newJobsThisMonth: number
-  jobGrowth: number
   totalApplications: number
   pendingApplications: number
-  reviewedApplications: number
-  shortlistedApplications: number
-  interviewApplications: number
   acceptedApplications: number
   rejectedApplications: number
+  interviewApplications: number
   totalViews: number
   averageViewsPerJob: number
   averageApplicationsPerJob: number
   conversionRate: number
-  jobsByIndustry: Array<{ industry: string; count: number }>
-  jobsByType: Array<{ type: string; count: number }>
-  topEmployers: Array<{ name: string; jobCount: number; views: number }>
-  topSkills: Array<{ skill: string; count: number }>
+  jobsByIndustry: Array<{ name: string; count: number }>
   jobsByMonth: Array<{ month: string; jobs: number; applications: number }>
+  applicationsByMonth: Array<{ month: string; applications: number }>
+  applicationsByStatus: Array<{ status: string; count: number }>
+  topSkills: Array<{ skill: string; count: number }>
+  topEmployers: Array<{ name: string; jobCount: number; views: number }>
 }
 
 const SuperAdminDashboard: React.FC = () => {
@@ -60,95 +54,60 @@ const SuperAdminDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
-      const response = await api.get(`/admin/analytics?period=${selectedPeriod}`)
+      // Use the correct endpoint that matches your backend
+      const response = await api.get(`/super-admin/analytics`)
+      
       console.log('Dashboard API Response:', response.data)
       
       if (response.data?.success && response.data?.data) {
         const data = response.data.data
         
-        // Calculate derived stats
-        const totalApplications = (data.pendingApplications || 0) + 
-                                  (data.reviewedApplications || 0) + 
-                                  (data.shortlistedApplications || 0) + 
-                                  (data.interviewApplications || 0) + 
-                                  (data.acceptedApplications || 0) + 
-                                  (data.rejectedApplications || 0)
-        
         setStats({
+          // User Stats
           totalUsers: data.totalUsers || 0,
           totalJobSeekers: data.totalJobSeekers || 0,
           totalEmployers: data.totalEmployers || 0,
           totalAdmins: data.totalAdmins || 0,
-          activeUsers: data.totalUsers || 0,
-          newUsersThisMonth: data.newUsersThisMonth || 0,
-          userGrowth: data.userGrowth || 5,
+          
+          // Job Stats
           totalJobs: data.totalJobs || 0,
           activeJobs: data.activeJobs || 0,
           closedJobs: data.closedJobs || 0,
           pendingJobs: data.pendingJobs || 0,
-          newJobsThisMonth: data.newJobsThisMonth || 0,
-          jobGrowth: data.jobGrowth || 8,
-          totalApplications: totalApplications,
+          
+          // Application Stats
+          totalApplications: data.totalApplications || 0,
           pendingApplications: data.pendingApplications || 0,
-          reviewedApplications: data.reviewedApplications || 0,
-          shortlistedApplications: data.shortlistedApplications || 0,
-          interviewApplications: data.interviewApplications || 0,
           acceptedApplications: data.acceptedApplications || 0,
           rejectedApplications: data.rejectedApplications || 0,
+          interviewApplications: data.interviewApplications || 0,
+          
+          // Views & Metrics
           totalViews: data.totalViews || 0,
           averageViewsPerJob: data.averageViewsPerJob || 0,
           averageApplicationsPerJob: data.averageApplicationsPerJob || 0,
           conversionRate: data.conversionRate || 0,
+          
+          // Chart Data
           jobsByIndustry: data.jobsByIndustry || [],
-          jobsByType: data.jobsByType || [],
-          topEmployers: data.topEmployers || [],
+          jobsByMonth: data.jobsByMonth || [],
+          applicationsByMonth: data.applicationsByMonth || [],
+          applicationsByStatus: data.applicationsByStatus || [],
+          
+          // Top Lists
           topSkills: data.topSkills || [],
-          jobsByMonth: data.jobsByMonth || []
+          topEmployers: data.topEmployers || []
         })
       } else {
         console.warn('Unexpected API response structure:', response.data)
-        setStats(getDefaultStats())
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
       toast({ variant: "destructive", title: "Error", description: "Failed to load dashboard data" })
-      setStats(getDefaultStats())
     } finally {
       setLoading(false)
     }
   }
-
-  const getDefaultStats = (): DashboardStats => ({
-    totalUsers: 0,
-    totalJobSeekers: 0,
-    totalEmployers: 0,
-    totalAdmins: 0,
-    activeUsers: 0,
-    newUsersThisMonth: 0,
-    userGrowth: 0,
-    totalJobs: 0,
-    activeJobs: 0,
-    closedJobs: 0,
-    pendingJobs: 0,
-    newJobsThisMonth: 0,
-    jobGrowth: 0,
-    totalApplications: 0,
-    pendingApplications: 0,
-    reviewedApplications: 0,
-    shortlistedApplications: 0,
-    interviewApplications: 0,
-    acceptedApplications: 0,
-    rejectedApplications: 0,
-    totalViews: 0,
-    averageViewsPerJob: 0,
-    averageApplicationsPerJob: 0,
-    conversionRate: 0,
-    jobsByIndustry: [],
-    jobsByType: [],
-    topEmployers: [],
-    topSkills: [],
-    jobsByMonth: []
-  })
 
   const formatNumber = (num: number | undefined) => {
     if (!num || num === undefined) return '0'
@@ -157,14 +116,7 @@ const SuperAdminDashboard: React.FC = () => {
     return num.toString()
   }
 
-  const applicationStatusData = stats ? [
-    { name: 'Pending', value: stats.pendingApplications, color: '#f59e0b' },
-    { name: 'Reviewed', value: stats.reviewedApplications, color: '#3b82f6' },
-    { name: 'Shortlisted', value: stats.shortlistedApplications, color: '#8b5cf6' },
-    { name: 'Interview', value: stats.interviewApplications, color: '#06b6d4' },
-    { name: 'Accepted', value: stats.acceptedApplications, color: '#10b981' },
-    { name: 'Rejected', value: stats.rejectedApplications, color: '#ef4444' }
-  ].filter(s => s.value > 0) : []
+  const applicationStatusData = stats?.applicationsByStatus || []
 
   const maxSkillCount = stats?.topSkills && stats.topSkills.length > 0 
     ? Math.max(...stats.topSkills.map(s => s.count)) 
@@ -201,24 +153,10 @@ const SuperAdminDashboard: React.FC = () => {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Super Admin Dashboard</h1>
           <p className="text-sm sm:text-base text-gray-500 mt-1">Platform overview and key metrics</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            {['7d', '30d', '90d'].map((period) => (
-              <button
-                key={period}
-                onClick={() => setSelectedPeriod(period)}
-                className={`px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm transition-colors ${
-                  selectedPeriod === period ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                {period === '7d' ? 'Week' : period === '30d' ? 'Month' : 'Quarter'}
-              </button>
-            ))}
-          </div>
-          <Button variant="outline" size="sm" onClick={fetchDashboardData} className="border-gray-300">
-            <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={fetchDashboardData} className="border-gray-300">
+          <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
       {/* Stats Cards Row 1 - Main Metrics */}
@@ -375,24 +313,29 @@ const SuperAdminDashboard: React.FC = () => {
                       cy="50%"
                       labelLine={false}
                       outerRadius={80}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      dataKey="count"
+                      nameKey="status"
+                      label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`}
                     >
-                      {applicationStatusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
+                      {applicationStatusData.map((entry, index) => {
+                        const colors = ['#f59e0b', '#06b6d4', '#10b981', '#ef4444']
+                        return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                      })}
                     </Pie>
                     <Tooltip />
                   </RePieChart>
                 </ResponsiveContainer>
                 <div className="flex flex-wrap justify-center gap-3 mt-4">
-                  {applicationStatusData.map((status) => (
-                    <div key={status.name} className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: status.color }} />
-                      <span className="text-xs text-gray-600">{status.name}</span>
-                      <span className="text-xs font-semibold text-gray-900">{status.value}</span>
-                    </div>
-                  ))}
+                  {applicationStatusData.map((status, index) => {
+                    const colors = ['#f59e0b', '#06b6d4', '#10b981', '#ef4444']
+                    return (
+                      <div key={status.status} className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors[index] }} />
+                        <span className="text-xs text-gray-600">{status.status}</span>
+                        <span className="text-xs font-semibold text-gray-900">{status.count}</span>
+                      </div>
+                    )
+                  })}
                 </div>
               </>
             )}
@@ -412,7 +355,7 @@ const SuperAdminDashboard: React.FC = () => {
                 <BarChart data={stats.jobsByIndustry} layout="vertical" margin={{ left: 80 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis type="number" stroke="#6b7280" tick={{ fontSize: 12 }} />
-                  <YAxis type="category" dataKey="industry" stroke="#6b7280" tick={{ fontSize: 12 }} width={100} />
+                  <YAxis type="category" dataKey="name" stroke="#6b7280" tick={{ fontSize: 12 }} width={100} />
                   <Tooltip />
                   <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} name="Number of Jobs" />
                 </BarChart>
