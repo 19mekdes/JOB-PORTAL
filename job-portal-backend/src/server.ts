@@ -2336,46 +2336,53 @@ app.post('/api/contact', async (req: Request, res: Response) => {
       }
     })
     
-    // Send email to admin/support
-    const adminEmailHtml = `
+    // Send email to support (mekdesw60@gmail.com)
+    const supportEmailHtml = `
       <!DOCTYPE html>
       <html>
       <head>
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #2563eb; color: white; padding: 20px; text-align: center; }
-          .content { padding: 20px; background: #f9fafb; }
-          .field { margin-bottom: 15px; }
-          .label { font-weight: bold; color: #374151; }
+          .header { background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+          .field { margin-bottom: 15px; padding: 10px; background: white; border-radius: 8px; }
+          .label { font-weight: bold; color: #374151; margin-bottom: 5px; }
+          .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h2>New Contact Form Submission</h2>
+            <h2>📬 New Contact Form Submission</h2>
+            <p>JobPortal Contact Message</p>
           </div>
           <div class="content">
             <div class="field">
-              <div class="label">Name:</div>
+              <div class="label">👤 Name:</div>
               <div>${name}</div>
             </div>
             <div class="field">
-              <div class="label">Email:</div>
+              <div class="label">📧 Email:</div>
               <div>${email}</div>
             </div>
             <div class="field">
-              <div class="label">Category:</div>
-              <div>${category || 'General'}</div>
+              <div class="label">📂 Category:</div>
+              <div>${category || 'General Inquiry'}</div>
             </div>
             <div class="field">
-              <div class="label">Subject:</div>
-              <div>${subject}</div>
+              <div class="label">📝 Subject:</div>
+              <div><strong>${subject}</strong></div>
             </div>
             <div class="field">
-              <div class="label">Message:</div>
-              <div>${message.replace(/\n/g, '<br>')}</div>
+              <div class="label">💬 Message:</div>
+              <div style="white-space: pre-wrap;">${message.replace(/\n/g, '<br>')}</div>
             </div>
+            <hr style="margin: 20px 0;">
+            <p style="font-size: 12px; color: #6b7280;">Sent from JobPortal Contact Form</p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} JobPortal. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -2388,57 +2395,60 @@ app.post('/api/contact', async (req: Request, res: Response) => {
       <html>
       <head>
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #10b981; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { padding: 20px; background: #f9fafb; border-radius: 0 0 10px 10px; }
-          .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
+          .header { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+          .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h2>We've Received Your Message!</h2>
+            <h2>✅ We've Received Your Message!</h2>
           </div>
           <div class="content">
-            <p>Dear ${name},</p>
-            <p>Thank you for contacting JobPortal. We have received your message and will get back to you within 24 hours.</p>
-            <p><strong>Your Message Summary:</strong></p>
-            <p><strong>Subject:</strong> ${subject}</p>
-            <p><strong>Category:</strong> ${category || 'General'}</p>
+            <h3>Dear ${name},</h3>
+            <p>Thank you for contacting <strong>JobPortal</strong>. We have received your message and will get back to you within 24 hours.</p>
+            
+            <div style="background: #e0e7ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 0;"><strong>📋 Your Message Summary:</strong></p>
+              <p style="margin: 5px 0;"><strong>Subject:</strong> ${subject}</p>
+              <p style="margin: 5px 0;"><strong>Category:</strong> ${category || 'General Inquiry'}</p>
+            </div>
+            
             <p>We appreciate your patience and will respond as soon as possible.</p>
+            
             <p>Best regards,<br><strong>JobPortal Support Team</strong></p>
+            <hr>
+            <p style="font-size: 12px; color: #6b7280;">This is an automated confirmation. Please do not reply to this email.</p>
           </div>
           <div class="footer">
             <p>© ${new Date().getFullYear()} JobPortal. All rights reserved.</p>
+            <p>Connecting Talent with Opportunity</p>
           </div>
         </div>
       </body>
       </html>
     `
     
-    // Send to admin/support email
+    // Send to support email (mekdesw60@gmail.com)
     await transporter.sendMail({
       from: `"JobPortal Contact" <${process.env.EMAIL_USER}>`,
-      to: process.env.SUPPORT_EMAIL || process.env.EMAIL_USER,
-      subject: `New Contact: ${subject} from ${name}`,
-      html: adminEmailHtml
+      to: 'mekdesw60@gmail.com',  // ✅ Your support email
+      subject: `📬 New Contact: ${subject} from ${name}`,
+      html: supportEmailHtml
     })
     
     // Send auto-reply to user
     await transporter.sendMail({
       from: `"JobPortal Support" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'We received your message - JobPortal',
+      subject: '✅ We received your message - JobPortal',
       html: userEmailHtml
     })
     
-    // Save to database (optional)
-    // await prisma.contactMessage.create({
-    //   data: { name, email, subject, message, category, status: 'pending' }
-    // })
-    
-    console.log(`✅ Contact form processed for ${email}`)
+    console.log(`✅ Contact form processed for ${email} -> Sent to mekdesw60@gmail.com`)
     
     res.json({ 
       success: true, 
@@ -2449,7 +2459,7 @@ app.post('/api/contact', async (req: Request, res: Response) => {
     console.error('Contact form error:', error)
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to send message. Please try again later.' 
+      message: error.message || 'Failed to send message. Please try again later.' 
     })
   }
 })
