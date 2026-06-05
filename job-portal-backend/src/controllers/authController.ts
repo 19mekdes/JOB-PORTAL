@@ -12,6 +12,9 @@ const prisma = new PrismaClient()
 const generateToken = (userId: string, email: string): string => {
   const payload = { id: userId, email: email }
   const secret = process.env.JWT_SECRET as string
+  if (!secret) {
+    throw new Error('JWT_SECRET is not configured. Please set it in your .env file.')
+  }
   const token = jwt.sign(payload, secret, { expiresIn: '7d' } as jwt.SignOptions)
   return token
 }
@@ -20,26 +23,46 @@ const generateToken = (userId: string, email: string): string => {
 const generateRefreshToken = (userId: string): string => {
   const payload = { id: userId }
   const secret = process.env.JWT_REFRESH_SECRET as string
+  if (!secret) {
+    throw new Error('JWT_REFRESH_SECRET is not configured. Please set it in your .env file.')
+  }
   const token = jwt.sign(payload, secret, { expiresIn: '30d' } as jwt.SignOptions)
   return token
 }
 
-// Helper function to send email
+// Helper function to send email with better error handling
 const sendEmail = async (to: string, subject: string, html: string) => {
+  console.log('📧 sendEmail called with:', { to, subject });
+  
+  // Check if email credentials are configured
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.error('❌ Email credentials missing!');
+    console.log('   EMAIL_USER:', process.env.EMAIL_USER ? 'SET' : 'MISSING');
+    console.log('   EMAIL_PASS:', process.env.EMAIL_PASS ? 'SET' : 'MISSING');
+    throw new Error('Email configuration missing');
+  }
+  
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     }
-  })
+  });
   
-  await transporter.sendMail({
+  // Verify connection first
+  await transporter.verify();
+  console.log('✅ SMTP connection verified');
+  
+  const info = await transporter.sendMail({
     from: `"JobPortal" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html
-  })
+  });
+  
+  console.log('✅ Email sent! Message ID:', info.messageId);
+  return info;
 }
 
 // ========== REGISTER USER ==========
@@ -315,7 +338,7 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<v
   }
 }
 
-// ========== FORGOT PASSWORD - COMPLETE VERSION ==========
+// ========== FORGOT PASSWORD - WITH DEBUGGING ==========
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email } = req.body
@@ -334,8 +357,8 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
       include: { seeker_profile: true, employer_profile: true }
     })
 
-    // For security, always return success even if user doesn't exist
     if (!user) {
+      console.log('❌ User not found:', email)
       res.json({
         success: true,
         message: 'If an account exists with that email, you will receive a password reset link'
@@ -343,12 +366,13 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
       return
     }
 
+    console.log('✅ User found:', user.email)
+
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex')
     const resetExpiry = new Date()
-    resetExpiry.setHours(resetExpiry.getHours() + 1) // 1 hour expiry
+    resetExpiry.setHours(resetExpiry.getHours() + 1)
 
-    // Save token to database (you need to add these fields to your User model)
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -357,63 +381,100 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
       }
     })
 
-    // Create reset URL
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
     const resetUrl = `${frontendUrl}/reset-password/${resetToken}`
 
-    // Get user name
     const userName = user.seeker_profile?.full_name || 
                      user.employer_profile?.company_name || 
                      user.email.split('@')[0]
 
-    // Send email
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-          .button { background: #2563eb; color: white; padding: 12px 28px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 20px 0; }
-          .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h2>Password Reset Request</h2>
-          </div>
-          <div class="content">
-            <h3>Hello ${userName},</h3>
-            <p>We received a request to reset your password for your JobPortal account.</p>
-            <p>Click the button below to create a new password:</p>
-            <div style="text-align: center;">
-              <a href="${resetUrl}" class="button">Reset Password</a>
+    console.log('\n🔐 ========== PASSWORD RESET INFO ==========');
+    console.log('📧 Email:', user.email);
+    console.log('🔗 Reset URL:', resetUrl);
+    console.log('=============================================\n');
+
+    // Check email configuration
+    console.log('📧 Checking email configuration...');
+    console.log('   EMAIL_USER:', process.env.EMAIL_USER ? '✅ ' + process.env.EMAIL_USER : '❌ MISSING');
+    console.log('   EMAIL_PASS:', process.env.EMAIL_PASS ? '✅ SET (length: ' + process.env.EMAIL_PASS.length + ')' : '❌ MISSING');
+    
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.log('⚠️ Email credentials missing! Returning reset link in response.');
+      res.json({
+        success: true,
+        message: 'Password reset link (email not configured - check .env file)',
+        resetLink: resetUrl,
+        devMode: true
+      });
+      return;
+    }
+
+    // Send email with detailed error catching
+    try {
+      console.log('📧 Attempting to send email to:', user.email);
+      
+      const emailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { background: #2563eb; color: white; padding: 12px 28px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2>Password Reset Request</h2>
             </div>
-            <p>If you didn't request this, you can safely ignore this email.</p>
-            <p>This link will expire in 1 hour.</p>
-            <hr />
-            <p>Best regards,<br><strong>JobPortal Team</strong></p>
+            <div class="content">
+              <h3>Hello ${userName},</h3>
+              <p>We received a request to reset your password for your JobPortal account.</p>
+              <p>Click the button below to create a new password:</p>
+              <div style="text-align: center;">
+                <a href="${resetUrl}" class="button">Reset Password</a>
+              </div>
+              <p>If the button doesn't work, copy this link: ${resetUrl}</p>
+              <p>This link will expire in 1 hour.</p>
+              <p>If you didn't request this, you can safely ignore this email.</p>
+              <hr />
+              <p>Best regards,<br><strong>JobPortal Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>© ${new Date().getFullYear()} JobPortal. All rights reserved.</p>
+            </div>
           </div>
-          <div class="footer">
-            <p>© ${new Date().getFullYear()} JobPortal. All rights reserved.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `
+        </body>
+        </html>
+      `
 
-    await sendEmail(user.email, 'Reset Your JobPortal Password', emailHtml)
-    console.log(`✅ Password reset email sent to: ${email}`)
-
-    res.json({
-      success: true,
-      message: 'If an account exists with that email, you will receive a password reset link'
-    })
+      await sendEmail(user.email, 'Reset Your JobPortal Password', emailHtml)
+      console.log('✅ Password reset email sent successfully to:', email)
+      
+      res.json({
+        success: true,
+        message: 'If an account exists with that email, you will receive a password reset link'
+      })
+      
+    } catch (emailError: any) {
+      console.error('❌ Failed to send email:', emailError.message);
+      console.error('Error details:', emailError);
+      
+      // Return the reset link in response for development
+      res.json({
+        success: true,
+        message: 'Unable to send email. Please use the reset link below.',
+        resetLink: resetUrl,
+        emailError: emailError.message
+      });
+    }
+    
   } catch (error) {
-    console.error('Forgot password error:', error)
+    console.error('❌ Forgot password error:', error)
     res.status(500).json({
       success: false,
       message: (error as Error).message
@@ -421,7 +482,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
   }
 }
 
-// ========== RESET PASSWORD - COMPLETE VERSION ==========
+// ========== RESET PASSWORD ==========
 export const resetPassword = async (req: Request, res: Response): Promise<void> => {
   try {
     const { token } = req.params
@@ -445,12 +506,11 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return
     }
 
-    // Find user with valid reset token
     const user = await prisma.user.findFirst({
       where: {
         reset_password_token: token,
         reset_password_expires: {
-          gt: new Date() // Token not expired
+          gt: new Date()
         }
       },
       include: { seeker_profile: true, employer_profile: true }
@@ -464,10 +524,8 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return
     }
 
-    // Hash new password
     const hashedPassword = await bcrypt.hash(new_password, 10)
 
-    // Update user password and clear reset token
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -478,7 +536,6 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       }
     })
 
-    // Send confirmation email
     const userName = user.seeker_profile?.full_name || 
                      user.employer_profile?.company_name || 
                      user.email.split('@')[0]
@@ -583,7 +640,6 @@ export const verifyResetToken = async (req: Request, res: Response): Promise<voi
 export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
   try {
     const { token } = req.params
-
     res.json({
       success: true,
       message: 'Email verified successfully'
@@ -600,7 +656,6 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
 export const resendVerificationEmail = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email } = req.body
-
     res.json({
       success: true,
       message: 'Verification email sent successfully'

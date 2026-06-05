@@ -1,3 +1,5 @@
+import 'dotenv/config'
+
 // Add this at the top of server.ts right after imports
 process.on('uncaughtException', (error) => {
   console.error('❌ Uncaught Exception:', error)
@@ -11,29 +13,26 @@ process.on('unhandledRejection', (reason, promise) => {
 
 console.log('🚀 Starting server initialization...')
 
-
 import express, { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
+import authRoutes from './routes/authRoutes'
 import { v2 as cloudinary } from 'cloudinary'
 import { CloudinaryStorage } from 'multer-storage-cloudinary'
 import adminRoutes from './routes/adminRoutes';
 import nodemailer from 'nodemailer'
 import employerRoutes from './routes/employerRoutes'
-import { 
-  testEmailConfig, 
+import {
+  testEmailConfig,
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendNewApplicationNotification
 } from './services/emailService'
-// ========== AFTER IMPORTS AND dotenv.config() ==========
-dotenv.config()
 
 // Create express app FIRST
 const app = express()
@@ -136,6 +135,7 @@ const uploadImage = multer({
 })
 
 app.use('/api/admin', adminRoutes);
+app.use('/api/auth', authRoutes);
 
 // Configure email transporter (use your email service)
 const emailTransporter = nodemailer.createTransport({

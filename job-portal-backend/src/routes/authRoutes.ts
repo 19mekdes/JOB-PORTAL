@@ -1,3 +1,4 @@
+// src/routes/authRoutes.ts
 import express from 'express'
 import {
   register,
@@ -11,9 +12,9 @@ import {
   resendVerificationEmail,
   refreshToken,
   updateProfile,
-  verifyResetToken  // Add this import
+  verifyResetToken
 } from '../controllers/authController'
-import { protect } from '../middleware/authMiddleware'
+import { authMiddleware, isAdmin, isSuperAdmin, isEmployer, isJobSeeker } from '../middleware/authMiddleware'  // ✅ Use correct names
 import { registerValidation, loginValidation } from '../middleware/validationMiddleware'
 
 const router = express.Router()
@@ -23,15 +24,15 @@ router.post('/register', registerValidation, register)
 router.post('/login', loginValidation, login)
 router.post('/forgot-password', forgotPassword)
 router.post('/reset-password/:token', resetPassword)
-router.post('/verify-reset-token', verifyResetToken)  // ✅ ADD THIS LINE - Important for frontend
+router.post('/verify-reset-token', verifyResetToken)
 router.get('/verify-email/:token', verifyEmail)
 router.post('/resend-verification', resendVerificationEmail)
 router.post('/refresh-token', refreshToken)
 
 // ========== PROTECTED ROUTES (Authentication required) ==========
-router.get('/me', protect, getMe)
-router.post('/logout', protect, logout)
-router.post('/change-password', protect, changePassword)
-router.put('/profile', protect, updateProfile)
+router.get('/me', authMiddleware, getMe)  // ✅ Use authMiddleware
+router.post('/logout', authMiddleware, logout)
+router.post('/change-password', authMiddleware, changePassword)
+router.put('/profile', authMiddleware, updateProfile)
 
 export default router
