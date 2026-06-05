@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Briefcase } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 
 interface AuthLayoutProps {
   children: ReactNode
@@ -11,7 +11,7 @@ interface AuthLayoutProps {
     linkText: string
     to: string
   }
-  showLogo?: boolean
+  showBackButton?: boolean
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl'
 }
 
@@ -20,7 +20,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
   title,
   subtitle,
   alternateLink,
-  showLogo = true,
+  showBackButton = true,
   maxWidth = 'md'
 }) => {
   const maxWidthClasses = {
@@ -32,18 +32,20 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
 
   return (
     <div className="min-h-screen flex flex-col justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className={`${maxWidthClasses[maxWidth]} w-full mx-auto`}>
-        {showLogo && (
-          <div className="text-center mb-8">
-            <Link to="/" className="inline-flex items-center space-x-2">
-              <div className="p-2 rounded-xl bg-blue-600 text-white">
-                <Briefcase className="h-6 w-6" />
-              </div>
-              <span className="text-2xl font-bold text-gray-900">JobPortal</span>
-            </Link>
-          </div>
-        )}
+      {/* Back to Home Button - Top Left */}
+      {showBackButton && (
+        <div className="fixed top-6 left-6 z-10">
+          <Link 
+            to="/" 
+            className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors duration-200 text-sm"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Home</span>
+          </Link>
+        </div>
+      )}
 
+      <div className={`${maxWidthClasses[maxWidth]} w-full mx-auto`}>
         <div className="text-center mb-8">
           <h2 className="text-3xl font-extrabold text-gray-900">{title}</h2>
           {subtitle && <p className="mt-2 text-sm text-gray-600">{subtitle}</p>}

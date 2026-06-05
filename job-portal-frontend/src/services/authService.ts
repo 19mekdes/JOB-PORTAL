@@ -48,6 +48,8 @@ export interface AuthResponse {
   token: string
   refreshToken?: string
   user: {
+    user: any
+    user(arg0: string, user: any): unknown
     id: string
     email: string
     user_type: string

@@ -106,25 +106,25 @@ function App() {
 
           {/* ========== AUTH ROUTES ========== */}
           <Route path="/login" element={
-            <AuthLayout title="Welcome Back" subtitle="Sign in to your account">
+            <AuthLayout title="" subtitle="">
               <Login />
             </AuthLayout>
           } />
 
           <Route path="/register" element={
-            <AuthLayout title="Create Account" subtitle="Join thousands of job seekers and employers">
+            <AuthLayout title=" " subtitle="">
               <Register />
             </AuthLayout>
           } />
 
           <Route path="/forgot-password" element={
-            <AuthLayout title="Reset Password" subtitle="We'll send you a link to reset your password">
+            <AuthLayout title="" subtitle="">
               <ForgotPassword />
             </AuthLayout>
           } />
 
           <Route path="/reset-password/:token" element={
-            <AuthLayout title="Create New Password" subtitle="Enter your new password below">
+            <AuthLayout title="" subtitle="">
               <ResetPassword />
             </AuthLayout>
           } />

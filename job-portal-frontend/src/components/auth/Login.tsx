@@ -88,16 +88,15 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
-        {/* Logo */}
         <div className="text-center mb-6">
           <div className="flex justify-center mb-4">
             <div className="h-12 w-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-md">
               <Briefcase className="h-6 w-6 text-white" />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-3xl font-bold text-gray-900">
             Welcome Back
           </h2>
           <p className="mt-1 text-sm text-gray-500">

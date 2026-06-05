@@ -10,7 +10,8 @@ import {
   verifyEmail,
   resendVerificationEmail,
   refreshToken,
-  updateProfile
+  updateProfile,
+  verifyResetToken  // Add this import
 } from '../controllers/authController'
 import { protect } from '../middleware/authMiddleware'
 import { registerValidation, loginValidation } from '../middleware/validationMiddleware'
@@ -22,6 +23,7 @@ router.post('/register', registerValidation, register)
 router.post('/login', loginValidation, login)
 router.post('/forgot-password', forgotPassword)
 router.post('/reset-password/:token', resetPassword)
+router.post('/verify-reset-token', verifyResetToken)  // ✅ ADD THIS LINE - Important for frontend
 router.get('/verify-email/:token', verifyEmail)
 router.post('/resend-verification', resendVerificationEmail)
 router.post('/refresh-token', refreshToken)

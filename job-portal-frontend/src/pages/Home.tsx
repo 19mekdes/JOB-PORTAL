@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { RootState } from '../redux/store'
 import { 
   Search, Briefcase, Users, TrendingUp, Clock, Building2,
-  Shield, Sparkles, ArrowRight, Star, CheckCircle, Award, MapPin, DollarSign, Play, Pause
+  Shield, Sparkles, ArrowRight, Star, CheckCircle, MapPin, DollarSign, Play, Pause
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -28,7 +29,7 @@ const Home: React.FC = () => {
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [recentJobs, setRecentJobs] = useState<Job[]>([])
-  const [popularSearches, setPopularSearches] = useState<any[]>([])
+  const [, setPopularSearches] = useState<any[]>([])
   const [topCompanies, setTopCompanies] = useState<any[]>([])
   const [stats, setStats] = useState({
     totalJobs: 0,
@@ -83,9 +84,6 @@ const Home: React.FC = () => {
     }
   }
 
-  const handlePopularSearch = (query: string) => {
-    navigate(`/jobs?search=${encodeURIComponent(query)}`)
-  }
 
   const formatSalary = (min: number | null, max: number | null) => {
     if (!min && !max) return 'Competitive'
@@ -109,6 +107,7 @@ const Home: React.FC = () => {
       if (diffHours < 24) return `${diffHours} hours ago`
       if (diffDays < 7) return `${diffDays} days ago`
       return date.toLocaleDateString()
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       return 'Recently'
     }
@@ -129,7 +128,7 @@ const Home: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <div className="relative min-h-[80vh] bg-gradient-to-r from-gray-900 to-gray-800">
+        <div className="relative min-h-[80vh] bg-linear-to-r from-gray-900 to-gray-800">
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
             <div className="text-center">
               <div className="h-8 w-32 sm:w-48 bg-gray-700 rounded-full mx-auto mb-6 animate-pulse"></div>
@@ -194,7 +193,7 @@ const Home: React.FC = () => {
             
             <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6 text-white leading-tight animate-slide-up">
               Find Your
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">
+              <span className="block text-transparent bg-clip-text bg-linear-to-r from-blue-200 to-white">
                 Dream Job Today
               </span>
             </h1>
@@ -220,7 +219,7 @@ const Home: React.FC = () => {
                 
                 <Button 
                   onClick={handleSearch}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 sm:px-8 py-3 sm:py-8 rounded-lg sm:rounded-xl text-sm sm:text-lg font-semibold w-full sm:w-auto transition-all duration-300 hover:scale-105 shadow-lg"
+                  className="bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 sm:px-8 py-3 sm:py-8 rounded-lg sm:rounded-xl text-sm sm:text-lg font-semibold w-full sm:w-auto transition-all duration-300 hover:scale-105 shadow-lg"
                 >
                   <Search className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
                   Find Jobs
@@ -286,7 +285,7 @@ const Home: React.FC = () => {
                   <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                     <div className="flex items-start justify-between mb-3 sm:mb-4">
                       <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-base sm:text-lg">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-base sm:text-lg">
                           {getCompanyInitial(job.company_name)}
                         </div>
                         <div>
@@ -343,7 +342,7 @@ const Home: React.FC = () => {
                   style={{ animationDelay: `${idx * 50}ms` }}
                 >
                   <div className="bg-gray-50 rounded-xl p-3 sm:p-6 text-center hover:shadow-lg transition-all duration-300 hover:transform hover:-translate-y-1 hover:bg-blue-50">
-                    <div className="w-14 h-14 sm:w-20 sm:h-20 mx-auto bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-4 group-hover:from-blue-200 group-hover:to-blue-300 transition-all">
+                    <div className="w-14 h-14 sm:w-20 sm:h-20 mx-auto bg-linear-to-br from-blue-100 to-blue-200 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-4 group-hover:from-blue-200 group-hover:to-blue-300 transition-all">
                       <span className="text-xl sm:text-2xl font-bold text-blue-600">{getCompanyInitial(company.name)}</span>
                     </div>
                     <p className="font-semibold text-gray-900 text-xs sm:text-sm line-clamp-1">{company.name}</p>
@@ -361,7 +360,7 @@ const Home: React.FC = () => {
       )}
 
       {/* CTA Section */}
-      <section className="py-12 sm:py-20 bg-gradient-to-r from-blue-600 to-blue-800">
+      <section className="py-12 sm:py-20 bg-linear-to-r from-blue-600 to-blue-800">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4">Ready to Start Your Journey?</h2>
           <p className="text-base sm:text-xl text-blue-100 mb-6 sm:mb-8">Join {stats.totalUsers.toLocaleString()}+ successful job seekers</p>
