@@ -2143,6 +2143,317 @@ app.get('/api/employer/dashboard', authMiddleware, async (req: Request, res: Res
   }
 })
 
+
+
+
+// ========== ADMIN JOB MODERATION (Approve/Reject Job) ==========
+app.put('/api/admin/jobs/:id/moderate', authMiddleware, isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const { status, reason } = req.body
+    
+    console.log(`🔍 Moderating job ${id} to status: ${status}`)
+    
+    // Check if job exists
+    const job = await prisma.jobPost.findUnique({
+      where: { id },
+      include: {
+        employer: {
+          include: {
+            user: true
+          }
+        }
+      }
+    })
+    
+    if (!job) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Job not found' 
+      })
+    }
+    
+    // Get the status ID
+    let statusId
+    let statusName
+    
+    switch (status) {
+      case 'approved':
+        statusName = 'Open'
+        break
+      case 'rejected':
+        statusName = 'Rejected'
+        break
+      case 'pending':
+        statusName = 'Pending'
+        break
+      default:
+        statusName = status
+    }
+    
+    const statusRecord = await prisma.jobPostStatus.findFirst({
+      where: { status_name: statusName }
+    })
+    
+    if (!statusRecord) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Status '${statusName}' not found` 
+      })
+    }
+    
+    statusId = statusRecord.id
+    
+    // Update job status
+    const updatedJob = await prisma.jobPost.update({
+      where: { id },
+      data: {
+        status_id: statusId,
+        updated_at: new Date()
+      }
+    })
+    
+    // Send email notification to employer
+    if (job.employer?.user?.email) {
+      try {
+        const nodemailer = require('nodemailer')
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+          }
+        })
+        
+        const statusText = status === 'approved' ? 'approved' : 'rejected'
+        const statusColor = status === 'approved' ? '#10b981' : '#ef4444'
+        
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: ${statusColor}; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+              .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+              .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h2>Job ${statusText === 'approved' ? 'Approved' : 'Update'}</h2>
+              </div>
+              <div class="content">
+                <h3>Hello ${job.employer.company_name},</h3>
+                <p>Your job posting <strong>"${job.title}"</strong> has been ${statusText} by an administrator.</p>
+                ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+                <p>You can view your job posting in your employer dashboard.</p>
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/employer/jobs" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px;">View Jobs</a>
+                <p>Best regards,<br><strong>JobPortal Team</strong></p>
+              </div>
+              <div class="footer">
+                <p>© ${new Date().getFullYear()} JobPortal. All rights reserved.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+        
+        await transporter.sendMail({
+          from: `"JobPortal" <${process.env.EMAIL_USER}>`,
+          to: job.employer.user.email,
+          subject: `Job ${statusText === 'approved' ? 'Approved' : 'Status Update'}: ${job.title}`,
+          html: emailHtml
+        })
+        
+        console.log(`✅ Email sent to employer: ${job.employer.user.email}`)
+      } catch (emailError) {
+        console.error('Failed to send email:', emailError)
+      }
+    }
+    
+    // Create notification for employer
+    await prisma.notification.create({
+      data: {
+        user_id: job.employer.user_id,
+        title: `Job ${status === 'approved' ? 'Approved' : 'Rejected'}`,
+        message: `Your job "${job.title}" has been ${status === 'approved' ? 'approved and is now live' : 'rejected'}.${reason ? ` Reason: ${reason}` : ''}`,
+        type: 'job_moderation',
+        created_at: new Date()
+      }
+    })
+    
+    console.log(`✅ Job ${id} moderated to ${status}`)
+    
+    res.json({
+      success: true,
+      message: `Job ${status === 'approved' ? 'approved' : 'rejected'} successfully`,
+      data: updatedJob
+    })
+    
+  } catch (error: any) {
+    console.error('Error moderating job:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    })
+  }
+})
+
+// ========== CONTACT FORM ENDPOINT ==========
+app.post('/api/contact', async (req: Request, res: Response) => {
+  try {
+    const { name, email, subject, message, category } = req.body
+    
+    console.log('📧 Contact form submission:', { name, email, subject, category })
+    
+    // Validate required fields
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please fill in all required fields' 
+      })
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please provide a valid email address' 
+      })
+    }
+    
+    // Configure email transporter
+    const nodemailer = require('nodemailer')
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    })
+    
+    // Send email to admin/support
+    const adminEmailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #2563eb; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background: #f9fafb; }
+          .field { margin-bottom: 15px; }
+          .label { font-weight: bold; color: #374151; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>New Contact Form Submission</h2>
+          </div>
+          <div class="content">
+            <div class="field">
+              <div class="label">Name:</div>
+              <div>${name}</div>
+            </div>
+            <div class="field">
+              <div class="label">Email:</div>
+              <div>${email}</div>
+            </div>
+            <div class="field">
+              <div class="label">Category:</div>
+              <div>${category || 'General'}</div>
+            </div>
+            <div class="field">
+              <div class="label">Subject:</div>
+              <div>${subject}</div>
+            </div>
+            <div class="field">
+              <div class="label">Message:</div>
+              <div>${message.replace(/\n/g, '<br>')}</div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+    
+    // Send auto-reply to user
+    const userEmailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #10b981; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { padding: 20px; background: #f9fafb; border-radius: 0 0 10px 10px; }
+          .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h2>We've Received Your Message!</h2>
+          </div>
+          <div class="content">
+            <p>Dear ${name},</p>
+            <p>Thank you for contacting JobPortal. We have received your message and will get back to you within 24 hours.</p>
+            <p><strong>Your Message Summary:</strong></p>
+            <p><strong>Subject:</strong> ${subject}</p>
+            <p><strong>Category:</strong> ${category || 'General'}</p>
+            <p>We appreciate your patience and will respond as soon as possible.</p>
+            <p>Best regards,<br><strong>JobPortal Support Team</strong></p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} JobPortal. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+    
+    // Send to admin/support email
+    await transporter.sendMail({
+      from: `"JobPortal Contact" <${process.env.EMAIL_USER}>`,
+      to: process.env.SUPPORT_EMAIL || process.env.EMAIL_USER,
+      subject: `New Contact: ${subject} from ${name}`,
+      html: adminEmailHtml
+    })
+    
+    // Send auto-reply to user
+    await transporter.sendMail({
+      from: `"JobPortal Support" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'We received your message - JobPortal',
+      html: userEmailHtml
+    })
+    
+    // Save to database (optional)
+    // await prisma.contactMessage.create({
+    //   data: { name, email, subject, message, category, status: 'pending' }
+    // })
+    
+    console.log(`✅ Contact form processed for ${email}`)
+    
+    res.json({ 
+      success: true, 
+      message: 'Message sent successfully' 
+    })
+    
+  } catch (error: any) {
+    console.error('Contact form error:', error)
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to send message. Please try again later.' 
+    })
+  }
+})
+
 // ========== EMPLOYER JOB ROUTES ==========
 app.get('/api/employer/jobs', authMiddleware, async (req: Request, res: Response) => {
   try {
