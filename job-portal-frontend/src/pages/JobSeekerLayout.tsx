@@ -2,8 +2,9 @@
 // src/pages/JobSeekerLayout.tsx
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link, Outlet, useLocation } from 'react-router-dom'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from '@/redux/store'
+import { logout } from '@/redux/slices/authSlice'
 import {
   LayoutDashboard,
   Briefcase,
@@ -33,7 +34,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
- 
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
@@ -49,14 +49,13 @@ interface Notification {
 const JobSeekerLayout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const dispatch = useDispatch()
   const { user } = useSelector((state: RootState) => state.auth)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
-  
-  // Real-time synchronization state for your Cloudinary profile image link
   const [liveAvatar, setLiveAvatar] = useState<string | null>(null)
 
   const navItems = [
@@ -86,7 +85,7 @@ const JobSeekerLayout: React.FC = () => {
     window.addEventListener('resize', handleResize)
     handleResize()
     return () => window.removeEventListener('resize', handleResize)
-  }, [user, location.pathname]) // Automatically runs when routing shifts to instantly pick up freshly saved images
+  }, [user, location.pathname])
 
   const fetchLiveProfileAvatar = async () => {
     try {
@@ -167,10 +166,38 @@ const JobSeekerLayout: React.FC = () => {
     return 'U'
   }
 
+  // ✅ FIXED: Complete logout function
   const handleLogout = () => {
+    console.log('🔓 Logging out...')
+    
+    // Clear all localStorage items
     localStorage.removeItem('token')
     localStorage.removeItem('user')
-    navigate('/login')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('admin_token')
+    localStorage.removeItem('accessToken')
+    
+    // Clear sessionStorage
+    sessionStorage.clear()
+    
+    // Dispatch Redux logout action to clear state
+    dispatch(logout())
+    
+    // Clear axios default headers (if you have axios instance)
+    delete api.defaults.headers.common['Authorization']
+    
+    // Navigate to login page
+    navigate('/login', { replace: true })
+    
+    // Force reload to clear any cached state
+    setTimeout(() => {
+      window.location.href = '/login'
+    }, 50)
+    
+    toast({
+      title: "Signed Out",
+      description: "You have been successfully logged out.",
+    })
   }
 
   const toggleSidebar = () => {
@@ -287,7 +314,7 @@ const JobSeekerLayout: React.FC = () => {
             })}
           </nav>
 
-          {/* Logout Action Footer link container */}
+          {/* Logout Action Footer link container - FIXED */}
           <div className={`p-4 border-t border-gray-200 ${!sidebarOpen && 'flex justify-center'}`}>
             <button
               type="button"
@@ -360,6 +387,7 @@ const JobSeekerLayout: React.FC = () => {
             })}
           </nav>
 
+          {/* Mobile Logout Button - FIXED */}
           <div className="p-4 border-t border-gray-200">
             <button
               type="button"
@@ -510,4 +538,4 @@ const JobSeekerLayout: React.FC = () => {
   )
 }
 
-export default JobSeekerLayout;
+export default JobSeekerLayout

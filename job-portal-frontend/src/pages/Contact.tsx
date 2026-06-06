@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -7,7 +8,9 @@ import {
   Clock,
   Send,
   CheckCircle,
-  AlertCircle} from 'lucide-react'
+  AlertCircle,
+  Loader2
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -15,6 +18,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { toast } from '@/hooks/use-toast'
+import api from '@/services/api'  // Add this import
 
 const Contact: React.FC = () => {
   const navigate = useNavigate()
@@ -71,21 +75,26 @@ const Contact: React.FC = () => {
 
     setIsSubmitting(true)
     try {
-      setIsSubmitted(true)
-      toast({
-        variant: "success",
-        title: "Message Sent!",
-        description: "We'll get back to you within 24 hours.",
-      })
-      setTimeout(() => {
-        navigate('/')
-      }, 3000)
-    } catch (error) {
+      // Send to backend API
+      const response = await api.post('/contact', formData)
+
+      if (response.data?.success) {
+        setIsSubmitted(true)
+        toast({
+          title: "Message Sent!",
+          description: "We'll get back to you within 24 hours.",
+        })
+        setTimeout(() => {
+          navigate('/')
+        }, 3000)
+      } else {
+        throw new Error(response.data?.message || 'Failed to send message')
+      }
+    } catch (error: any) {
       console.error('Error sending message:', error)
       toast({
-        variant: "destructive",
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: error.response?.data?.message || "Failed to send message. Please try again.",
       })
     } finally {
       setIsSubmitting(false)
@@ -93,9 +102,9 @@ const Contact: React.FC = () => {
   }
 
   const contactInfo = [
-    { icon: Mail, title: 'Email Us', details: ['support@jobportal.com', 'careers@jobportal.com'] },
-    { icon: Phone, title: 'Call Us', details: ['+1 (555) 123-4567', '+1 (555) 987-6543'] },
-    { icon: MapPin, title: 'Visit Us', details: ['123 Business Avenue', 'Suite 100', 'New York, NY 10001'] },
+    { icon: Mail, title: 'Email Us', details: ['mekdesw60@gmail.com', 'walemekdi59@gmail.com'] },
+    { icon: Phone, title: 'Call Us', details: ['+251980536095', '+251777536095'] },
+    { icon: MapPin, title: 'Visit Us', details: ['Addis Abeba, Ethiopia'] },
     { icon: Clock, title: 'Business Hours', details: ['Mon-Fri: 9AM - 6PM EST', 'Sat: 10AM - 4PM EST', 'Sun: Closed'] }
   ]
 
@@ -104,12 +113,16 @@ const Contact: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
         <Card className="max-w-md w-full text-center">
           <CardContent className="pt-8">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
             <h2 className="text-2xl font-bold mb-2">Thank You!</h2>
             <p className="text-gray-600 mb-4">
               Your message has been sent successfully. We'll get back to you within 24 hours.
             </p>
-            <Button onClick={() => navigate('/')}>Return Home</Button>
+            <Button onClick={() => navigate('/')} className="bg-blue-600 hover:bg-blue-700">
+              Return Home
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -135,14 +148,14 @@ const Contact: React.FC = () => {
             {contactInfo.map((info, idx) => {
               const Icon = info.icon
               return (
-                <Card key={idx}>
+                <Card key={idx} className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="pt-6">
                     <div className="flex items-start gap-3">
                       <div className="p-2 bg-blue-100 rounded-lg">
                         <Icon className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-lg">{info.title}</h3>
+                        <h3 className="font-semibold text-lg text-gray-900">{info.title}</h3>
                         {info.details.map((detail, i) => (
                           <p key={i} className="text-gray-600 text-sm">{detail}</p>
                         ))}
@@ -153,10 +166,10 @@ const Contact: React.FC = () => {
               )
             })}
 
-            {/* Social Media - Using simple links without icons */}
-            <Card>
+            {/* Social Media */}
+            <Card className="border border-gray-200 shadow-sm">
               <CardHeader>
-                <CardTitle>Follow Us</CardTitle>
+                <CardTitle className="text-gray-900">Follow Us</CardTitle>
                 <CardDescription>Connect with us on social media</CardDescription>
               </CardHeader>
               <CardContent>
@@ -172,44 +185,46 @@ const Contact: React.FC = () => {
 
           {/* Contact Form */}
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="border border-gray-200 shadow-sm">
               <CardHeader>
-                <CardTitle>Send us a Message</CardTitle>
+                <CardTitle className="text-gray-900 text-2xl">Send us a Message</CardTitle>
                 <CardDescription>Fill out the form below and we'll get back to you shortly</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Full Name *</Label>
+                      <Label htmlFor="name" className="text-gray-700">Full Name *</Label>
                       <Input
                         id="name"
+                        placeholder="John Doe"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className={errors.name ? 'border-red-500' : ''}
+                        className={errors.name ? 'border-red-500' : 'border-gray-300 focus:border-blue-500'}
                       />
                       {errors.name && <p className="text-red-500 text-xs">{errors.name}</p>}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email Address *</Label>
+                      <Label htmlFor="email" className="text-gray-700">Email Address *</Label>
                       <Input
                         id="email"
                         type="email"
+                        placeholder="john@example.com"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className={errors.email ? 'border-red-500' : ''}
+                        className={errors.email ? 'border-red-500' : 'border-gray-300 focus:border-blue-500'}
                       />
                       {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
+                    <Label htmlFor="category" className="text-gray-700">Category</Label>
                     <select
                       id="category"
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="general">General Inquiry</option>
                       <option value="support">Technical Support</option>
@@ -220,40 +235,45 @@ const Contact: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="subject">Subject *</Label>
+                    <Label htmlFor="subject" className="text-gray-700">Subject *</Label>
                     <Input
                       id="subject"
+                      placeholder="What is this regarding?"
                       value={formData.subject}
                       onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                      className={errors.subject ? 'border-red-500' : ''}
+                      className={errors.subject ? 'border-red-500' : 'border-gray-300 focus:border-blue-500'}
                     />
                     {errors.subject && <p className="text-red-500 text-xs">{errors.subject}</p>}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="message">Message *</Label>
+                    <Label htmlFor="message" className="text-gray-700">Message *</Label>
                     <Textarea
                       id="message"
+                      placeholder="Please provide as much detail as possible..."
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      placeholder="Please provide as much detail as possible..."
                       rows={6}
-                      className={errors.message ? 'border-red-500' : ''}
+                      className={errors.message ? 'border-red-500' : 'border-gray-300 focus:border-blue-500'}
                     />
                     {errors.message && <p className="text-red-500 text-xs">{errors.message}</p>}
                   </div>
 
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
+                  <Alert className="bg-blue-50 border-blue-200">
+                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800">
                       We typically respond within 24 hours during business days.
                     </AlertDescription>
                   </Alert>
 
-                  <Button type="submit" disabled={isSubmitting} className="w-full">
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  >
                     {isSubmitting ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         Sending...
                       </>
                     ) : (

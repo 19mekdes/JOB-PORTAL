@@ -1,50 +1,59 @@
-import React, { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate, Link } from 'react-router-dom'
-import { register } from '../../redux/slices/authSlice'
-import { AppDispatch, RootState } from '../../redux/store'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, Briefcase, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react'
+import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, Link } from "react-router-dom";
+import { register } from "../../redux/slices/authSlice";
+import { AppDispatch, RootState } from "../../redux/store";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Loader2,
+  Briefcase,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 
 interface FormData {
-  email: string
-  password: string
-  confirmPassword: string
-  full_name: string
-  user_type: 'Job Seeker' | 'Employer'
-  phone: string
-  location: string
+  email: string;
+  password: string;
+  confirmPassword: string;
+  full_name: string;
+  user_type: "Job Seeker" | "Employer";
+  phone: string;
+  location: string;
 }
 
 interface PasswordStrength {
-  hasMinLength: boolean
-  hasNumber: boolean
-  hasUpperCase: boolean
-  hasLowerCase: boolean
-  hasSpecialChar: boolean
+  hasMinLength: boolean;
+  hasNumber: boolean;
+  hasUpperCase: boolean;
+  hasLowerCase: boolean;
+  hasSpecialChar: boolean;
 }
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    full_name: '',
-    user_type: 'Job Seeker',
-    phone: '',
-    location: ''
-  })
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [passwordFocused, setPasswordFocused] = useState(false)
-  const [touched, setTouched] = useState<Record<string, boolean>>({})
+    email: "",
+    password: "",
+    confirmPassword: "",
+    full_name: "",
+    user_type: "Job Seeker",
+    phone: "",
+    location: "",
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const dispatch = useDispatch<AppDispatch>()
-  const navigate = useNavigate()
-  const { isLoading, isError, message } = useSelector((state: RootState) => state.auth)
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const { isLoading, isError, message } = useSelector(
+    (state: RootState) => state.auth
+  );
 
   // Password strength checker
   const checkPasswordStrength = (password: string): PasswordStrength => {
@@ -53,63 +62,65 @@ const Register: React.FC = () => {
       hasNumber: /\d/.test(password),
       hasUpperCase: /[A-Z]/.test(password),
       hasLowerCase: /[a-z]/.test(password),
-      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-    }
-  }
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    };
+  };
 
-  const passwordStrength = checkPasswordStrength(formData.password)
-  const isPasswordStrong = Object.values(passwordStrength).every(Boolean)
-  const doPasswordsMatch = formData.password === formData.confirmPassword
-  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
-  const isFormValid = 
+  const passwordStrength = checkPasswordStrength(formData.password);
+  const isPasswordStrong = Object.values(passwordStrength).every(Boolean);
+  const doPasswordsMatch = formData.password === formData.confirmPassword;
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+  const isFormValid =
     isEmailValid &&
     isPasswordStrong &&
     doPasswordsMatch &&
     formData.full_name.trim().length >= 2 &&
-    (formData.user_type === 'Job Seeker' || formData.user_type === 'Employer')
+    (formData.user_type === "Job Seeker" || formData.user_type === "Employer");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleBlur = (fieldName: string) => {
     setTouched({
       ...touched,
-      [fieldName]: true
-    })
-  }
+      [fieldName]: true,
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!isFormValid) return
-    
+    e.preventDefault();
+
+    if (!isFormValid) return;
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { confirmPassword, ...registerData } = formData
-    const result = await dispatch(register(registerData))
-    
-    if (result.type === 'auth/register/fulfilled') {
-      navigate('/dashboard')
+    const { confirmPassword, ...registerData } = formData;
+    const result = await dispatch(register(registerData));
+
+    if (result.type === "auth/register/fulfilled") {
+      navigate("/dashboard");
     }
-  }
+  };
 
   // Password strength indicator color
   const getPasswordStrengthColor = () => {
-    const strength = Object.values(passwordStrength).filter(Boolean).length
-    if (strength <= 2) return 'bg-red-500'
-    if (strength <= 4) return 'bg-yellow-500'
-    return 'bg-green-500'
-  }
+    const strength = Object.values(passwordStrength).filter(Boolean).length;
+    if (strength <= 2) return "bg-red-500";
+    if (strength <= 4) return "bg-yellow-500";
+    return "bg-green-500";
+  };
 
   const getPasswordStrengthText = () => {
-    const strength = Object.values(passwordStrength).filter(Boolean).length
-    if (strength <= 2) return 'Weak'
-    if (strength <= 4) return 'Medium'
-    return 'Strong'
-  }
+    const strength = Object.values(passwordStrength).filter(Boolean).length;
+    if (strength <= 2) return "Weak";
+    if (strength <= 4) return "Medium";
+    return "Strong";
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -131,7 +142,7 @@ const Register: React.FC = () => {
         {isError && (
           <Alert variant="destructive">
             <AlertDescription>
-              {message || 'Registration failed. Please try again.'}
+              {message || "Registration failed. Please try again."}
             </AlertDescription>
           </Alert>
         )}
@@ -139,7 +150,6 @@ const Register: React.FC = () => {
         {/* Form */}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="bg-white shadow-md rounded-lg p-6 space-y-5">
-            
             {/* Full Name */}
             <div>
               <Label htmlFor="full_name">
@@ -152,13 +162,15 @@ const Register: React.FC = () => {
                 required
                 value={formData.full_name}
                 onChange={handleChange}
-                onBlur={() => handleBlur('full_name')}
+                onBlur={() => handleBlur("full_name")}
                 placeholder="John Doe"
                 className="mt-1"
                 disabled={isLoading}
               />
               {touched.full_name && !formData.full_name.trim() && (
-                <p className="text-red-500 text-xs mt-1">Full name is required</p>
+                <p className="text-red-500 text-xs mt-1">
+                  Full name is required
+                </p>
               )}
             </div>
 
@@ -174,13 +186,15 @@ const Register: React.FC = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                onBlur={() => handleBlur('email')}
+                onBlur={() => handleBlur("email")}
                 placeholder="you@example.com"
                 className="mt-1"
                 disabled={isLoading}
               />
               {touched.email && !isEmailValid && (
-                <p className="text-red-500 text-xs mt-1">Please enter a valid email address</p>
+                <p className="text-red-500 text-xs mt-1">
+                  Please enter a valid email address
+                </p>
               )}
             </div>
 
@@ -212,14 +226,14 @@ const Register: React.FC = () => {
                 <Input
                   id="password"
                   name="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   required
                   value={formData.password}
                   onChange={handleChange}
                   onFocus={() => setPasswordFocused(true)}
                   onBlur={() => {
-                    setPasswordFocused(false)
-                    handleBlur('password')
+                    setPasswordFocused(false);
+                    handleBlur("password");
                   }}
                   placeholder="Create a strong password"
                   disabled={isLoading}
@@ -243,16 +257,23 @@ const Register: React.FC = () => {
                 <div className="mt-2 space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={`h-full ${getPasswordStrengthColor()} transition-all duration-300`}
-                        style={{ width: `${(Object.values(passwordStrength).filter(Boolean).length / 5) * 100}%` }}
+                        style={{
+                          width: `${
+                            (Object.values(passwordStrength).filter(Boolean)
+                              .length /
+                              5) *
+                            100
+                          }%`,
+                        }}
                       />
                     </div>
                     <span className="ml-2 text-xs font-medium">
                       {getPasswordStrengthText()}
                     </span>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="flex items-center space-x-1">
                       {passwordStrength.hasMinLength ? (
@@ -308,11 +329,11 @@ const Register: React.FC = () => {
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
+                  type={showConfirmPassword ? "text" : "password"}
                   required
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  onBlur={() => handleBlur('confirmPassword')}
+                  onBlur={() => handleBlur("confirmPassword")}
                   placeholder="Confirm your password"
                   disabled={isLoading}
                   className="pr-10"
@@ -329,47 +350,20 @@ const Register: React.FC = () => {
                   )}
                 </button>
               </div>
-              {touched.confirmPassword && formData.confirmPassword && !doPasswordsMatch && (
-                <p className="text-red-500 text-xs mt-1">Passwords do not match</p>
-              )}
-            </div>
-
-            {/* Optional Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="phone">Phone Number (Optional)</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="+1 234 567 8900"
-                  className="mt-1"
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="location">Location (Optional)</Label>
-                <Input
-                  id="location"
-                  name="location"
-                  type="text"
-                  value={formData.location}
-                  onChange={handleChange}
-                  placeholder="City, Country"
-                  className="mt-1"
-                  disabled={isLoading}
-                />
-              </div>
+              {touched.confirmPassword &&
+                formData.confirmPassword &&
+                !doPasswordsMatch && (
+                  <p className="text-red-500 text-xs mt-1">
+                    Passwords do not match
+                  </p>
+                )}
             </div>
           </div>
 
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             disabled={isLoading || !isFormValid}
           >
             {isLoading ? (
@@ -378,17 +372,17 @@ const Register: React.FC = () => {
                 Creating account...
               </>
             ) : (
-              'Create Account'
+              "Create Account"
             )}
           </Button>
 
           {/* Terms and Conditions */}
           <p className="text-xs text-gray-500 text-center">
-            By signing up, you agree to our{' '}
+            By signing up, you agree to our{" "}
             <Link to="/terms" className="text-blue-600 hover:text-blue-500">
               Terms of Service
-            </Link>
-            {' '}and{' '}
+            </Link>{" "}
+            and{" "}
             <Link to="/privacy" className="text-blue-600 hover:text-blue-500">
               Privacy Policy
             </Link>
@@ -397,14 +391,17 @@ const Register: React.FC = () => {
 
         {/* Sign in link */}
         <p className="text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
             Sign in
           </Link>
         </p>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Register
+export default Register;
