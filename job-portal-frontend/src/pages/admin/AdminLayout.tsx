@@ -3,8 +3,9 @@
 
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link, Outlet, useLocation } from 'react-router-dom'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from '@/redux/store'
+import { logout } from '@/redux/slices/authSlice'
 import {
   LayoutDashboard,
   Users,
@@ -63,6 +64,7 @@ interface AdminProfile {
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const dispatch = useDispatch()
   const { user } = useSelector((state: RootState) => state.auth)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
@@ -192,10 +194,31 @@ const AdminLayout: React.FC = () => {
     return 'Admin'
   }
 
+  // FIXED: Complete logout function that works immediately
   const handleLogout = () => {
+    // Clear all localStorage items
     localStorage.removeItem('token')
     localStorage.removeItem('user')
-    navigate('/login')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('admin_token')
+    localStorage.removeItem('accessToken')
+    
+    // Clear sessionStorage
+    sessionStorage.clear()
+    
+    // Dispatch Redux logout action to clear state
+    dispatch(logout())
+    
+    // Clear axios default headers
+    delete api.defaults.headers.common['Authorization']
+    
+    // Navigate to login page
+    navigate('/login', { replace: true })
+    
+    // Force reload to clear any cached state
+    setTimeout(() => {
+      window.location.href = '/login'
+    }, 50)
   }
 
   const toggleSidebar = () => {

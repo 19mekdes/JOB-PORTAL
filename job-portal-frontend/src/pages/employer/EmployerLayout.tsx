@@ -1,8 +1,9 @@
 /* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link, Outlet, useLocation } from 'react-router-dom'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from '@/redux/store'
+import { logout } from '@/redux/slices/authSlice'
 import {
   LayoutDashboard,
   Briefcase,
@@ -50,8 +51,9 @@ interface Notification {
 const EmployerLayout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const dispatch = useDispatch()
   const { user } = useSelector((state: RootState) => state.auth)
-  const { darkMode } = useTheme() // Add theme hook
+  const { darkMode } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -165,10 +167,31 @@ const EmployerLayout: React.FC = () => {
     return 'E'
   }
 
+  // FIXED: Complete logout function that works immediately
   const handleLogout = () => {
+    // Clear all localStorage items
     localStorage.removeItem('token')
     localStorage.removeItem('user')
-    navigate('/login')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('admin_token')
+    localStorage.removeItem('accessToken')
+    
+    // Clear sessionStorage
+    sessionStorage.clear()
+    
+    // Dispatch Redux logout action to clear state
+    dispatch(logout())
+    
+    // Clear axios default headers
+    delete api.defaults.headers.common['Authorization']
+    
+    // Navigate to login page
+    navigate('/login', { replace: true })
+    
+    // Force reload to clear any cached state
+    setTimeout(() => {
+      window.location.href = '/login'
+    }, 50)
   }
 
   const toggleSidebar = () => {
@@ -285,7 +308,7 @@ const EmployerLayout: React.FC = () => {
             })}
           </nav>
 
-          {/* Footer Action items container */}
+          {/* Footer Action items container - Logout Button */}
           <div className={`p-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${!sidebarOpen && 'flex justify-center'}`}>
             <button
               type="button"
@@ -359,6 +382,7 @@ const EmployerLayout: React.FC = () => {
             })}
           </nav>
 
+          {/* Mobile Logout Button */}
           <div className={`p-4 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <button
               type="button"

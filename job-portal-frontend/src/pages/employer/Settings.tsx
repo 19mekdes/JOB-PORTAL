@@ -12,7 +12,6 @@ import {
   Save,
   Loader2,
   Key,
-  BellRing,
   Palette
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -22,16 +21,6 @@ import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/context/ThemeContext'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 
 type ActiveTab = 'security' | 'notifications' | 'appearance'
 
@@ -213,7 +202,7 @@ const EmployerSettings = () => {
           </div>
 
           {/* Main Content */}
-          <div className={`rounded-2xl border p-6 lg:col-span-3 ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}}>
+          <div className={`rounded-2xl border p-6 lg:col-span-3 ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
             
             {/* SECURITY SECTION */}
             {activeTab === 'security' && (
@@ -388,8 +377,11 @@ const EmployerSettings = () => {
                 </div>
               </div>
             )}
-          
-    
- 
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default EmployerSettings

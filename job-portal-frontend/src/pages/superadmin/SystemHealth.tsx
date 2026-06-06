@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/pages/superadmin/SystemHealth.tsx
 import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -6,11 +7,10 @@ import { Badge } from '@/components/ui/badge'
 import { 
   Activity, Database, Server, HardDrive, AlertTriangle, 
   CheckCircle, XCircle, Clock, RefreshCw, Cpu, MemoryStick,
-  Globe, Mail, Cloud, TrendingUp, Users, Briefcase, FileText
+  Globe, Mail, Cloud, Users, Briefcase, FileText
 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
-import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
 interface SystemHealthData {
@@ -91,6 +91,7 @@ const SystemHealth: React.FC = () => {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchHealthData()
     
     let interval: NodeJS.Timeout
