@@ -42,9 +42,9 @@ const About: React.FC = () => {
   ]
 
   const stats = [
-    { label: 'Active Jobs', value: '10,000+', icon: Briefcase },
-    { label: 'Companies', value: '5,000+', icon: Building },
-    { label: 'Job Seekers', value: '50,000+', icon: Users },
+    { label: 'Active Jobs', value: '10+', icon: Briefcase },
+    { label: 'Companies', value: '5+', icon: Building },
+    { label: 'Job Seekers', value: '50+', icon: Users },
     { label: 'Success Rate', value: '95%', icon: TrendingUp },
     { label: 'Countries', value: '50+', icon: Globe },
     { label: 'Years of Trust', value: '10+', icon: Award }
@@ -52,28 +52,28 @@ const About: React.FC = () => {
 
   const team = [
     {
-      name: 'John Smith',
+      name: 'Mekdes Wale',
       role: 'CEO & Founder',
       bio: 'Former tech executive with 15+ years of experience in recruitment technology.',
-      avatar: 'JS'
+      avatar: 'MW'
     },
     {
-      name: 'Sarah Johnson',
+      name: 'Ayenalem',
       role: 'Head of Operations',
       bio: 'Passionate about creating seamless user experiences and driving growth.',
-      avatar: 'SJ'
+      avatar: 'AY'
     },
     {
-      name: 'Michael Chen',
+      name: 'Natnael',
       role: 'CTO',
       bio: 'Technology leader building scalable platforms for millions of users.',
-      avatar: 'MC'
+      avatar: 'NA'
     },
     {
-      name: 'Emily Rodriguez',
+      name: 'Surafel',
       role: 'Head of Marketing',
       bio: 'Expert in digital marketing and employer branding strategies.',
-      avatar: 'ER'
+      avatar: 'SU'
     }
   ]
 

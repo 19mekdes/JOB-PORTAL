@@ -197,7 +197,7 @@ const Contact: React.FC = () => {
                       <Label htmlFor="name" className="text-gray-700">Full Name *</Label>
                       <Input
                         id="name"
-                        placeholder="John Doe"
+                        placeholder="Full Name"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         className={errors.name ? 'border-red-500' : 'border-gray-300 focus:border-blue-500'}
@@ -209,7 +209,7 @@ const Contact: React.FC = () => {
                       <Input
                         id="email"
                         type="email"
-                        placeholder="john@example.com"
+                        placeholder="Email Address"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         className={errors.email ? 'border-red-500' : 'border-gray-300 focus:border-blue-500'}

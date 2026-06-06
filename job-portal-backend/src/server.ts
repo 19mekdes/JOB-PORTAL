@@ -2464,6 +2464,403 @@ app.post('/api/contact', async (req: Request, res: Response) => {
   }
 })
 
+
+// ========== EMPLOYER SETTINGS ENDPOINTS ==========
+
+// 1. GET Employer Profile
+app.get('/api/employer/profile', authMiddleware, isEmployer, async (req: Request, res: Response) => {
+  try {
+    console.log('📋 Fetching employer profile for user:', req.user!.id)
+    
+    const employer = await prisma.employerProfile.findFirst({
+      where: { user_id: req.user!.id },
+      include: { 
+        industry: true,
+        user: {
+          select: { email: true, is_active: true }
+        }
+      }
+    })
+    
+    if (!employer) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Employer profile not found' 
+      })
+    }
+    
+    // Get jobs count
+    const jobsCount = await prisma.jobPost.count({
+      where: { employer_id: employer.id }
+    })
+    
+    res.json({
+      success: true,
+      data: {
+        id: employer.id,
+        user_id: employer.user_id,
+        company_name: employer.company_name,
+        company_description: employer.company_description,
+        website: employer.website,
+        location: employer.location,
+        phone: employer.phone,
+        company_size: employer.company_size,
+        industry: employer.industry?.industry_name,
+        industry_id: employer.industry_id,
+        logo_url: employer.logo_url,
+        cover_image: employer.cover_image,
+        is_verified: employer.is_verified,
+        jobs_count: jobsCount,
+        email: employer.user?.email,
+        is_active: employer.user?.is_active
+      }
+    })
+    
+  } catch (error: any) {
+    console.error('Error fetching employer profile:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// 2. UPDATE Employer Profile
+app.put('/api/employer/profile', authMiddleware, isEmployer, async (req: Request, res: Response) => {
+  try {
+    const {
+      company_name,
+      company_description,
+      website,
+      location,
+      phone,
+      company_size,
+      industry
+    } = req.body
+    
+    console.log('✏️ Updating employer profile for user:', req.user!.id)
+    
+    // Get industry ID if industry name is provided
+    let industryId = undefined
+    if (industry) {
+      const industryRecord = await prisma.jobIndustry.findFirst({
+        where: { industry_name: industry }
+      })
+      if (industryRecord) {
+        industryId = industryRecord.id
+      }
+    }
+    
+    const updatedEmployer = await prisma.employerProfile.update({
+      where: { user_id: req.user!.id },
+      data: {
+        company_name,
+        company_description,
+        website,
+        location,
+        phone,
+        company_size,
+        industry_id: industryId,
+        updated_at: new Date()
+      }
+    })
+    
+    console.log('✅ Employer profile updated successfully')
+    
+    res.json({
+      success: true,
+      data: updatedEmployer,
+      message: 'Company profile updated successfully'
+    })
+    
+  } catch (error: any) {
+    console.error('Error updating employer profile:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// 3. UPLOAD Company Logo
+app.post('/api/employer/logo', authMiddleware, isEmployer, uploadImage.single('logo'), async (req: Request, res: Response) => {
+  try {
+    console.log('📤 Uploading company logo for user:', req.user!.id)
+    
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No file uploaded' 
+      })
+    }
+    
+    const employer = await prisma.employerProfile.findFirst({
+      where: { user_id: req.user!.id }
+    })
+    
+    if (!employer) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Employer profile not found' 
+      })
+    }
+    
+    // Delete old logo from Cloudinary if exists
+    if (employer.logo_url) {
+      const oldPublicId = getPublicIdFromUrl(employer.logo_url)
+      if (oldPublicId) {
+        await cloudinary.uploader.destroy(oldPublicId)
+      }
+    }
+    
+    const updatedEmployer = await prisma.employerProfile.update({
+      where: { id: employer.id },
+      data: { 
+        logo_url: req.file.path, // Cloudinary URL
+        updated_at: new Date()
+      }
+    })
+    
+    console.log('✅ Company logo uploaded successfully')
+    
+    res.json({
+      success: true,
+      data: { logo_url: updatedEmployer.logo_url },
+      message: 'Company logo updated successfully'
+    })
+    
+  } catch (error: any) {
+    console.error('Error uploading logo:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// 4. DELETE Company Logo
+app.delete('/api/employer/logo', authMiddleware, isEmployer, async (req: Request, res: Response) => {
+  try {
+    console.log('🗑️ Deleting company logo for user:', req.user!.id)
+    
+    const employer = await prisma.employerProfile.findFirst({
+      where: { user_id: req.user!.id }
+    })
+    
+    if (!employer) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Employer profile not found' 
+      })
+    }
+    
+    // Delete from Cloudinary
+    if (employer.logo_url) {
+      const publicId = getPublicIdFromUrl(employer.logo_url)
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId)
+      }
+    }
+    
+    await prisma.employerProfile.update({
+      where: { id: employer.id },
+      data: { 
+        logo_url: null,
+        updated_at: new Date()
+      }
+    })
+    
+    console.log('✅ Company logo deleted successfully')
+    
+    res.json({
+      success: true,
+      message: 'Company logo removed successfully'
+    })
+    
+  } catch (error: any) {
+    console.error('Error deleting logo:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// 5. GET All Industries
+app.get('/api/industries', async (req: Request, res: Response) => {
+  try {
+    const industries = await prisma.jobIndustry.findMany({
+      orderBy: { industry_name: 'asc' }
+    })
+    
+    res.json({
+      success: true,
+      data: industries
+    })
+    
+  } catch (error: any) {
+    console.error('Error fetching industries:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// 6. GET Notification Preferences
+app.get('/api/notifications/preferences', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    console.log('🔔 Fetching notification preferences for user:', req.user!.id)
+    
+    let preferences = await prisma.notificationPreference.findUnique({
+      where: { user_id: req.user!.id }
+    })
+    
+    if (!preferences) {
+      // Create default preferences if not exists
+      preferences = await prisma.notificationPreference.create({
+        data: {
+          user_id: req.user!.id,
+          email_notifications: true,
+          application_updates: true,
+          new_job_alerts: true,
+          marketing_emails: false,
+          push_notifications: true,
+          status_changes: true,
+          weekly_digest: false
+        }
+      })
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        email_notifications: preferences.email_notifications,
+        application_alerts: preferences.application_updates,
+        job_alerts: preferences.new_job_alerts,
+        marketing_emails: preferences.marketing_emails,
+        push_notifications: preferences.push_notifications,
+        status_changes: preferences.status_changes,
+        weekly_digest: preferences.weekly_digest
+      }
+    })
+    
+  } catch (error: any) {
+    console.error('Error fetching notification preferences:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// 7. UPDATE Notification Preferences
+app.put('/api/notifications/preferences', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const {
+      email_notifications,
+      application_alerts,
+      job_alerts,
+      marketing_emails,
+      push_notifications,
+      status_changes,
+      weekly_digest
+    } = req.body
+    
+    console.log('🔔 Updating notification preferences for user:', req.user!.id)
+    
+    const preferences = await prisma.notificationPreference.upsert({
+      where: { user_id: req.user!.id },
+      update: {
+        email_notifications: email_notifications !== undefined ? email_notifications : undefined,
+        application_updates: application_alerts !== undefined ? application_alerts : undefined,
+        new_job_alerts: job_alerts !== undefined ? job_alerts : undefined,
+        marketing_emails: marketing_emails !== undefined ? marketing_emails : undefined,
+        push_notifications: push_notifications !== undefined ? push_notifications : undefined,
+        status_changes: status_changes !== undefined ? status_changes : undefined,
+        weekly_digest: weekly_digest !== undefined ? weekly_digest : undefined,
+        updated_at: new Date()
+      },
+      create: {
+        user_id: req.user!.id,
+        email_notifications: email_notifications ?? true,
+        application_updates: application_alerts ?? true,
+        new_job_alerts: job_alerts ?? true,
+        marketing_emails: marketing_emails ?? false,
+        push_notifications: push_notifications ?? true,
+        status_changes: status_changes ?? true,
+        weekly_digest: weekly_digest ?? false
+      }
+    })
+    
+    console.log('✅ Notification preferences updated')
+    
+    res.json({
+      success: true,
+      message: 'Notification preferences updated successfully',
+      data: preferences
+    })
+    
+  } catch (error: any) {
+    console.error('Error updating notification preferences:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// 8. CHANGE Password (Works for all user types)
+app.post('/api/auth/change-password', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { current_password, new_password } = req.body
+    
+    console.log('🔐 Changing password for user:', req.user!.id)
+    
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id }
+    })
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      })
+    }
+    
+    // Verify current password
+    const isValid = await bcrypt.compare(current_password, user.password)
+    if (!isValid) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Current password is incorrect' 
+      })
+    }
+    
+    // Check new password length
+    if (new_password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'New password must be at least 6 characters' 
+      })
+    }
+    
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(new_password, 10)
+    
+    // Update password
+    await prisma.user.update({
+      where: { id: req.user!.id },
+      data: { 
+        password: hashedPassword,
+        updated_at: new Date()
+      }
+    })
+    
+    console.log('✅ Password changed successfully')
+    
+    // Create notification
+    await prisma.notification.create({
+      data: {
+        user_id: req.user!.id,
+        title: 'Password Changed',
+        message: 'Your password was successfully changed.',
+        type: 'security',
+        created_at: new Date()
+      }
+    })
+    
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    })
+    
+  } catch (error: any) {
+    console.error('Error changing password:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+
 // ========== EMPLOYER JOB ROUTES ==========
 app.get('/api/employer/jobs', authMiddleware, async (req: Request, res: Response) => {
   try {
