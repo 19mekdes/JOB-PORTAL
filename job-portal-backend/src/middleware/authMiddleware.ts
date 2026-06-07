@@ -4,14 +4,13 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Extend Express Request type
 declare global {
   namespace Express {
     interface Request {
       user?: {
         id: string;
         email: string;
-        full_name?: string;  // Make full_name optional
+        full_name?: string;  
       };
       fullUser?: any;
     }
