@@ -167,7 +167,7 @@ const EmployerLayout: React.FC = () => {
     return 'E'
   }
 
-  // FIXED: Complete logout function that works immediately
+  
   const handleLogout = () => {
     // Clear all localStorage items
     localStorage.removeItem('token')
