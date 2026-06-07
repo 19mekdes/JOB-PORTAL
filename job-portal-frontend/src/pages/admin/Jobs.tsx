@@ -14,7 +14,8 @@ import {
   Building2,
   Clock,
   AlertCircle,
-  Mail
+  Mail,
+  Filter
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -103,6 +104,7 @@ const AdminJobs: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [employmentTypeFilter, setEmploymentTypeFilter] = useState('all')
   const [activeTab, setActiveTab] = useState('all')
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
@@ -111,6 +113,7 @@ const AdminJobs: React.FC = () => {
   const [rejectReason, setRejectReason] = useState('')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [employmentTypes, setEmploymentTypes] = useState<{ id: number; type_name: string }[]>([])
   const [stats, setStats] = useState<JobStats>({
     total: 0,
     pending: 0,
@@ -120,6 +123,30 @@ const AdminJobs: React.FC = () => {
     draft: 0,
     archived: 0
   })
+
+  // Fetch employment types for filter
+  useEffect(() => {
+    const fetchEmploymentTypes = async () => {
+      try {
+        const response = await api.get('/employment-types')
+        if (response.data.success) {
+          setEmploymentTypes(response.data.data)
+        }
+      } catch (error) {
+        console.error('Error fetching employment types:', error)
+        // Fallback employment types
+        setEmploymentTypes([
+          { id: 1, type_name: 'Full-time' },
+          { id: 2, type_name: 'Part-time' },
+          { id: 3, type_name: 'Contract' },
+          { id: 4, type_name: 'Remote' },
+          { id: 5, type_name: 'Hybrid' },
+          { id: 6, type_name: 'Internship' }
+        ])
+      }
+    }
+    fetchEmploymentTypes()
+  }, [])
 
   // Synchronize Tab and Selection Filters cleanly
   const handleTabChange = (val: string) => {
@@ -136,10 +163,11 @@ const AdminJobs: React.FC = () => {
     try {
       setLoading(true)
       
-      // Build params - don't send status filter if 'all'
+      // Build params
       const params: any = { limit: 50 }
       if (searchTerm) params.search = searchTerm
       if (statusFilter !== 'all') params.status = statusFilter
+      if (employmentTypeFilter !== 'all') params.employment_type = employmentTypeFilter
       
       console.log('Fetching jobs with params:', params)
       
@@ -200,7 +228,7 @@ const AdminJobs: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }, [searchTerm, statusFilter])
+  }, [searchTerm, statusFilter, employmentTypeFilter])
 
   useEffect(() => {
     fetchJobs()
@@ -302,6 +330,25 @@ const AdminJobs: React.FC = () => {
     }
   }
 
+  const getEmploymentTypeBadge = (typeName: string) => {
+    switch (typeName?.toLowerCase()) {
+      case 'full-time':
+        return <Badge className="bg-blue-100 text-blue-800">Full-time</Badge>
+      case 'part-time':
+        return <Badge className="bg-purple-100 text-purple-800">Part-time</Badge>
+      case 'contract':
+        return <Badge className="bg-orange-100 text-orange-800">Contract</Badge>
+      case 'remote':
+        return <Badge className="bg-green-100 text-green-800">Remote</Badge>
+      case 'hybrid':
+        return <Badge className="bg-teal-100 text-teal-800">Hybrid</Badge>
+      case 'internship':
+        return <Badge className="bg-pink-100 text-pink-800">Internship</Badge>
+      default:
+        return <Badge variant="outline">{typeName || 'Full-time'}</Badge>
+    }
+  }
+
   const formatDate = (date: string) => {
     if (!date) return 'N/A'
     return new Date(date).toLocaleDateString('en-US', {
@@ -318,7 +365,7 @@ const AdminJobs: React.FC = () => {
     return job.salary_range || 'Competitive'
   }
 
-  // Filter jobs based on active tab
+  // Filter jobs based on active tab and employment type
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = searchTerm === '' || 
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -330,7 +377,10 @@ const AdminJobs: React.FC = () => {
       (activeTab === 'rejected' && job.status?.status_name === 'Rejected') ||
       (activeTab === 'closed' && job.status?.status_name === 'Closed')
     
-    return matchesSearch && matchesTab
+    const matchesEmploymentType = employmentTypeFilter === 'all' || 
+      job.employment_type?.type_name?.toLowerCase() === employmentTypeFilter.toLowerCase()
+    
+    return matchesSearch && matchesTab && matchesEmploymentType
   })
 
   if (loading && jobs.length === 0) {
@@ -401,9 +451,10 @@ const AdminJobs: React.FC = () => {
         </Card>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white">
-        <div className="flex gap-2 border-b border-gray-200 pb-2">
+      {/* Tabs and Filters */}
+      <div className="bg-white space-y-4">
+        {/* Status Tabs */}
+        <div className="flex gap-2 border-b border-gray-200 pb-2 flex-wrap">
           <button
             onClick={() => handleTabChange('all')}
             className={`px-4 py-2 rounded-lg transition ${activeTab === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
@@ -434,6 +485,49 @@ const AdminJobs: React.FC = () => {
           >
             Closed ({stats.closed})
           </button>
+        </div>
+
+        {/* Employment Type Filter */}
+        <div className="flex items-center gap-3 flex-wrap bg-white">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <span className="text-sm text-gray-600 font-medium">Employment Type:</span>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => setEmploymentTypeFilter('all')}
+              className={`px-3 py-1.5 text-sm rounded-lg transition ${
+                employmentTypeFilter === 'all' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              All
+            </button>
+            {employmentTypes.map((type) => (
+              <button
+                key={type.id}
+                onClick={() => setEmploymentTypeFilter(type.type_name)}
+                className={`px-3 py-1.5 text-sm rounded-lg transition ${
+                  employmentTypeFilter === type.type_name 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {type.type_name}
+              </button>
+            ))}
+          </div>
+          {employmentTypeFilter !== 'all' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEmploymentTypeFilter('all')}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              Clear filter
+            </Button>
+          )}
         </div>
       </div>
 
@@ -488,6 +582,15 @@ const AdminJobs: React.FC = () => {
             <div className="text-center py-12 bg-white">
               <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-500">No jobs found</p>
+              {employmentTypeFilter !== 'all' && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setEmploymentTypeFilter('all')}
+                  className="mt-4"
+                >
+                  Clear employment type filter
+                </Button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto bg-white">
@@ -496,6 +599,7 @@ const AdminJobs: React.FC = () => {
                   <TableRow className="border-b border-gray-200 bg-gray-50">
                     <TableHead className="text-gray-700 bg-gray-50">Job Title</TableHead>
                     <TableHead className="text-gray-700 bg-gray-50">Company</TableHead>
+                    <TableHead className="text-gray-700 bg-gray-50">Type</TableHead>
                     <TableHead className="text-gray-700 bg-gray-50">Location</TableHead>
                     <TableHead className="text-gray-700 bg-gray-50">Posted</TableHead>
                     <TableHead className="text-gray-700 bg-gray-50">Apps</TableHead>
@@ -509,7 +613,7 @@ const AdminJobs: React.FC = () => {
                       <TableCell className="bg-white">
                         <div className="bg-white">
                           <p className="font-medium text-gray-900">{job.title}</p>
-                          <p className="text-xs text-gray-500">{job.employment_type?.type_name || 'Full-time'}</p>
+                          <p className="text-xs text-gray-500">{getEmploymentTypeBadge(job.employment_type?.type_name || 'Full-time')}</p>
                         </div>
                       </TableCell>
                       <TableCell className="bg-white">
@@ -521,6 +625,9 @@ const AdminJobs: React.FC = () => {
                           </Avatar>
                           <span className="text-sm text-gray-700">{job.employer?.company_name}</span>
                         </div>
+                      </TableCell>
+                      <TableCell className="bg-white">
+                        {getEmploymentTypeBadge(job.employment_type?.type_name || 'Full-time')}
                       </TableCell>
                       <TableCell className="bg-white">
                         <div className="flex items-center gap-1 bg-white">
@@ -591,7 +698,7 @@ const AdminJobs: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Job Detail Dialog */}
+      {/* Job Detail Dialog - Add Employment Type to display */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white">
           {selectedJob && (
