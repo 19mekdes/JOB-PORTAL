@@ -28,7 +28,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; email: string; full_name?: string };
     
-    // ✅ FIX: Set req.user with optional full_name
+    
     req.user = {
       id: decoded.id,
       email: decoded.email,
