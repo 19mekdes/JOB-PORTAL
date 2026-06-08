@@ -14,20 +14,13 @@ import {
   Building2,
   Clock,
   AlertCircle,
-  Mail,
-  Filter
+  Filter,
+  ChevronDown
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -44,12 +37,74 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
+
+// Custom Dropdown Component
+interface DropdownOption {
+  value: string
+  label: string
+}
+
+const CustomDropdown: React.FC<{
+  options: DropdownOption[]
+  value: string
+  onChange: (value: string) => void
+  placeholder: string
+  icon?: React.ReactNode
+}> = ({ options, value, onChange, placeholder, icon }) => {
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = React.useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const selectedOption = options.find(opt => opt.value === value)
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          {icon}
+          <span>{selectedOption ? selectedOption.label : placeholder}</span>
+        </div>
+        <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => {
+                onChange(option.value)
+                setIsOpen(false)
+              }}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                value === option.value ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface Job {
   id: string
@@ -95,8 +150,6 @@ interface JobStats {
   approved: number
   rejected: number
   closed: number
-  draft: number
-  archived: number
 }
 
 const AdminJobs: React.FC = () => {
@@ -105,77 +158,72 @@ const AdminJobs: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [employmentTypeFilter, setEmploymentTypeFilter] = useState('all')
-  const [activeTab, setActiveTab] = useState('all')
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [isRejectOpen, setIsRejectOpen] = useState(false)
   const [isApproveOpen, setIsApproveOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [employmentTypes, setEmploymentTypes] = useState<{ id: number; type_name: string }[]>([])
   const [stats, setStats] = useState<JobStats>({
     total: 0,
     pending: 0,
     approved: 0,
     rejected: 0,
-    closed: 0,
-    draft: 0,
-    archived: 0
+    closed: 0
   })
 
-  // Fetch employment types for filter
-  useEffect(() => {
-    const fetchEmploymentTypes = async () => {
-      try {
-        const response = await api.get('/employment-types')
-        if (response.data.success) {
-          setEmploymentTypes(response.data.data)
-        }
-      } catch (error) {
-        console.error('Error fetching employment types:', error)
-        // Fallback employment types
-        setEmploymentTypes([
-          { id: 1, type_name: 'Full-time' },
-          { id: 2, type_name: 'Part-time' },
-          { id: 3, type_name: 'Contract' },
-          { id: 4, type_name: 'Remote' },
-          { id: 5, type_name: 'Hybrid' },
-          { id: 6, type_name: 'Internship' }
-        ])
-      }
-    }
-    fetchEmploymentTypes()
-  }, [])
+  const statusOptions: DropdownOption[] = [
+    { value: 'all', label: 'All Status' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'rejected', label: 'Rejected' },
+    { value: 'closed', label: 'Closed' }
+  ]
 
-  // Synchronize Tab and Selection Filters cleanly
-  const handleTabChange = (val: string) => {
-    setActiveTab(val)
-    setPage(1)
-    if (val === 'all') setStatusFilter('all')
-    else if (val === 'pending') setStatusFilter('Pending')
-    else if (val === 'approved') setStatusFilter('Open')
-    else if (val === 'rejected') setStatusFilter('Rejected')
-    else if (val === 'closed') setStatusFilter('Closed')
-  }
+  const employmentTypeOptions: DropdownOption[] = [
+    { value: 'all', label: 'All Types' },
+    { value: 'full-time', label: 'Full-time' },
+    { value: 'part-time', label: 'Part-time' },
+    { value: 'contract', label: 'Contract' },
+    { value: 'remote', label: 'Remote' },
+    { value: 'hybrid', label: 'Hybrid' },
+    { value: 'internship', label: 'Internship' }
+  ]
 
   const fetchJobs = useCallback(async () => {
     try {
       setLoading(true)
       
-      // Build params
-      const params: any = { limit: 50 }
-      if (searchTerm) params.search = searchTerm
-      if (statusFilter !== 'all') params.status = statusFilter
-      if (employmentTypeFilter !== 'all') params.employment_type = employmentTypeFilter
+      // Build params for backend filtering
+      const params: any = {}
       
-      console.log('Fetching jobs with params:', params)
+      if (searchTerm) params.search = searchTerm
+      
+      // Map status filter for backend
+      if (statusFilter !== 'all') {
+        const statusMap: Record<string, string> = {
+          'pending': 'Pending',
+          'approved': 'Open',
+          'rejected': 'Rejected',
+          'closed': 'Closed'
+        }
+        params.status = statusMap[statusFilter]
+      }
+      
+      // Map employment type for backend
+      if (employmentTypeFilter !== 'all') {
+        const typeMap: Record<string, string> = {
+          'full-time': 'Full-time',
+          'part-time': 'Part-time',
+          'contract': 'Contract',
+          'remote': 'Remote',
+          'hybrid': 'Hybrid',
+          'internship': 'Internship'
+        }
+        params.employment_type = typeMap[employmentTypeFilter]
+      }
       
       const response = await api.get('/admin/jobs', { params })
       
-      console.log('Jobs API Response:', response.data)
-      
-      // Handle different response structures
       let jobsData = []
       if (response.data?.data && Array.isArray(response.data.data)) {
         jobsData = response.data.data
@@ -185,38 +233,17 @@ const AdminJobs: React.FC = () => {
       
       setJobs(jobsData)
       
-      // Handle stats from response
-      let statsData = response.data?.stats
-      if (!statsData && response.data?.data?.stats) statsData = response.data.data.stats
-      if (!statsData && response.data?.stats) statsData = response.data.stats
-      
-      if (statsData) {
-        setStats({
-          total: statsData.total || 0,
-          pending: statsData.pending || 0,
-          approved: statsData.approved || statsData.open || 0,
-          rejected: statsData.rejected || 0,
-          closed: statsData.closed || 0,
-          draft: statsData.draft || 0,
-          archived: statsData.archived || 0
-        })
-      } else {
-        // Calculate stats from jobs data if not provided
-        const calculated = jobsData.reduce((acc: any, job: Job) => {
-          acc.total++
-          const statusName = job.status?.status_name?.toLowerCase()
-          if (statusName === 'pending') acc.pending++
-          else if (statusName === 'open' || statusName === 'approved') acc.approved++
-          else if (statusName === 'rejected') acc.rejected++
-          else if (statusName === 'closed') acc.closed++
-          else if (statusName === 'draft') acc.draft++
-          else if (statusName === 'archived') acc.archived++
-          return acc
-        }, { total: 0, pending: 0, approved: 0, rejected: 0, closed: 0, draft: 0, archived: 0 })
-        setStats(calculated)
-      }
-      
-      setTotalPages(response.data?.pagination?.pages || 1)
+      // Calculate stats from jobs data
+      const calculated = jobsData.reduce((acc: any, job: Job) => {
+        acc.total++
+        const statusName = job.status?.status_name?.toLowerCase()
+        if (statusName === 'pending') acc.pending++
+        else if (statusName === 'open' || statusName === 'approved') acc.approved++
+        else if (statusName === 'rejected') acc.rejected++
+        else if (statusName === 'closed') acc.closed++
+        return acc
+      }, { total: 0, pending: 0, approved: 0, rejected: 0, closed: 0 })
+      setStats(calculated)
       
     } catch (error: any) {
       console.error('Error fetching jobs:', error)
@@ -234,9 +261,47 @@ const AdminJobs: React.FC = () => {
     fetchJobs()
   }, [fetchJobs])
 
+  // Client-side filtering as backup
+  const filteredJobs = jobs.filter(job => {
+    // Status filter
+    let matchesStatus = true
+    if (statusFilter !== 'all') {
+      const jobStatus = job.status?.status_name?.toLowerCase()
+      if (statusFilter === 'pending' && jobStatus !== 'pending') matchesStatus = false
+      else if (statusFilter === 'approved' && jobStatus !== 'open' && jobStatus !== 'approved') matchesStatus = false
+      else if (statusFilter === 'rejected' && jobStatus !== 'rejected') matchesStatus = false
+      else if (statusFilter === 'closed' && jobStatus !== 'closed') matchesStatus = false
+    }
+    
+    // Employment type filter
+    let matchesEmploymentType = true
+    if (employmentTypeFilter !== 'all') {
+      const jobType = job.employment_type?.type_name?.toLowerCase()
+      if (employmentTypeFilter === 'full-time' && jobType !== 'full-time') matchesEmploymentType = false
+      else if (employmentTypeFilter === 'part-time' && jobType !== 'part-time') matchesEmploymentType = false
+      else if (employmentTypeFilter === 'contract' && jobType !== 'contract') matchesEmploymentType = false
+      else if (employmentTypeFilter === 'remote' && jobType !== 'remote') matchesEmploymentType = false
+      else if (employmentTypeFilter === 'hybrid' && jobType !== 'hybrid') matchesEmploymentType = false
+      else if (employmentTypeFilter === 'internship' && jobType !== 'internship') matchesEmploymentType = false
+    }
+    
+    // Search filter
+    const matchesSearch = searchTerm === '' || 
+      job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.employer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    return matchesStatus && matchesEmploymentType && matchesSearch
+  })
+
   const updateJobStatus = async (jobId: string, status: string, reason?: string) => {
     try {
-      await api.put(`/admin/jobs/${jobId}/moderate`, { status, reason })
+      let backendStatus = status
+      if (status === 'approved' || status === 'Approve') backendStatus = 'Open'
+      else if (status === 'rejected' || status === 'Reject') backendStatus = 'Rejected'
+      else if (status === 'closed') backendStatus = 'Closed'
+      
+      await api.put(`/admin/jobs/${jobId}/moderate`, { status: backendStatus, reason })
+      
       toast({
         title: "Success",
         description: `Job ${status.toLowerCase()} successfully`,
@@ -321,10 +386,6 @@ const AdminJobs: React.FC = () => {
         return <Badge className="bg-red-100 text-red-800 border-red-200 flex items-center gap-1"><XCircle className="h-3 w-3" />Rejected</Badge>
       case 'closed':
         return <Badge className="bg-gray-100 text-gray-800 border-gray-200 flex items-center gap-1"><XCircle className="h-3 w-3" />Closed</Badge>
-      case 'draft':
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Draft</Badge>
-      case 'archived':
-        return <Badge className="bg-gray-100 text-gray-600 border-gray-200">Archived</Badge>
       default:
         return <Badge variant="secondary">{status || 'Unknown'}</Badge>
     }
@@ -365,24 +426,6 @@ const AdminJobs: React.FC = () => {
     return job.salary_range || 'Competitive'
   }
 
-  // Filter jobs based on active tab and employment type
-  const filteredJobs = jobs.filter(job => {
-    const matchesSearch = searchTerm === '' || 
-      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.employer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesTab = activeTab === 'all' || 
-      (activeTab === 'pending' && job.status?.status_name === 'Pending') ||
-      (activeTab === 'approved' && (job.status?.status_name === 'Open' || job.status?.status_name === 'Approved')) ||
-      (activeTab === 'rejected' && job.status?.status_name === 'Rejected') ||
-      (activeTab === 'closed' && job.status?.status_name === 'Closed')
-    
-    const matchesEmploymentType = employmentTypeFilter === 'all' || 
-      job.employment_type?.type_name?.toLowerCase() === employmentTypeFilter.toLowerCase()
-    
-    return matchesSearch && matchesTab && matchesEmploymentType
-  })
-
   if (loading && jobs.length === 0) {
     return (
       <div className="flex justify-center items-center h-96 bg-white">
@@ -394,8 +437,8 @@ const AdminJobs: React.FC = () => {
   return (
     <div className="space-y-6 bg-white min-h-screen p-6 rounded-xl">
       {/* Header */}
-      <div className="flex justify-between items-center bg-white">
-        <div className="bg-white">
+      <div className="flex justify-between items-center">
+        <div>
           <h1 className="text-2xl font-bold text-gray-900">Job Moderation</h1>
           <p className="text-gray-500 mt-1">Review, approve, and manage job postings</p>
         </div>
@@ -406,160 +449,108 @@ const AdminJobs: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 bg-white">
-        <Card className="cursor-pointer hover:shadow-md transition bg-white border border-gray-200" onClick={() => handleTabChange('all')}>
-          <CardContent className="pt-4 text-center bg-white">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <Card className="bg-white border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50 transition" onClick={() => { setStatusFilter('all'); setEmploymentTypeFilter('all'); setSearchTerm(''); }}>
+          <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             <p className="text-xs text-gray-500">Total Jobs</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md transition bg-white border border-yellow-200" onClick={() => handleTabChange('pending')}>
-          <CardContent className="pt-4 text-center bg-white">
+        <Card className="bg-white border border-yellow-200 shadow-sm cursor-pointer hover:bg-yellow-50 transition" onClick={() => setStatusFilter('pending')}>
+          <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-            <p className="text-xs text-gray-500">Pending Review</p>
+            <p className="text-xs text-gray-500">Pending</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md transition bg-white border border-green-200" onClick={() => handleTabChange('approved')}>
-          <CardContent className="pt-4 text-center bg-white">
+        <Card className="bg-white border border-green-200 shadow-sm cursor-pointer hover:bg-green-50 transition" onClick={() => setStatusFilter('approved')}>
+          <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
             <p className="text-xs text-gray-500">Approved</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md transition bg-white border border-red-200" onClick={() => handleTabChange('rejected')}>
-          <CardContent className="pt-4 text-center bg-white">
+        <Card className="bg-white border border-red-200 shadow-sm cursor-pointer hover:bg-red-50 transition" onClick={() => setStatusFilter('rejected')}>
+          <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
             <p className="text-xs text-gray-500">Rejected</p>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-md transition bg-white border border-gray-200" onClick={() => handleTabChange('closed')}>
-          <CardContent className="pt-4 text-center bg-white">
+        <Card className="bg-white border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50 transition" onClick={() => setStatusFilter('closed')}>
+          <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-gray-600">{stats.closed}</p>
             <p className="text-xs text-gray-500">Closed</p>
           </CardContent>
         </Card>
-        <Card className="bg-white border border-gray-200">
-          <CardContent className="pt-4 text-center bg-white">
-            <p className="text-2xl font-bold text-gray-600">{stats.draft}</p>
-            <p className="text-xs text-gray-500">Draft</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-white border border-gray-200">
-          <CardContent className="pt-4 text-center bg-white">
-            <p className="text-2xl font-bold text-gray-600">{stats.archived}</p>
-            <p className="text-xs text-gray-500">Archived</p>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Tabs and Filters */}
-      <div className="bg-white space-y-4">
-        {/* Status Tabs */}
-        <div className="flex gap-2 border-b border-gray-200 pb-2 flex-wrap">
-          <button
-            onClick={() => handleTabChange('all')}
-            className={`px-4 py-2 rounded-lg transition ${activeTab === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-          >
-            All Jobs
-          </button>
-          <button
-            onClick={() => handleTabChange('pending')}
-            className={`px-4 py-2 rounded-lg transition ${activeTab === 'pending' ? 'bg-yellow-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-          >
-            Pending ({stats.pending})
-          </button>
-          <button
-            onClick={() => handleTabChange('approved')}
-            className={`px-4 py-2 rounded-lg transition ${activeTab === 'approved' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-          >
-            Approved ({stats.approved})
-          </button>
-          <button
-            onClick={() => handleTabChange('rejected')}
-            className={`px-4 py-2 rounded-lg transition ${activeTab === 'rejected' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-          >
-            Rejected ({stats.rejected})
-          </button>
-          <button
-            onClick={() => handleTabChange('closed')}
-            className={`px-4 py-2 rounded-lg transition ${activeTab === 'closed' ? 'bg-gray-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-          >
-            Closed ({stats.closed})
-          </button>
-        </div>
-
-        {/* Employment Type Filter */}
-        <div className="flex items-center gap-3 flex-wrap bg-white">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <span className="text-sm text-gray-600 font-medium">Employment Type:</span>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => setEmploymentTypeFilter('all')}
-              className={`px-3 py-1.5 text-sm rounded-lg transition ${
-                employmentTypeFilter === 'all' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              All
-            </button>
-            {employmentTypes.map((type) => (
-              <button
-                key={type.id}
-                onClick={() => setEmploymentTypeFilter(type.type_name)}
-                className={`px-3 py-1.5 text-sm rounded-lg transition ${
-                  employmentTypeFilter === type.type_name 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {type.type_name}
-              </button>
-            ))}
-          </div>
-          {employmentTypeFilter !== 'all' && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setEmploymentTypeFilter('all')}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              Clear filter
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Filters and Jobs Table */}
+      {/* Filters Section */}
       <Card className="bg-white border border-gray-200 shadow-sm">
-        <CardHeader className="pb-3 bg-white">
-          <div className="flex justify-between items-center flex-wrap gap-4 bg-white">
-            <CardTitle className="bg-white text-gray-900">
-              {activeTab === 'all' ? 'All Jobs' : 
-               activeTab === 'pending' ? 'Pending Review' :
-               activeTab === 'approved' ? 'Approved Jobs' :
-               activeTab === 'rejected' ? 'Rejected Jobs' : 'Closed Jobs'}
-              <span className="text-sm text-gray-500 ml-2">({filteredJobs.length})</span>
-            </CardTitle>
-            <div className="flex gap-3 flex-wrap bg-white">
-              <div className="relative w-64 bg-white">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search by title or company..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 bg-white border-gray-300"
-                />
-              </div>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-gray-900">Filters</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search by title or company..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-white border-gray-300"
+              />
             </div>
+
+            {/* Status Dropdown */}
+            <CustomDropdown
+              options={statusOptions}
+              value={statusFilter}
+              onChange={setStatusFilter}
+              placeholder="All Status"
+              icon={<Filter className="h-4 w-4 text-gray-400" />}
+            />
+
+            {/* Employment Type Dropdown */}
+            <CustomDropdown
+              options={employmentTypeOptions}
+              value={employmentTypeFilter}
+              onChange={setEmploymentTypeFilter}
+              placeholder="All Types"
+              icon={<Briefcase className="h-4 w-4 text-gray-400" />}
+            />
+
+            {/* Clear Filters Button */}
+            {(statusFilter !== 'all' || employmentTypeFilter !== 'all' || searchTerm) && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setStatusFilter('all')
+                  setEmploymentTypeFilter('all')
+                  setSearchTerm('')
+                }}
+                className="border-gray-300 text-gray-600 hover:bg-gray-50"
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Jobs Table */}
+      <Card className="bg-white border border-gray-200 shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-center flex-wrap gap-4">
+            <CardTitle className="text-gray-900">
+              Job Listings
+              <span className="text-sm text-gray-500 ml-2">({filteredJobs.length} jobs)</span>
+            </CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="bg-white">
-          {/* Bulk Actions for Pending Tab */}
-          {activeTab === 'pending' && filteredJobs.length > 0 && (
+        <CardContent>
+          {/* Bulk Actions */}
+          {stats.pending > 0 && (
             <div className="mb-4 flex gap-2 p-3 bg-yellow-50 rounded-lg">
-              <span className="text-sm text-yellow-700">{filteredJobs.length} jobs pending review</span>
+              <span className="text-sm text-yellow-700">{stats.pending} jobs pending review</span>
               <Button 
                 size="sm" 
                 onClick={() => bulkAction('approve')}
@@ -579,45 +570,48 @@ const AdminJobs: React.FC = () => {
           )}
 
           {filteredJobs.length === 0 ? (
-            <div className="text-center py-12 bg-white">
+            <div className="text-center py-12">
               <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-500">No jobs found</p>
-              {employmentTypeFilter !== 'all' && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setEmploymentTypeFilter('all')}
+              {(statusFilter !== 'all' || employmentTypeFilter !== 'all' || searchTerm) && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setStatusFilter('all')
+                    setEmploymentTypeFilter('all')
+                    setSearchTerm('')
+                  }}
                   className="mt-4"
                 >
-                  Clear employment type filter
+                  Clear all filters
                 </Button>
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto bg-white">
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-gray-50">
-                  <TableRow className="border-b border-gray-200 bg-gray-50">
-                    <TableHead className="text-gray-700 bg-gray-50">Job Title</TableHead>
-                    <TableHead className="text-gray-700 bg-gray-50">Company</TableHead>
-                    <TableHead className="text-gray-700 bg-gray-50">Type</TableHead>
-                    <TableHead className="text-gray-700 bg-gray-50">Location</TableHead>
-                    <TableHead className="text-gray-700 bg-gray-50">Posted</TableHead>
-                    <TableHead className="text-gray-700 bg-gray-50">Apps</TableHead>
-                    <TableHead className="text-gray-700 bg-gray-50">Status</TableHead>
-                    <TableHead className="text-right text-gray-700 bg-gray-50">Actions</TableHead>
+                  <TableRow className="border-b border-gray-200">
+                    <TableHead className="text-gray-700">Job Title</TableHead>
+                    <TableHead className="text-gray-700">Company</TableHead>
+                    <TableHead className="text-gray-700">Type</TableHead>
+                    <TableHead className="text-gray-700">Location</TableHead>
+                    <TableHead className="text-gray-700">Posted</TableHead>
+                    <TableHead className="text-gray-700">Apps</TableHead>
+                    <TableHead className="text-gray-700">Status</TableHead>
+                    <TableHead className="text-right text-gray-700">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredJobs.map((job) => (
-                    <TableRow key={job.id} className="hover:bg-gray-50 border-b border-gray-100 bg-white">
-                      <TableCell className="bg-white">
-                        <div className="bg-white">
+                    <TableRow key={job.id} className="hover:bg-gray-50 border-b border-gray-100">
+                      <TableCell>
+                        <div>
                           <p className="font-medium text-gray-900">{job.title}</p>
-                          <p className="text-xs text-gray-500">{getEmploymentTypeBadge(job.employment_type?.type_name || 'Full-time')}</p>
                         </div>
                       </TableCell>
-                      <TableCell className="bg-white">
-                        <div className="flex items-center gap-2 bg-white">
+                      <TableCell>
+                        <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6 bg-blue-100">
                             <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
                               {job.employer?.company_name?.charAt(0) || 'C'}
@@ -626,22 +620,20 @@ const AdminJobs: React.FC = () => {
                           <span className="text-sm text-gray-700">{job.employer?.company_name}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="bg-white">
-                        {getEmploymentTypeBadge(job.employment_type?.type_name || 'Full-time')}
-                      </TableCell>
-                      <TableCell className="bg-white">
-                        <div className="flex items-center gap-1 bg-white">
+                      <TableCell>{getEmploymentTypeBadge(job.employment_type?.type_name || 'Full-time')}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
                           <MapPin className="h-3 w-3 text-gray-400" />
                           <span className="text-sm text-gray-600">{job.location || 'Remote'}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-gray-500 text-sm bg-white">{formatDate(job.created_at)}</TableCell>
-                      <TableCell className="bg-white">
+                      <TableCell className="text-sm text-gray-500">{formatDate(job.created_at)}</TableCell>
+                      <TableCell>
                         <span className="text-sm font-medium text-blue-600">{job.applications_count || 0}</span>
                       </TableCell>
-                      <TableCell className="bg-white">{getStatusBadge(job.status?.status_name)}</TableCell>
-                      <TableCell className="text-right bg-white">
-                        <div className="flex justify-end gap-2 bg-white">
+                      <TableCell>{getStatusBadge(job.status?.status_name)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
                           <Button 
                             variant="ghost" 
                             size="sm"
@@ -679,6 +671,16 @@ const AdminJobs: React.FC = () => {
                               </Button>
                             </>
                           )}
+                          {(job.status?.status_name === 'Open' || job.status?.status_name === 'Approved') && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-gray-600 hover:bg-gray-50"
+                              onClick={() => updateJobStatus(job.id, 'closed')}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="sm" 
@@ -698,19 +700,19 @@ const AdminJobs: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Job Detail Dialog - Add Employment Type to display */}
+      {/* Job Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white border border-gray-200">
           {selectedJob && (
             <>
-              <DialogHeader className="bg-white">
-                <DialogTitle className="text-xl flex items-center gap-2 text-gray-900 bg-white">
+              <DialogHeader>
+                <DialogTitle className="text-xl flex items-center gap-2 text-gray-900">
                   <Briefcase className="h-5 w-5" />
                   Job Details
                 </DialogTitle>
               </DialogHeader>
               
-              <div className="space-y-6 bg-white">
+              <div className="space-y-6">
                 {/* Job Header */}
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
                   <h2 className="text-xl font-bold text-gray-900">{selectedJob.title}</h2>
@@ -809,7 +811,7 @@ const AdminJobs: React.FC = () => {
                     {(selectedJob.status?.status_name === 'Open' || selectedJob.status?.status_name === 'Approved') && (
                       <Button 
                         className="bg-gray-600 hover:bg-gray-700 text-white"
-                        onClick={() => updateJobStatus(selectedJob.id, 'Closed')}
+                        onClick={() => updateJobStatus(selectedJob.id, 'closed')}
                       >
                         <XCircle className="h-4 w-4 mr-2" />
                         Close Job
@@ -817,7 +819,7 @@ const AdminJobs: React.FC = () => {
                     )}
                     <Button 
                       variant="outline" 
-                      className="text-red-600 border-red-600 hover:bg-red-50 bg-white"
+                      className="text-red-600 border-red-600 hover:bg-red-50"
                       onClick={() => deleteJob(selectedJob.id)}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
@@ -833,28 +835,26 @@ const AdminJobs: React.FC = () => {
 
       {/* Approve Job Dialog */}
       <Dialog open={isApproveOpen} onOpenChange={setIsApproveOpen}>
-        <DialogContent className="bg-white">
-          <DialogHeader className="bg-white">
+        <DialogContent className="bg-white border border-gray-200">
+          <DialogHeader>
             <DialogTitle className="text-gray-900">Approve Job Posting</DialogTitle>
             <DialogDescription className="text-gray-500">
               Are you sure you want to approve this job?
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 bg-white">
-            <div className="bg-green-50 p-3 rounded-lg">
-              <p className="text-sm text-green-800 flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" />
-                Approving this job will make it visible to all job seekers.
-              </p>
-            </div>
+          <div className="bg-green-50 p-3 rounded-lg">
+            <p className="text-sm text-green-800 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Approving this job will make it visible to all job seekers.
+            </p>
           </div>
-          <DialogFooter className="bg-white">
-            <Button variant="outline" onClick={() => setIsApproveOpen(false)} className="bg-white border-gray-300">
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsApproveOpen(false)} className="border-gray-300">
               Cancel
             </Button>
             <Button 
               className="bg-green-600 hover:bg-green-700 text-white"
-              onClick={() => selectedJob && updateJobStatus(selectedJob.id, 'Open')}
+              onClick={() => selectedJob && updateJobStatus(selectedJob.id, 'approved')}
             >
               Approve Job
             </Button>
@@ -864,15 +864,15 @@ const AdminJobs: React.FC = () => {
 
       {/* Reject Job Dialog */}
       <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
-        <DialogContent className="bg-white">
-          <DialogHeader className="bg-white">
+        <DialogContent className="bg-white border border-gray-200">
+          <DialogHeader>
             <DialogTitle className="text-gray-900">Reject Job Posting</DialogTitle>
             <DialogDescription className="text-gray-500">
               Provide a reason for rejecting this job
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 bg-white">
-            <div className="bg-white">
+          <div className="space-y-4">
+            <div>
               <Label htmlFor="reason" className="text-gray-700">Rejection Reason</Label>
               <Textarea
                 id="reason"
@@ -893,13 +893,13 @@ const AdminJobs: React.FC = () => {
               </p>
             </div>
           </div>
-          <DialogFooter className="bg-white">
-            <Button variant="outline" onClick={() => setIsRejectOpen(false)} className="bg-white border-gray-300">
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRejectOpen(false)} className="border-gray-300">
               Cancel
             </Button>
             <Button 
               variant="destructive"
-              onClick={() => selectedJob && updateJobStatus(selectedJob.id, 'Rejected', rejectReason)}
+              onClick={() => selectedJob && updateJobStatus(selectedJob.id, 'rejected', rejectReason)}
             >
               Reject Job
             </Button>

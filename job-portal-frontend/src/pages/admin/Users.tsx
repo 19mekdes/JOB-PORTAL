@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
@@ -51,9 +50,7 @@ const UserManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const [isSuspendOpen, setIsSuspendOpen] = useState(false)
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
-  const [suspendReason, setSuspendReason] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [activeTab, setActiveTab] = useState('all')
@@ -92,48 +89,31 @@ const UserManagement: React.FC = () => {
       
       setUsers(usersData)
       
-      // Get stats from API response
-      let statsData = response.data?.stats
-      if (!statsData && response.data?.data?.stats) statsData = response.data.data.stats
-      if (!statsData && response.data?.stats) statsData = response.data.stats
+      // Calculate stats from usersData
+      let jobSeekersCount = 0, employersCount = 0, adminsCount = 0, superAdminsCount = 0, activeCount = 0, suspendedCount = 0
       
-      if (statsData && statsData.total > 0) {
-        setStats({
-          total: statsData.total || 0,
-          active: statsData.active || 0,
-          suspended: statsData.suspended || 0,
-          jobSeekers: statsData.jobSeekers || 0,
-          employers: statsData.employers || 0,
-          admins: statsData.admins || 0,
-          superAdmins: statsData.superAdmins || 0
-        })
-      } else {
-        // Calculate stats from usersData as fallback
-        let jobSeekersCount = 0, employersCount = 0, adminsCount = 0, superAdminsCount = 0, activeCount = 0, suspendedCount = 0
+      for (const user of usersData) {
+        if (user.is_active) activeCount++
+        else suspendedCount++
         
-        for (const user of usersData) {
-          if (user.is_active) activeCount++
-          else suspendedCount++
-          
-          const typeName = user.user_type?.type_name?.toLowerCase() || ''
-          if (typeName === 'job seeker') jobSeekersCount++
-          else if (typeName === 'employer') employersCount++
-          else if (typeName === 'admin') adminsCount++
-          else if (typeName === 'super admin') superAdminsCount++
-        }
-        
-        setStats({
-          total: usersData.length,
-          active: activeCount,
-          suspended: suspendedCount,
-          jobSeekers: jobSeekersCount,
-          employers: employersCount,
-          admins: adminsCount,
-          superAdmins: superAdminsCount
-        })
+        const typeName = user.user_type?.type_name?.toLowerCase() || ''
+        if (typeName === 'job seeker') jobSeekersCount++
+        else if (typeName === 'employer') employersCount++
+        else if (typeName === 'admin') adminsCount++
+        else if (typeName === 'super admin') superAdminsCount++
       }
       
-      const pages = response.data?.pagination?.pages || Math.ceil((statsData?.total || usersData.length) / 20) || 1
+      setStats({
+        total: usersData.length,
+        active: activeCount,
+        suspended: suspendedCount,
+        jobSeekers: jobSeekersCount,
+        employers: employersCount,
+        admins: adminsCount,
+        superAdmins: superAdminsCount
+      })
+      
+      const pages = response.data?.pagination?.pages || Math.ceil(usersData.length / 20) || 1
       setTotalPages(pages)
       
     } catch (error: any) {
@@ -144,7 +124,6 @@ const UserManagement: React.FC = () => {
     }
   }, [page, searchTerm, roleFilter, statusFilter, activeTab])
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchUsers() }, [fetchUsers])
 
   const handleTabChange = (tab: string) => {
@@ -157,28 +136,34 @@ const UserManagement: React.FC = () => {
     else if (tab === 'admins') setRoleFilter('all')
   }
 
-  const updateUserStatus = async (userId: string, isActive: boolean, reason?: string) => {
+  // Update user status (suspend/activate) - Used only in View Dialog
+  const updateUserStatus = async (userId: string, isActive: boolean) => {
     try {
-      await api.put(`/admin/users/${userId}/status`, { is_active: isActive, reason })
-      toast({ title: "Success", description: `User ${isActive ? 'activated' : 'suspended'} successfully` })
+      await api.put(`/admin/users/${userId}/status`, { is_active: isActive })
+      toast({ 
+        title: "Success", 
+        description: `User ${isActive ? 'activated' : 'suspended'} successfully` 
+      })
       fetchUsers()
       setIsDetailOpen(false)
-      setIsSuspendOpen(false)
-      setSuspendReason('')
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Failed" })
+      toast({ 
+        variant: "destructive", 
+        title: "Error", 
+        description: error.response?.data?.message || "Failed to update user status" 
+      })
     }
   }
 
   const deleteUser = async (userId: string) => {
-    if (confirm('Delete this user? This cannot be undone.')) {
+    if (confirm('⚠️ Delete this user? This action cannot be undone.')) {
       try {
         await api.delete(`/admin/users/${userId}`)
         toast({ title: "Success", description: "User deleted successfully" })
         fetchUsers()
         setIsDetailOpen(false)
       } catch (error: any) {
-        toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Failed" })
+        toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Failed to delete user" })
       }
     }
   }
@@ -199,14 +184,14 @@ const UserManagement: React.FC = () => {
       setNewPassword('')
       setConfirmPassword('')
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Failed" })
+      toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Failed to reset password" })
     }
   }
 
   const getRoleBadge = (role: string | undefined) => {
     if (!role) return <Badge className="bg-gray-100 text-gray-700 border-gray-200">Unknown</Badge>
     switch (role.toLowerCase()) {
-      case 'super admin': return <Badge className="bg-linear-to-r from-red-500 to-red-600 text-white border-0">Super Admin</Badge>
+      case 'super admin': return <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0">Super Admin</Badge>
       case 'admin': return <Badge className="bg-purple-100 text-purple-800 border-purple-200">Admin</Badge>
       case 'employer': return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Employer</Badge>
       case 'job seeker': return <Badge className="bg-green-100 text-green-800 border-green-200">Job Seeker</Badge>
@@ -229,25 +214,19 @@ const UserManagement: React.FC = () => {
   const filteredUsers = users.filter(user => {
     const userTypeName = user.user_type?.type_name || ''
     
-    // Search filter
     const matchesSearch = searchTerm === '' || 
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       getUserDisplayName(user).toLowerCase().includes(searchTerm.toLowerCase())
     
-    // Role filter
     const matchesRole = roleFilter === 'all' || userTypeName === roleFilter
     
-    // Status filter - FIXED
     let matchesStatus = true
     if (statusFilter === 'active') {
       matchesStatus = user.is_active === true
     } else if (statusFilter === 'suspended') {
       matchesStatus = user.is_active === false
-    } else {
-      matchesStatus = true
     }
     
-    // Tab filter
     const matchesTab = activeTab === 'all' || 
       (activeTab === 'job_seekers' && userTypeName === 'Job Seeker') ||
       (activeTab === 'employers' && userTypeName === 'Employer') ||
@@ -414,23 +393,39 @@ const UserManagement: React.FC = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => { setSelectedUser(user); setIsDetailOpen(true) }} className="hover:bg-gray-100">
+                          {/* View Button - Only this remains */}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => { setSelectedUser(user); setIsDetailOpen(true) }} 
+                            className="hover:bg-gray-100" 
+                            title="View Details"
+                          >
                             <Eye className="h-4 w-4 text-gray-600" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => { setSelectedUser(user); setIsResetPasswordOpen(true) }} className="hover:bg-gray-100">
+                          
+                          {/* Reset Password Button */}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => { setSelectedUser(user); setIsResetPasswordOpen(true) }} 
+                            className="hover:bg-gray-100" 
+                            title="Reset Password"
+                          >
                             <Key className="h-4 w-4 text-gray-600" />
                           </Button>
-                          {user.is_active ? (
-                            <Button variant="ghost" size="sm" className="text-yellow-600 hover:bg-yellow-50" onClick={() => { setSelectedUser(user); setIsSuspendOpen(true) }}>
-                              <UserX className="h-4 w-4" />
-                            </Button>
-                          ) : (
-                            <Button variant="ghost" size="sm" className="text-green-600 hover:bg-green-50" onClick={() => updateUserStatus(user.id, true)}>
-                              <UserCheck className="h-4 w-4" />
-                            </Button>
-                          )}
+                          
+                          {/* ❌ SUSPEND/ACTIVATE BUTTON REMOVED - Now only in View Dialog */}
+                          
+                          {/* Delete Button (Super Admin only) */}
                           {isSuperAdmin && (
-                            <Button variant="ghost" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => deleteUser(user.id)}>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-600 hover:bg-red-50" 
+                              onClick={() => deleteUser(user.id)}
+                              title="Delete User"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           )}
@@ -456,7 +451,7 @@ const UserManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* User Detail Dialog */}
+      {/* User Detail Dialog - NOW CONTAINS THE SUSPEND/ACTIVATE BUTTON */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white border border-gray-200">
           {selectedUser && (
@@ -468,7 +463,8 @@ const UserManagement: React.FC = () => {
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-6">
-                <div className="bg-linear-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
+                {/* User Header */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16 bg-blue-200">
                       <AvatarFallback className="bg-blue-200 text-blue-700 text-xl">
@@ -485,6 +481,8 @@ const UserManagement: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                
+                {/* Contact Info */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-gray-900 mb-3">Contact Information</h3>
                   <div className="space-y-2">
@@ -510,28 +508,49 @@ const UserManagement: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                
+                {/* Actions - Suspend/Activate moved HERE (only in View Dialog) */}
                 <div className="border-t pt-4 border-gray-200">
                   <h3 className="font-semibold text-gray-900 mb-3">Moderation Actions</h3>
                   <div className="flex gap-3 flex-wrap">
-                    <Button variant="outline" onClick={() => { setIsResetPasswordOpen(true); setIsDetailOpen(false) }} className="bg-white border-gray-300">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => { setIsResetPasswordOpen(true); setIsDetailOpen(false) }} 
+                      className="bg-white border-gray-300"
+                    >
                       <Key className="h-4 w-4 mr-2 text-gray-600" />
                       Reset Password
                     </Button>
+                    
+                    {/* ✅ SUSPEND/ACTIVATE BUTTON - NOW ONLY HERE */}
                     {selectedUser.is_active ? (
-                      <Button variant="outline" className="text-yellow-600 border-yellow-600 hover:bg-yellow-50 bg-white" onClick={() => { setIsSuspendOpen(true); setIsDetailOpen(false) }}>
+                      <Button 
+                        variant="outline" 
+                        className="text-yellow-600 border-yellow-600 hover:bg-yellow-50 bg-white" 
+                        onClick={() => updateUserStatus(selectedUser.id, false)}
+                      >
                         <UserX className="h-4 w-4 mr-2" />
-                        Suspend
+                        Suspend User
                       </Button>
                     ) : (
-                      <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => updateUserStatus(selectedUser.id, true)}>
+                      <Button 
+                        className="bg-green-600 hover:bg-green-700 text-white" 
+                        onClick={() => updateUserStatus(selectedUser.id, true)}
+                      >
                         <UserCheck className="h-4 w-4 mr-2" />
-                        Activate
+                        Activate User
                       </Button>
                     )}
+                    
+                    {/* Delete Button (Super Admin only) */}
                     {isSuperAdmin && (
-                      <Button variant="outline" className="text-red-600 border-red-600 hover:bg-red-50 bg-white" onClick={() => deleteUser(selectedUser.id)}>
+                      <Button 
+                        variant="outline" 
+                        className="text-red-600 border-red-600 hover:bg-red-50 bg-white" 
+                        onClick={() => deleteUser(selectedUser.id)}
+                      >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
+                        Delete User
                       </Button>
                     )}
                   </div>
@@ -547,7 +566,7 @@ const UserManagement: React.FC = () => {
         <DialogContent className="bg-white border border-gray-200">
           <DialogHeader>
             <DialogTitle className="text-gray-900">Reset Password</DialogTitle>
-            <DialogDescription className="text-gray-500">New password for {selectedUser?.email}</DialogDescription>
+            <DialogDescription className="text-gray-500">Set new password for {selectedUser?.email}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -567,34 +586,7 @@ const UserManagement: React.FC = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsResetPasswordOpen(false)} className="bg-white border-gray-300">Cancel</Button>
-            <Button onClick={() => selectedUser && resetUserPassword(selectedUser.id)} className="bg-blue-600 hover:bg-blue-700 text-white">Reset</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Suspend User Dialog */}
-      <Dialog open={isSuspendOpen} onOpenChange={setIsSuspendOpen}>
-        <DialogContent className="bg-white border border-gray-200">
-          <DialogHeader>
-            <DialogTitle className="text-gray-900">Suspend User</DialogTitle>
-            <DialogDescription className="text-gray-500">Suspending {selectedUser?.email}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label className="text-gray-700">Reason (Optional)</Label>
-              <Textarea value={suspendReason} onChange={(e) => setSuspendReason(e.target.value)} rows={3} placeholder="Reason for suspension..." className="bg-white border-gray-300" />
-              <p className="text-xs text-gray-500 mt-1">This reason will be logged for audit purposes.</p>
-            </div>
-            <div className="bg-red-50 p-3 rounded-lg">
-              <p className="text-sm text-red-800 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                Suspended users cannot log in or access the platform.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsSuspendOpen(false)} className="bg-white border-gray-300">Cancel</Button>
-            <Button variant="destructive" onClick={() => selectedUser && updateUserStatus(selectedUser.id, false, suspendReason)}>Suspend</Button>
+            <Button onClick={() => selectedUser && resetUserPassword(selectedUser.id)} className="bg-blue-600 hover:bg-blue-700 text-white">Reset Password</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

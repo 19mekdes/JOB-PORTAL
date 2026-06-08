@@ -78,18 +78,19 @@ export const getAllUsers = async (req: Request, res: Response) => {
     
     const where: any = {};
     
-    if (role) {
+    if (role && role !== 'all') {
       where.user_type = { type_name: role as string };
     }
     
     if (search) {
       where.OR = [
         { email: { contains: search as string, mode: 'insensitive' } },
-        { full_name: { contains: search as string, mode: 'insensitive' } }
+        { full_name: { contains: search as string, mode: 'insensitive' } },
+        { employer_profile: { company_name: { contains: search as string, mode: 'insensitive' } } }
       ];
     }
     
-    if (is_active !== undefined) {
+    if (is_active !== undefined && is_active !== 'all') {
       where.is_active = is_active === 'true';
     }
     
@@ -108,9 +109,52 @@ export const getAllUsers = async (req: Request, res: Response) => {
       prisma.user.count({ where })
     ]);
     
+    // Add job and application counts to each user
+    const usersWithStats = await Promise.all(users.map(async (user) => {
+      let jobsCount = 0;
+      let appsCount = 0;
+      
+      // Count jobs for employers
+      if (user.employer_profile) {
+        jobsCount = await prisma.jobPost.count({
+          where: { employer_id: user.employer_profile.id }
+        });
+      }
+      
+      // Count applications for job seekers
+      if (user.seeker_profile) {
+        appsCount = await prisma.jobApplication.count({
+          where: { seeker_id: user.seeker_profile.id }
+        });
+      }
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      
+      return {
+        ...userWithoutPassword,
+        stats: {
+          jobs_count: jobsCount,
+          applications_count: appsCount
+        }
+      };
+    }));
+    
+    // Calculate summary stats for the frontend cards
+    const summaryStats = {
+      total: usersWithStats.length,
+      active: usersWithStats.filter(u => u.is_active === true).length,
+      suspended: usersWithStats.filter(u => u.is_active === false).length,
+      jobSeekers: usersWithStats.filter(u => u.user_type?.type_name === 'Job Seeker').length,
+      employers: usersWithStats.filter(u => u.user_type?.type_name === 'Employer').length,
+      admins: usersWithStats.filter(u => u.user_type?.type_name === 'Admin').length,
+      superAdmins: usersWithStats.filter(u => u.user_type?.type_name === 'Super Admin').length
+    };
+    
     res.json({
       success: true,
-      data: users,
+      data: usersWithStats,
+      stats: summaryStats,
       pagination: {
         page: parseInt(page as string),
         limit: parseInt(limit as string),
@@ -150,12 +194,49 @@ export const getUserById = async (req: Request, res: Response) => {
   }
 };
 
+// ========== UPDATE USER STATUS (WITH PROTECTION AGAINST SUSPENDING SUPER ADMIN) ==========
 export const updateUserStatus = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const { is_active } = req.body;
     const adminId = getUserId(req);
     
+    // Get the target user with their role
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { user_type: true }
+    });
+    
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    // Get the admin user making the request
+    const adminUser = await prisma.user.findUnique({
+      where: { id: adminId },
+      include: { user_type: true }
+    });
+    
+    const adminRole = adminUser?.user_type?.type_name;
+    const targetRole = targetUser.user_type?.type_name;
+    
+    // ❌ Prevent Admin from suspending or activating a Super Admin
+    if (adminRole === 'Admin' && targetRole === 'Super Admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Admin cannot suspend or activate a Super Admin account.' 
+      });
+    }
+    
+    // ❌ Prevent anyone from suspending themselves
+    if (userId === adminId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'You cannot suspend or activate your own account.' 
+      });
+    }
+    
+    // Update user status
     const user = await prisma.user.update({
       where: { id: userId },
       data: { 
@@ -177,8 +258,6 @@ export const updateUserStatus = async (req: Request, res: Response) => {
       }
     });
     
-    console.log(`📧 ${statusMessage} email sent to ${user.email}`);
-    
     res.json({ 
       success: true, 
       data: user, 
@@ -190,65 +269,60 @@ export const updateUserStatus = async (req: Request, res: Response) => {
   }
 };
 
-// ========== UPDATE USER ==========
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const { full_name, phone, role } = req.body;
     const adminId = getUserId(req);
     
-    console.log(`🔄 UPDATE USER called for ID: ${userId}`);
-    console.log(`   Data:`, { full_name, phone, role });
-    
-    // Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { id: userId },
       include: { user_type: true }
     });
     
     if (!existingUser) {
-      console.log(`❌ User not found: ${userId}`);
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     
-    console.log(`✅ Found user: ${existingUser.email}`);
+    // Get admin role
+    const adminUser = await prisma.user.findUnique({
+      where: { id: adminId },
+      include: { user_type: true }
+    });
     
-    // Prepare update data
+    const adminRole = adminUser?.user_type?.type_name;
+    const targetRole = existingUser.user_type?.type_name;
+    
+    // ❌ Prevent Admin from editing Super Admin
+    if (adminRole === 'Admin' && targetRole === 'Super Admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Admin cannot edit a Super Admin account.' 
+      });
+    }
+    
     const updateData: any = {
       updated_at: new Date()
     };
     
     if (full_name !== undefined && full_name !== existingUser.full_name) {
       updateData.full_name = full_name;
-      console.log(`   Updating name: ${existingUser.full_name} -> ${full_name}`);
     }
     
-    // Note: Phone might not exist in your User model, so we'll skip it if it causes issues
-    if (phone !== undefined) {
-      // If your User model has a phone field, uncomment this
-      // updateData.phone = phone;
-      console.log(`   Phone update requested but phone field may not exist in schema: ${phone}`);
-    }
-    
-    // Update user type if role is provided
     if (role && role !== existingUser.user_type?.type_name) {
       const userType = await prisma.userType.findFirst({
         where: { type_name: role }
       });
       if (userType) {
         updateData.user_type_id = userType.id;
-        console.log(`   Updating role: ${existingUser.user_type?.type_name} -> ${role}`);
       }
     }
     
-    // Update user
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: updateData,
       include: { user_type: true }
     });
-    
-    console.log(`✅ User updated successfully: ${updatedUser.email}`);
     
     const { password, ...userWithoutPassword } = updatedUser;
     res.json({ 
@@ -257,41 +331,52 @@ export const updateUser = async (req: Request, res: Response) => {
       message: 'User updated successfully' 
     });
   } catch (error) {
-    console.error('❌ Update user error:', error);
+    console.error('Update user error:', error);
     res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
 
-// ========== RESET PASSWORD ==========
 export const resetPassword = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
-    const { password } = req.body;
+    const { newPassword } = req.body;
     const adminId = getUserId(req);
     
-    console.log(`🔑 RESET PASSWORD called for ID: ${userId}`);
-    
-    // Validate password
-    if (!password || password.length < 6) {
+    if (!newPassword || newPassword.length < 6) {
       return res.status(400).json({ 
         success: false, 
         message: 'Password must be at least 6 characters' 
       });
     }
     
-    // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id: userId }
+      where: { id: userId },
+      include: { user_type: true }
     });
     
     if (!existingUser) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     
-    // Hash the new password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Get admin role
+    const adminUser = await prisma.user.findUnique({
+      where: { id: adminId },
+      include: { user_type: true }
+    });
     
-    // Update password
+    const adminRole = adminUser?.user_type?.type_name;
+    const targetRole = existingUser.user_type?.type_name;
+    
+    // ❌ Prevent Admin from resetting Super Admin password
+    if (adminRole === 'Admin' && targetRole === 'Super Admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Admin cannot reset password for a Super Admin account.' 
+      });
+    }
+    
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
     await prisma.user.update({
       where: { id: userId },
       data: {
@@ -300,14 +385,11 @@ export const resetPassword = async (req: Request, res: Response) => {
       }
     });
     
-    console.log(`✅ Password reset for: ${existingUser.email}`);
-    
-    // Create notification
     await prisma.notification.create({
       data: {
         user_id: userId,
         title: 'Password Reset',
-        message: 'An administrator has reset your password. Please login with your new password.',
+        message: 'An administrator has reset your password.',
         type: 'security',
         created_at: new Date()
       }
@@ -318,20 +400,16 @@ export const resetPassword = async (req: Request, res: Response) => {
       message: 'Password reset successfully' 
     });
   } catch (error) {
-    console.error('❌ Reset password error:', error);
+    console.error('Reset password error:', error);
     res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
 
-// ========== DELETE USER ==========
 export const deleteUser = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const adminId = getUserId(req);
     
-    console.log(`🗑️ DELETE USER called for ID: ${userId}`);
-    
-    // Check if user exists with related profiles
     const existingUser = await prisma.user.findUnique({
       where: { id: userId },
       include: { 
@@ -349,7 +427,6 @@ export const deleteUser = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     
-    // Prevent deleting yourself
     if (userId === adminId) {
       return res.status(400).json({ 
         success: false, 
@@ -357,55 +434,62 @@ export const deleteUser = async (req: Request, res: Response) => {
       });
     }
     
+    // Get admin role
+    const adminUser = await prisma.user.findUnique({
+      where: { id: adminId },
+      include: { user_type: true }
+    });
+    
+    const adminRole = adminUser?.user_type?.type_name;
+    const targetRole = existingUser.user_type?.type_name;
+    
+    // ❌ Prevent Admin from deleting Super Admin
+    if (adminRole === 'Admin' && targetRole === 'Super Admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Admin cannot delete a Super Admin account.' 
+      });
+    }
+    
     const userEmail = existingUser.email;
     const userName = existingUser.full_name;
     
-    // Delete related records using correct Prisma model names
     if (existingUser.seeker_profile) {
       await prisma.jobSeekerProfile.delete({
         where: { user_id: userId }
       });
-      console.log(`📝 Deleted seeker profile for ${userEmail}`);
     }
     
     if (existingUser.employer_profile) {
-      // Delete jobs associated with employer
       await prisma.jobPost.deleteMany({
         where: { employer_id: existingUser.employer_profile.id }
       });
-      console.log(`📝 Deleted jobs for employer ${userEmail}`);
       
       await prisma.employerProfile.delete({
         where: { user_id: userId }
       });
-      console.log(`📝 Deleted employer profile for ${userEmail}`);
     }
     
-    // Delete user's notifications
     await prisma.notification.deleteMany({
       where: { user_id: userId }
     });
     
-    // Delete notification preferences if exists
     if (prisma.notificationPreference) {
       await prisma.notificationPreference.deleteMany({
         where: { user_id: userId }
       });
     }
     
-    // Finally delete the user
     await prisma.user.delete({
       where: { id: userId }
     });
-    
-    console.log(`✅ User ${userEmail} (${userName}) deleted successfully`);
     
     res.json({ 
       success: true, 
       message: `User ${userName} deleted successfully` 
     });
   } catch (error) {
-    console.error('❌ Delete user error:', error);
+    console.error('Delete user error:', error);
     res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
@@ -419,12 +503,15 @@ export const getAllJobs = async (req: Request, res: Response) => {
     
     const where: any = {};
     
-    if (status) {
+    if (status && status !== 'all') {
       where.status = { status_name: status as string };
     }
     
     if (search) {
-      where.title = { contains: search as string, mode: 'insensitive' };
+      where.OR = [
+        { title: { contains: search as string, mode: 'insensitive' } },
+        { employer: { company_name: { contains: search as string, mode: 'insensitive' } } }
+      ];
     }
     
     const [jobs, total] = await Promise.all([
@@ -443,9 +530,25 @@ export const getAllJobs = async (req: Request, res: Response) => {
       prisma.jobPost.count({ where })
     ]);
     
+    // Calculate job stats
+    const allJobs = await prisma.jobPost.findMany({
+      include: { status: true }
+    });
+    
+    const jobStats = {
+      total: allJobs.length,
+      pending: allJobs.filter(j => j.status?.status_name === 'Pending').length,
+      approved: allJobs.filter(j => j.status?.status_name === 'Open').length,
+      rejected: allJobs.filter(j => j.status?.status_name === 'Rejected').length,
+      closed: allJobs.filter(j => j.status?.status_name === 'Closed').length,
+      draft: allJobs.filter(j => j.status?.status_name === 'Draft').length,
+      archived: allJobs.filter(j => j.status?.status_name === 'Archived').length
+    };
+    
     res.json({
       success: true,
       data: jobs,
+      stats: jobStats,
       pagination: {
         page: parseInt(page as string),
         limit: parseInt(limit as string),
@@ -567,7 +670,6 @@ export const getAnalytics = async (req: Request, res: Response) => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
-    // Get daily job posts for the last 30 days
     const dailyJobsRaw = await prisma.$queryRaw`
       SELECT 
         DATE(created_at) as date,
@@ -578,7 +680,6 @@ export const getAnalytics = async (req: Request, res: Response) => {
       ORDER BY date DESC
     `;
     
-    // Get top industries
     const topIndustries = await prisma.jobIndustry.findMany({
       include: {
         jobs: {
@@ -588,7 +689,6 @@ export const getAnalytics = async (req: Request, res: Response) => {
       take: 5
     });
     
-    // Get top employers
     const topEmployers = await prisma.employerProfile.findMany({
       include: {
         jobs: {
@@ -599,7 +699,6 @@ export const getAnalytics = async (req: Request, res: Response) => {
       orderBy: { jobs: { _count: 'desc' } }
     });
     
-    // Get application stats by status
     const applicationStatuses = await prisma.jobApplicationStatus.findMany({
       include: {
         _count: {
@@ -613,7 +712,6 @@ export const getAnalytics = async (req: Request, res: Response) => {
       count: status._count.applications
     }));
     
-    // Parse raw query results
     const dailyJobs = (dailyJobsRaw as any[]).map(row => ({
       date: row.date,
       count: Number(row.count)
@@ -675,12 +773,35 @@ export const bulkUpdateUserStatus = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'No user IDs provided' });
     }
     
+    // Get admin role
+    const adminUser = await prisma.user.findUnique({
+      where: { id: adminId },
+      include: { user_type: true }
+    });
+    
+    const adminRole = adminUser?.user_type?.type_name;
+    
+    // Check if any of the target users are Super Admins
+    const targetUsers = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      include: { user_type: true }
+    });
+    
+    const hasSuperAdmin = targetUsers.some(u => u.user_type?.type_name === 'Super Admin');
+    
+    // ❌ Prevent Admin from bulk updating Super Admins
+    if (adminRole === 'Admin' && hasSuperAdmin) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Admin cannot perform bulk actions on Super Admin accounts.' 
+      });
+    }
+    
     const result = await prisma.user.updateMany({
       where: { id: { in: userIds } },
       data: { is_active, updated_at: new Date() }
     });
     
-    // Create notifications for affected users
     for (const userId of userIds) {
       await prisma.notification.create({
         data: {

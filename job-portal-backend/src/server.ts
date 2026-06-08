@@ -3654,9 +3654,10 @@ app.get('/api/admin/profile', authMiddleware, async (req: Request, res: Response
     res.status(500).json({ success: false, message: error.message })
   }
 })
-// ========== GET /api/admin/users - SIMPLIFIED ==========
 app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) => {
   try {
+    console.log('📊 Getting users with job counts...');
+    
     // Get all users
     const users = await prisma.user.findMany({
       include: {
@@ -3666,40 +3667,28 @@ app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) 
       }
     });
     
-    // Build response manually with counts
-    const formattedUsers = [];
+    const result = [];
     
     for (const user of users) {
-      let jobsCount = 0;
-      let appsCount = 0;
+      let jobCount = 0;
+      let appCount = 0;
       
       // Count jobs for employer
       if (user.employer_profile) {
-        // Direct query for this employer only
-        const result = await prisma.$queryRaw`
-          SELECT COUNT(*) as count FROM "JobPost" WHERE employer_id = ${user.employer_profile.id}
-        `;
-        jobsCount = Number((result as any[])[0]?.count || 0);
-        
-        if (user.email === 'mekdiwale59@gmail.com') {
-          console.log(`Employer ${user.email}: ${jobsCount} jobs`);
-        }
+        jobCount = await prisma.jobPost.count({
+          where: { employer_id: user.employer_profile.id }
+        });
+        console.log(`Employer ${user.email}: ${jobCount} jobs`);
       }
       
-      // Count apps for seeker
+      // Count applications for job seeker
       if (user.seeker_profile) {
-        // Direct query for this seeker only
-        const result = await prisma.$queryRaw`
-          SELECT COUNT(*) as count FROM "JobApplication" WHERE seeker_id = ${user.seeker_profile.id}
-        `;
-        appsCount = Number((result as any[])[0]?.count || 0);
-        
-        if (user.email === 'mekdesw60@gmail.com') {
-          console.log(`Seeker ${user.email}: ${appsCount} apps`);
-        }
+        appCount = await prisma.jobApplication.count({
+          where: { seeker_id: user.seeker_profile.id }
+        });
       }
       
-      formattedUsers.push({
+      result.push({
         id: user.id,
         email: user.email,
         full_name: user.full_name || user.seeker_profile?.full_name || user.employer_profile?.company_name || 'N/A',
@@ -3710,12 +3699,13 @@ app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) 
         created_at: user.created_at,
         updated_at: user.updated_at,
         stats: {
-          jobs_count: jobsCount,
-          applications_count: appsCount
+          jobs_count: jobCount,
+          applications_count: appCount
         }
       });
     }
     
+    // Stats for cards
     const stats = {
       total: users.length,
       active: users.filter(u => u.is_active).length,
@@ -3728,11 +3718,11 @@ app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) 
     
     res.json({
       success: true,
-      data: formattedUsers,
+      data: result,
       stats: stats
     });
     
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
