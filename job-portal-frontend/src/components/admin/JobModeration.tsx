@@ -8,13 +8,12 @@ import {
   XCircle, 
   Search,
   RefreshCw,
-  MoreHorizontal,
+  Trash2,
   Building2,
   MapPin,
   DollarSign,
   Briefcase,
   Clock,
-  TrendingUp,
   Users
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -55,14 +54,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from '@/hooks/use-toast'
 import api from '../../services/api'
@@ -100,10 +91,6 @@ interface Job {
     id: number
     status_name: string
   }
-  _count?: {
-    applications: number
-    bookmarks: number
-  }
 }
 
 interface JobFilters {
@@ -125,13 +112,21 @@ const JobModeration: React.FC = () => {
     limit: 10
   })
   const [totalPages, setTotalPages] = useState(1)
-  const [, setTotalJobs] = useState(0)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  const [isModerateDialogOpen, setIsModerateDialogOpen] = useState(false)
+  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false)
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [moderationNote, setModerationNote] = useState('')
-  const [selectedStatus, setSelectedStatus] = useState('')
+  const [rejectReason, setRejectReason] = useState('')
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    closed: 0,
+    totalViews: 0,
+    totalApplications: 0
+  })
 
   useEffect(() => {
     fetchJobs()
@@ -148,46 +143,104 @@ const JobModeration: React.FC = () => {
       params.append('limit', filters.limit.toString())
 
       const response = await api.get(`/admin/jobs?${params.toString()}`)
-      setJobs(response.data.data || [])
-      setTotalPages(response.data.pagination?.pages || 1)
-      setTotalJobs(response.data.pagination?.total || 0)
+      
+      let jobsData = []
+      if (response.data?.data && Array.isArray(response.data.data)) {
+        jobsData = response.data.data
+      } else if (response.data && Array.isArray(response.data)) {
+        jobsData = response.data
+      }
+      
+      // Filter out invalid/corrupt jobs
+      const validJobs = jobsData.filter(job => {
+        return job && 
+               job.id && 
+               job.title && 
+               typeof job.title === 'string' &&
+               job.title.trim().length > 0 &&
+               job.title.trim() !== 'M' &&
+               job.title.trim() !== 'A' &&
+               job.title.trim() !== 'C' &&
+               !job.title.toLowerCase().includes('activate') &&
+               !job.title.toLowerCase().includes('settings') &&
+               !job.title.toLowerCase().includes('windows')
+      })
+      
+      setJobs(validJobs)
+      setTotalPages(response.data?.pagination?.pages || 1)
+      
+      if (response.data?.stats) {
+        setStats({
+          total: response.data.stats.total || validJobs.length,
+          pending: response.data.stats.pending || 0,
+          approved: response.data.stats.approved || response.data.stats.open || 0,
+          rejected: response.data.stats.rejected || 0,
+          closed: response.data.stats.closed || 0,
+          totalViews: 0,
+          totalApplications: 0
+        })
+      }
     } catch (error: any) {
       console.error('Error fetching jobs:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.response?.data?.message || "Failed to load jobs. Please try again.",
+        description: error.response?.data?.message || "Failed to load jobs",
       })
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleModerate = async () => {
-    if (!selectedJob || !selectedStatus) return
+  // ========== CORRECTED: Approve Job ==========
+  const handleApprove = async () => {
+    if (!selectedJob) return
 
     try {
-      // ✅ FIXED: Use the correct endpoint
-      await api.put(`/admin/jobs/${selectedJob.id}/status`, {
-        status: selectedStatus,
-        reason: moderationNote
-      })
+      console.log('Approving job:', selectedJob.id)
+      const response = await api.put(`/admin/jobs/${selectedJob.id}/approve`, {})
+      console.log('Approve response:', response.data)
       
       toast({
         title: "Success",
-        description: `Job ${selectedStatus.toLowerCase()} successfully`,
+        description: "Job approved successfully",
       })
       await fetchJobs()
-      setIsModerateDialogOpen(false)
+      setIsApproveDialogOpen(false)
       setSelectedJob(null)
-      setModerationNote('')
-      setSelectedStatus('')
     } catch (error: any) {
-      console.error('Error moderating job:', error)
+      console.error('Error approving job:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.response?.data?.message || "Failed to moderate job. Please try again.",
+        description: error.response?.data?.message || "Failed to approve job",
+      })
+    }
+  }
+
+  // ========== CORRECTED: Reject Job ==========
+  const handleReject = async () => {
+    if (!selectedJob) return
+
+    try {
+      console.log('Rejecting job:', selectedJob.id, 'Reason:', rejectReason)
+      const response = await api.put(`/admin/jobs/${selectedJob.id}/reject`, { reason: rejectReason })
+      console.log('Reject response:', response.data)
+      
+      toast({
+        title: "Success",
+        description: "Job rejected successfully",
+      })
+      await fetchJobs()
+      setIsRejectDialogOpen(false)
+      setSelectedJob(null)
+      setRejectReason('')
+    } catch (error: any) {
+      console.error('Error rejecting job:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.response?.data?.message || "Failed to reject job",
       })
     }
   }
@@ -209,7 +262,7 @@ const JobModeration: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.response?.data?.message || "Failed to delete job. Please try again.",
+        description: error.response?.data?.message || "Failed to delete job",
       })
     }
   }
@@ -217,70 +270,19 @@ const JobModeration: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'Open':
-        return <Badge className="bg-green-100 text-green-800">Open</Badge>
+        return <Badge className="bg-green-100 text-green-800 flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Approved</Badge>
       case 'Closed':
-        return <Badge className="bg-gray-100 text-gray-800">Closed</Badge>
-      case 'Draft':
-        return <Badge className="bg-yellow-100 text-yellow-800">Draft</Badge>
-      case 'Archived':
-        return <Badge className="bg-gray-100 text-gray-800">Archived</Badge>
+        return <Badge className="bg-gray-100 text-gray-800 flex items-center gap-1"><XCircle className="h-3 w-3" /> Closed</Badge>
       case 'Pending':
-        return <Badge className="bg-orange-100 text-orange-800">Pending</Badge>
+        return <Badge className="bg-yellow-100 text-yellow-800 flex items-center gap-1"><Clock className="h-3 w-3" /> Pending</Badge>
       case 'Rejected':
-        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>
+        return <Badge className="bg-red-100 text-red-800 flex items-center gap-1"><XCircle className="h-3 w-3" /> Rejected</Badge>
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return <Badge variant="outline">{status || 'Unknown'}</Badge>
     }
   }
 
-  // Calculate statistics from all jobs (not just current page)
-  const [allJobsStats, setAllJobsStats] = useState({
-    total: 0,
-    open: 0,
-    closed: 0,
-    draft: 0,
-    pending: 0,
-    totalViews: 0,
-    totalApplications: 0
-  })
-
-  // Fetch stats separately or calculate from API response
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await api.get('/admin/jobs?limit=1')
-        if (response.data.stats) {
-          setAllJobsStats({
-            total: response.data.stats.total || 0,
-            open: response.data.stats.approved || 0,
-            closed: response.data.stats.closed || 0,
-            draft: response.data.stats.draft || 0,
-            pending: response.data.stats.pending || 0,
-            totalViews: 0,
-            totalApplications: 0
-          })
-        }
-      } catch (error) {
-        console.error('Error fetching stats:', error)
-      }
-    }
-    fetchStats()
-  }, [])
-
-  // Calculate stats from current jobs (fallback)
-  const currentStats = {
-    total: jobs.length,
-    open: jobs.filter(j => j.status?.status_name === 'Open').length,
-    closed: jobs.filter(j => j.status?.status_name === 'Closed').length,
-    draft: jobs.filter(j => j.status?.status_name === 'Draft').length,
-    pending: jobs.filter(j => j.status?.status_name === 'Pending').length,
-    totalViews: jobs.reduce((sum, j) => sum + (j.views_count || 0), 0),
-    totalApplications: jobs.reduce((sum, j) => sum + (j.applications_count || 0), 0)
-  }
-
-  const displayStats = allJobsStats.total > 0 ? allJobsStats : currentStats
-
-  if (isLoading) {
+  if (isLoading && jobs.length === 0) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
@@ -292,12 +294,12 @@ const JobModeration: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Job Moderation</h1>
-          <p className="text-gray-500 mt-1">Review and manage job postings across all companies</p>
+          <p className="text-gray-500 mt-1">Review and manage job postings from all companies</p>
         </div>
         <Button variant="outline" onClick={fetchJobs}>
           <RefreshCw className="h-4 w-4 mr-2" />
@@ -306,13 +308,22 @@ const JobModeration: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
               <Briefcase className="h-5 w-5 mx-auto text-blue-500 mb-2" />
-              <p className="text-2xl font-bold">{displayStats.total}</p>
+              <p className="text-2xl font-bold">{stats.total}</p>
               <p className="text-xs text-gray-500">Total Jobs</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <Clock className="h-5 w-5 mx-auto text-yellow-500 mb-2" />
+              <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+              <p className="text-xs text-gray-500">Pending Review</p>
             </div>
           </CardContent>
         </Card>
@@ -320,17 +331,17 @@ const JobModeration: React.FC = () => {
           <CardContent className="pt-6">
             <div className="text-center">
               <CheckCircle className="h-5 w-5 mx-auto text-green-500 mb-2" />
-              <p className="text-2xl font-bold text-green-600">{displayStats.open}</p>
-              <p className="text-xs text-gray-500">Open</p>
+              <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
+              <p className="text-xs text-gray-500">Approved</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-orange-200 bg-orange-50">
+        <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
             <div className="text-center">
-              <Clock className="h-5 w-5 mx-auto text-orange-500 mb-2" />
-              <p className="text-2xl font-bold text-orange-600">{displayStats.pending || 0}</p>
-              <p className="text-xs text-gray-500">Pending</p>
+              <XCircle className="h-5 w-5 mx-auto text-red-500 mb-2" />
+              <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
+              <p className="text-xs text-gray-500">Rejected</p>
             </div>
           </CardContent>
         </Card>
@@ -338,39 +349,8 @@ const JobModeration: React.FC = () => {
           <CardContent className="pt-6">
             <div className="text-center">
               <XCircle className="h-5 w-5 mx-auto text-gray-500 mb-2" />
-              <p className="text-2xl font-bold text-gray-600">{displayStats.closed}</p>
+              <p className="text-2xl font-bold text-gray-600">{stats.closed}</p>
               <p className="text-xs text-gray-500">Closed</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <Eye className="h-5 w-5 mx-auto text-purple-500 mb-2" />
-              <p className="text-2xl font-bold">{displayStats.totalViews.toLocaleString()}</p>
-              <p className="text-xs text-gray-500">Total Views</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <Users className="h-5 w-5 mx-auto text-indigo-500 mb-2" />
-              <p className="text-2xl font-bold">{displayStats.totalApplications.toLocaleString()}</p>
-              <p className="text-xs text-gray-500">Applications</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <TrendingUp className="h-5 w-5 mx-auto text-emerald-500 mb-2" />
-              <p className="text-2xl font-bold">
-                {displayStats.totalJobs > 0 
-                  ? Math.round((displayStats.open / displayStats.total) * 100) 
-                  : 0}%
-              </p>
-              <p className="text-xs text-gray-500">Open Rate</p>
             </div>
           </CardContent>
         </Card>
@@ -387,7 +367,7 @@ const JobModeration: React.FC = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search by title, description, or company..."
+                placeholder="Search by title or company..."
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
                 className="pl-10"
@@ -402,11 +382,10 @@ const JobModeration: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Open">Open</SelectItem>
-                <SelectItem value="Closed">Closed</SelectItem>
-                <SelectItem value="Draft">Draft</SelectItem>
                 <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Open">Approved</SelectItem>
                 <SelectItem value="Rejected">Rejected</SelectItem>
+                <SelectItem value="Closed">Closed</SelectItem>
               </SelectContent>
             </Select>
             <Input
@@ -432,101 +411,89 @@ const JobModeration: React.FC = () => {
             </div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Job Title</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Posted</TableHead>
-                    <TableHead>Views/Apps</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {jobs.map((job) => (
-                    <TableRow key={job.id}>
-                      <TableCell className="font-medium">
-                        <div>
-                          <p className="font-semibold">{job.title}</p>
-                          <p className="text-xs text-gray-500">{job.employment_type?.type_name || 'N/A'}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback>
-                              {job.employer?.company_name?.charAt(0).toUpperCase() || 'C'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm">{job.employer?.company_name || 'Unknown'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <MapPin className="h-3 w-3" />
-                          {job.location || 'Not specified'}
-                          {job.is_remote && <Badge variant="outline" className="ml-1">Remote</Badge>}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {new Date(job.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Eye className="h-3 w-3" /> {job.views_count || 0}
-                          <Briefcase className="h-3 w-3 ml-1" /> {job.applications_count || 0}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(job.status?.status_name || 'Unknown')}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
+              <div className="w-full overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[200px]">Job Title</TableHead>
+                      <TableHead className="w-[180px]">Company</TableHead>
+                      <TableHead className="w-[150px]">Location</TableHead>
+                      <TableHead className="w-[100px]">Posted</TableHead>
+                      <TableHead className="w-[60px] text-center">Apps</TableHead>
+                      <TableHead className="w-[120px]">Status</TableHead>
+                      <TableHead className="w-[100px] text-center">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {jobs.map((job) => (
+                      <TableRow key={job.id}>
+                        <TableCell className="font-medium">
+                          <div>
+                            <p className="font-semibold">{job.title}</p>
+                            <p className="text-xs text-gray-500">{job.employment_type?.type_name || 'N/A'}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarFallback>
+                                {job.employer?.company_name?.charAt(0).toUpperCase() || 'C'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm">{job.employer?.company_name || 'Unknown'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 text-sm">
+                            <MapPin className="h-3 w-3" />
+                            {job.location || 'Not specified'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm whitespace-nowrap">
+                          {new Date(job.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="text-sm font-medium text-blue-600">
+                            {job.applications_count || 0}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(job.status?.status_name || 'Unknown')}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedJob(job)
+                                setIsViewDialogOpen(true)
+                              }}
+                              title="View Details"
+                              className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
+                            >
+                              <Eye className="h-4 w-4" />
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => {
-                              setSelectedJob(job)
-                              setIsViewDialogOpen(true)
-                            }}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {
-                              setSelectedJob(job)
-                              setSelectedStatus('')
-                              setModerationNote('')
-                              setIsModerateDialogOpen(true)
-                            }}>
-                              <CheckCircle className="mr-2 h-4 w-4" />
-                              Moderate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => {
                                 setSelectedJob(job)
                                 setIsDeleteDialogOpen(true)
                               }}
-                              className="text-red-600"
+                              title="Delete Job"
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
                             >
-                              <XCircle className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex justify-center gap-2 mt-4">
                   <Button
@@ -635,82 +602,99 @@ const JobModeration: React.FC = () => {
                 <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
                   Close
                 </Button>
+                {selectedJob.status?.status_name === 'Pending' && (
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => {
+                        setIsViewDialogOpen(false)
+                        setIsApproveDialogOpen(true)
+                      }} 
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      Approve Job
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        setIsViewDialogOpen(false)
+                        setIsRejectDialogOpen(true)
+                      }} 
+                      variant="destructive"
+                    >
+                      Reject Job
+                    </Button>
+                  </div>
+                )}
               </DialogFooter>
             </>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Moderate Job Dialog */}
-      <Dialog open={isModerateDialogOpen} onOpenChange={setIsModerateDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Moderate Job Posting</DialogTitle>
-            <DialogDescription>
-              Change the status of this job posting and provide a reason if needed.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <label className="text-sm font-medium">Job Title</label>
-              <p className="text-sm text-gray-600">{selectedJob?.title}</p>
-            </div>
-            <div className="grid gap-2">
-              <label className="text-sm font-medium">Current Status</label>
-              <div>{selectedJob && getStatusBadge(selectedJob.status?.status_name || 'Unknown')}</div>
-            </div>
-            <div className="grid gap-2">
-              <label className="text-sm font-medium">New Status</label>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select new status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Open">Open (Approve)</SelectItem>
-                  <SelectItem value="Closed">Closed</SelectItem>
-                  <SelectItem value="Draft">Draft</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <label className="text-sm font-medium">Moderation Note (Optional)</label>
-              <Textarea
-                placeholder="Provide a reason for this change..."
-                value={moderationNote}
-                onChange={(e) => setModerationNote(e.target.value)}
-                rows={3}
-              />
-              <p className="text-xs text-gray-500">This note will be shared with the employer.</p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModerateDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleModerate} disabled={!selectedStatus}>
-              Apply Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Approve Dialog */}
+      <AlertDialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Approve Job</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to approve "{selectedJob?.title}"?
+              <br />
+              This job will become visible to all job seekers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleApprove} className="bg-green-600 hover:bg-green-700">
+              Approve Job
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Reject Dialog */}
+      <AlertDialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject Job</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to reject "{selectedJob?.title}"?
+              <br />
+              The employer will be notified with your reason.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <label className="text-sm font-medium">Reason (Optional)</label>
+            <Textarea
+              placeholder="Provide a reason for rejection..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={3}
+              className="mt-2"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleReject} className="bg-red-600 hover:bg-red-700">
+              Reject Job
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Job</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the job posting
-              "<strong>{selectedJob?.title}</strong>" from <strong>{selectedJob?.employer?.company_name}</strong>.
-              <br /><br />
-              All applications associated with this job will also be permanently deleted.
+              Are you sure you want to delete "{selectedJob?.title}"?
+              <br />
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
-              Yes, Delete Job
+              Delete Job
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

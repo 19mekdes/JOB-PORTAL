@@ -27,6 +27,7 @@ import { CloudinaryStorage } from 'multer-storage-cloudinary'
 import adminRoutes from './routes/adminRoutes';
 import nodemailer from 'nodemailer'
 import employerRoutes from './routes/employerRoutes'
+
 import {
   testEmailConfig,
   sendWelcomeEmail,
@@ -1927,23 +1928,183 @@ app.get('/api/jobs/:id', async (req: Request, res: Response) => {
 app.post('/api/jobs', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { title, description, requirements, benefits, location, employment_type_id, industry_id, salary_min, salary_max, is_remote } = req.body
-    const user = await prisma.user.findUnique({ where: { id: req.user!.id }, include: { user_type: true, employer_profile: true } })
-    
-    if (user?.user_type?.type_name !== 'Employer') return res.status(403).json({ success: false, message: 'Only employers can post jobs' })
-    if (!user.employer_profile) return res.status(403).json({ success: false, message: 'Please complete your employer profile first' })
-    if (!title || !description || !location || !employment_type_id || !industry_id) return res.status(400).json({ success: false, message: 'Missing required fields' })
-    
-    const openStatus = await prisma.jobPostStatus.findFirst({ where: { status_name: 'Open' } })
-    const job = await prisma.jobPost.create({ 
-      data: { 
-        title, description, requirements: requirements || '', benefits: benefits || '', location, 
-        employer_id: user.employer_profile.id, employment_type_id: parseInt(employment_type_id), 
-        industry_id: parseInt(industry_id), salary_min: salary_min ? parseFloat(salary_min) : null, 
-        salary_max: salary_max ? parseFloat(salary_max) : null, is_remote: is_remote || false, 
-        status_id: openStatus!.id, created_at: new Date(), views_count: 0, applications_count: 0 
+    const user = await prisma.user.findUnique({ 
+      where: { id: req.user!.id }, 
+      include: { 
+        user_type: true, 
+        employer_profile: true 
       } 
     })
-    res.status(201).json({ success: true, data: job, message: 'Job posted successfully' })
+    
+    // Check if user is an employer
+    if (user?.user_type?.type_name !== 'Employer') {
+      return res.status(403).json({ success: false, message: 'Only employers can post jobs' })
+    }
+    
+    // Check if employer profile exists
+    if (!user.employer_profile) {
+      return res.status(403).json({ success: false, message: 'Please complete your employer profile first' })
+    }
+    
+    // ✅ OPTION B: Require verification before posting
+    if (!user.employer_profile.is_verified) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Your company must be verified before posting jobs. Please contact support to complete verification.',
+        code: 'COMPANY_NOT_VERIFIED'
+      })
+    }
+    
+    // ✅ Check if company is active (not suspended)
+    if (user.employer_profile.is_active === false) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Your account is suspended. Please contact support.',
+        code: 'ACCOUNT_SUSPENDED'
+      })
+    }
+    
+    // Validate required fields
+    if (!title || !description || !location || !employment_type_id || !industry_id) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' })
+    }
+    
+    // Get PENDING status
+    let pendingStatus = await prisma.jobPostStatus.findFirst({ 
+      where: { status_name: 'Pending' } 
+    })
+    
+    // Create Pending status if it doesn't exist
+    if (!pendingStatus) {
+      pendingStatus = await prisma.jobPostStatus.create({
+        data: { status_name: 'Pending' }
+      })
+      console.log('✅ Created Pending status')
+    }
+    
+    // Create job with PENDING status (requires admin approval)
+    const job = await prisma.jobPost.create({ 
+      data: { 
+        title, 
+        description, 
+        requirements: requirements || '', 
+        benefits: benefits || '', 
+        location, 
+        employer_id: user.employer_profile.id, 
+        employment_type_id: parseInt(employment_type_id), 
+        industry_id: parseInt(industry_id), 
+        salary_min: salary_min ? parseFloat(salary_min) : null, 
+        salary_max: salary_max ? parseFloat(salary_max) : null, 
+        is_remote: is_remote || false, 
+        status_id: pendingStatus.id,
+        created_at: new Date(), 
+        views_count: 0, 
+        applications_count: 0 
+      },
+      include: { status: true }
+    })
+    
+    // Notify admins about new job pending approval
+    const admins = await prisma.user.findMany({
+      where: {
+        user_type: {
+          type_name: { in: ['Admin', 'Super Admin'] }
+        }
+      }
+    })
+    
+    for (const admin of admins) {
+      await prisma.notification.create({
+        data: {
+          user_id: admin.id,
+          title: 'New Job Pending Approval',
+          message: `${user.employer_profile.company_name} posted "${job.title}" and needs approval.`,
+          type: 'job_moderation',
+          created_at: new Date()
+        }
+      })
+    }
+    
+    console.log(`✅ Job created with status: ${job.status?.status_name}`)
+    console.log(`📧 Notified ${admins.length} admins`)
+    
+    res.status(201).json({ 
+      success: true, 
+      data: job, 
+      message: 'Job submitted for approval. You will be notified once approved.' 
+    })
+  } catch (error: any) {
+    console.error('Error creating job:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// ========== ADMIN APPROVE JOB ==========
+app.put('/api/admin/jobs/:id/approve', authMiddleware, isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    
+    const openStatus = await prisma.jobPostStatus.findFirst({
+      where: { status_name: 'Open' }
+    })
+    
+    const job = await prisma.jobPost.update({
+      where: { id },
+      data: { 
+        status_id: openStatus!.id,
+        updated_at: new Date()
+      },
+      include: { employer: { include: { user: true } } }
+    })
+    
+    // Notify employer
+    await prisma.notification.create({
+      data: {
+        user_id: job.employer.user_id,
+        title: 'Job Approved',
+        message: `Your job "${job.title}" has been approved and is now live.`,
+        type: 'job_update',
+        created_at: new Date()
+      }
+    })
+    
+    res.json({ success: true, message: 'Job approved successfully' })
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// ========== ADMIN REJECT JOB ==========
+app.put('/api/admin/jobs/:id/reject', authMiddleware, isAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const { reason } = req.body
+    
+    const rejectedStatus = await prisma.jobPostStatus.findFirst({
+      where: { status_name: 'Rejected' }
+    })
+    
+    const job = await prisma.jobPost.update({
+      where: { id },
+      data: { 
+        status_id: rejectedStatus!.id,
+        updated_at: new Date()
+      },
+      include: { employer: { include: { user: true } } }
+    })
+    
+    // Notify employer with reason
+    await prisma.notification.create({
+      data: {
+        user_id: job.employer.user_id,
+        title: 'Job Rejected',
+        message: `Your job "${job.title}" was rejected.${reason ? ` Reason: ${reason}` : ''}`,
+        type: 'job_update',
+        created_at: new Date()
+      }
+    })
+    
+    res.json({ success: true, message: 'Job rejected successfully' })
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message })
   }

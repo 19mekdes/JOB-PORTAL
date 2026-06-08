@@ -1,4 +1,3 @@
- 
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect } from "react";
@@ -14,6 +13,7 @@ import {
   Plus,
   X,
   DollarSign,
+  AlertCircle,
 } from "lucide-react";
 import {
   Card,
@@ -37,6 +37,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import api from "../../services/api";
 
@@ -76,6 +77,7 @@ const PostJobForm: React.FC = () => {
   const [benefitInput, setBenefitInput] = useState("");
   const [activeTab, setActiveTab] = useState("basic");
   const [previewMode, setPreviewMode] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<JobFormData>({
     title: "",
@@ -95,7 +97,29 @@ const PostJobForm: React.FC = () => {
     if (id) {
       fetchJobForEdit();
     }
+    // Check company verification status on load
+    checkVerificationStatus();
   }, [id]);
+
+  const checkVerificationStatus = async () => {
+    try {
+      const response = await api.get("/employer/profile");
+      if (response.data?.data) {
+        const profile = response.data.data;
+        if (!profile.is_verified) {
+          setVerificationError(
+            "Your company is not verified yet. You need to complete verification before posting jobs. Please contact support."
+          );
+        } else if (profile.is_active === false) {
+          setVerificationError(
+            "Your account has been suspended. Please contact support."
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error checking verification status:", error);
+    }
+  };
 
   const fetchFormData = async () => {
     try {
@@ -218,6 +242,17 @@ const PostJobForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent, status: "draft" | "published") => {
     e.preventDefault();
+    
+    // Check verification error before submitting
+    if (verificationError) {
+      toast({
+        variant: "destructive",
+        title: "Cannot Post Job",
+        description: verificationError,
+      });
+      return;
+    }
+    
     if (!validateForm()) return;
 
     setIsLoading(true);
@@ -242,17 +277,37 @@ const PostJobForm: React.FC = () => {
         await api.post("/jobs", submitData);
         toast({
           title: "Success",
-          description: status === "published" ? "Job posted successfully!" : "Job saved as draft",
+          description: status === "published" 
+            ? "Job posted successfully! Pending admin approval." 
+            : "Job saved as draft",
         });
       }
       navigate("/employer/jobs");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving job:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to save job",
-      });
+      
+      // Handle specific error codes from backend
+      if (error.response?.data?.code === 'COMPANY_NOT_VERIFIED') {
+        toast({
+          variant: "destructive",
+          title: "Company Not Verified",
+          description: error.response?.data?.message || "Your company must be verified before posting jobs. Please contact support.",
+        });
+        setVerificationError(error.response?.data?.message);
+      } else if (error.response?.data?.code === 'ACCOUNT_SUSPENDED') {
+        toast({
+          variant: "destructive",
+          title: "Account Suspended",
+          description: error.response?.data?.message || "Your account has been suspended. Please contact support.",
+        });
+        setVerificationError(error.response?.data?.message);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.response?.data?.message || "Failed to save job",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -314,6 +369,16 @@ const PostJobForm: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Verification Warning Alert */}
+        {verificationError && !id && (
+          <Alert className="mb-6 bg-yellow-50 border-yellow-200">
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
+              {verificationError}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {previewMode ? (
           <Card className="border border-gray-200 shadow-sm rounded-xl overflow-hidden">
@@ -404,6 +469,7 @@ const PostJobForm: React.FC = () => {
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         placeholder="e.g., Senior Software Engineer"
                         className="mt-1.5 rounded-lg border-gray-200"
+                        disabled={!!verificationError && !id}
                       />
                     </div>
                     <div>
@@ -414,6 +480,7 @@ const PostJobForm: React.FC = () => {
                         placeholder="Describe the role, responsibilities, and what makes this opportunity unique..."
                         rows={6}
                         className="mt-1.5 rounded-lg border-gray-200"
+                        disabled={!!verificationError && !id}
                       />
                       <p className="text-xs text-gray-400 mt-1">Minimum 50 characters</p>
                     </div>
@@ -425,6 +492,7 @@ const PostJobForm: React.FC = () => {
                           onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                           placeholder="City, State or Remote"
                           className="mt-1.5 rounded-lg border-gray-200"
+                          disabled={!!verificationError && !id}
                         />
                       </div>
                       <div className="flex items-center space-x-2 pt-8">
@@ -432,6 +500,7 @@ const PostJobForm: React.FC = () => {
                           id="remote"
                           checked={formData.is_remote}
                           onCheckedChange={(checked) => setFormData({ ...formData, is_remote: checked })}
+                          disabled={!!verificationError && !id}
                         />
                         <Label htmlFor="remote">Remote Position</Label>
                       </div>
@@ -453,6 +522,7 @@ const PostJobForm: React.FC = () => {
                         <Select
                           value={formData.employment_type_id}
                           onValueChange={(value) => setFormData({ ...formData, employment_type_id: value })}
+                          disabled={!!verificationError && !id}
                         >
                           <SelectTrigger className="mt-1.5 rounded-lg border-gray-200">
                             <SelectValue placeholder="Select type" />
@@ -471,6 +541,7 @@ const PostJobForm: React.FC = () => {
                         <Select
                           value={formData.industry_id}
                           onValueChange={(value) => setFormData({ ...formData, industry_id: value })}
+                          disabled={!!verificationError && !id}
                         >
                           <SelectTrigger className="mt-1.5 rounded-lg border-gray-200">
                             <SelectValue placeholder="Select industry" />
@@ -496,6 +567,7 @@ const PostJobForm: React.FC = () => {
                             onChange={(e) => setFormData({ ...formData, salary_min: e.target.value })}
                             placeholder="50000"
                             className="pl-9 rounded-lg border-gray-200"
+                            disabled={!!verificationError && !id}
                           />
                         </div>
                       </div>
@@ -509,6 +581,7 @@ const PostJobForm: React.FC = () => {
                             onChange={(e) => setFormData({ ...formData, salary_max: e.target.value })}
                             placeholder="80000"
                             className="pl-9 rounded-lg border-gray-200"
+                            disabled={!!verificationError && !id}
                           />
                         </div>
                       </div>
@@ -533,8 +606,15 @@ const PostJobForm: React.FC = () => {
                           placeholder="e.g., 5+ years of React experience"
                           onKeyPress={(e) => e.key === "Enter" && addRequirement()}
                           className="rounded-lg border-gray-200"
+                          disabled={!!verificationError && !id}
                         />
-                        <Button type="button" onClick={addRequirement} variant="outline" className="border-gray-200 rounded-lg">
+                        <Button 
+                          type="button" 
+                          onClick={addRequirement} 
+                          variant="outline" 
+                          className="border-gray-200 rounded-lg"
+                          disabled={!!verificationError && !id}
+                        >
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
@@ -557,8 +637,15 @@ const PostJobForm: React.FC = () => {
                           placeholder="e.g., Health insurance"
                           onKeyPress={(e) => e.key === "Enter" && addBenefit()}
                           className="rounded-lg border-gray-200"
+                          disabled={!!verificationError && !id}
                         />
-                        <Button type="button" onClick={addBenefit} variant="outline" className="border-gray-200 rounded-lg">
+                        <Button 
+                          type="button" 
+                          onClick={addBenefit} 
+                          variant="outline" 
+                          className="border-gray-200 rounded-lg"
+                          disabled={!!verificationError && !id}
+                        >
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
@@ -590,7 +677,7 @@ const PostJobForm: React.FC = () => {
                 variant="outline"
                 type="button"
                 onClick={(e) => handleSubmit(e, "draft")}
-                disabled={isLoading}
+                disabled={isLoading || (!!verificationError && !id)}
                 className="border-gray-200 rounded-lg"
               >
                 {isLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
@@ -599,7 +686,7 @@ const PostJobForm: React.FC = () => {
               <Button
                 type="button"
                 onClick={(e) => handleSubmit(e, "published")}
-                disabled={isLoading}
+                disabled={isLoading || (!!verificationError && !id)}
                 className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
               >
                 {isLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
