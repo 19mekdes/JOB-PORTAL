@@ -37,11 +37,14 @@ model User {
   notification_preference    NotificationPreference?
   search_logs                SearchLog[]
   user_type                  UserType                @relation(fields: [user_type_id], references: [id])
-
+  
   @@index([email])
   @@index([user_type_id])
   @@index([reset_password_token])
 }
+
+
+// ===========================================
 
 model SystemSetting {
   id                             Int      @id @default(autoincrement())
@@ -187,7 +190,7 @@ model EmployerProfile {
   headquarters        String?
   social_links        Json?
   jobs_count          Int                  @default(0)
-  is_active     Boolean  @default(true)   // ✅ Required for suspension
+  is_active           Boolean              @default(true)
   is_verified         Boolean              @default(false)
   cover_image         String?
   user_id             String               @unique

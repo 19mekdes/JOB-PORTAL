@@ -13,9 +13,7 @@ import {
   MapPin,
   DollarSign,
   Briefcase,
-  Clock,
-  Users
-} from 'lucide-react'
+  Clock} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -152,7 +150,7 @@ const JobModeration: React.FC = () => {
       }
       
       // Filter out invalid/corrupt jobs
-      const validJobs = jobsData.filter(job => {
+      const validJobs = jobsData.filter((job: { id: any; title: string }) => {
         return job && 
                job.id && 
                job.title && 
@@ -415,13 +413,13 @@ const JobModeration: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[200px]">Job Title</TableHead>
-                      <TableHead className="w-[180px]">Company</TableHead>
-                      <TableHead className="w-[150px]">Location</TableHead>
-                      <TableHead className="w-[100px]">Posted</TableHead>
-                      <TableHead className="w-[60px] text-center">Apps</TableHead>
-                      <TableHead className="w-[120px]">Status</TableHead>
-                      <TableHead className="w-[100px] text-center">Actions</TableHead>
+                      <TableHead className="w-50">Job Title</TableHead>
+                      <TableHead className="w-45">Company</TableHead>
+                      <TableHead className="w-37.5">Location</TableHead>
+                      <TableHead className="w-25">Posted</TableHead>
+                      <TableHead className="w-15 text-center">Apps</TableHead>
+                      <TableHead className="w-30">Status</TableHead>
+                      <TableHead className="w-25 text-center">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

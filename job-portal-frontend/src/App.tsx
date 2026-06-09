@@ -74,6 +74,9 @@ import BackupRestore from '@/pages/superadmin/BackupRestore'
 import SystemHealth from '@/pages/superadmin/SystemHealth'
 import SettingsPage from '@/pages/superadmin/Settings'
 
+// Add route
+
+
 // Route Guards
 import PrivateRoute, {
   JobSeekerRoute,
@@ -146,6 +149,7 @@ function App() {
               <Route path="/saved-jobs" element={<BookmarksPage />} />
               <Route path="/jobseeker/preferences" element={<JobSeekerPreferences />} />
               <Route path="/profile" element={<SeekerProfile />} />
+              
             </Route>
           </Route>
 

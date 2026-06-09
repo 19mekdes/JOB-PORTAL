@@ -283,6 +283,7 @@ const PostJobForm: React.FC = () => {
         });
       }
       navigate("/employer/jobs");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Error saving job:", error);
       

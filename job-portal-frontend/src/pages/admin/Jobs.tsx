@@ -714,7 +714,7 @@ const AdminJobs: React.FC = () => {
               
               <div className="space-y-6">
                 {/* Job Header */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
+                <div className="bg-linear-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
                   <h2 className="text-xl font-bold text-gray-900">{selectedJob.title}</h2>
                   <div className="flex items-center gap-2 mt-1">
                     <Building2 className="h-4 w-4 text-gray-500" />
