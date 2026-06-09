@@ -823,3 +823,207 @@ export const bulkUpdateUserStatus = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
+
+// ========== APPLICATION MANAGEMENT ==========
+
+export const getApplications = async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 20, search, status, company, date_range } = req.query;
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(limit as string) || 20));
+    const skip = (pageNum - 1) * pageSize;
+
+    const where: any = {};
+
+    // Search by applicant name, email, or job title
+    if (search) {
+      where.OR = [
+        { seeker: { full_name: { contains: search as string, mode: 'insensitive' } } },
+        { seeker: { user: { email: { contains: search as string, mode: 'insensitive' } } } },
+        { job: { title: { contains: search as string, mode: 'insensitive' } } }
+      ];
+    }
+
+    // Filter by status
+    if (status && status !== 'all') {
+      where.status = { status_name: status as string };
+    }
+
+    // Filter by company
+    if (company && company !== 'all') {
+      where.job = { employer: { company_name: company as string } };
+    }
+
+    // Filter by date range
+    if (date_range && date_range !== 'all') {
+      const now = new Date();
+      const startOfDay = new Date(now);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      switch (date_range) {
+        case 'today':
+          where.applied_at = { gte: startOfDay };
+          break;
+        case 'week':
+          const weekAgo = new Date(now);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          where.applied_at = { gte: weekAgo };
+          break;
+        case 'month':
+          const monthAgo = new Date(now);
+          monthAgo.setMonth(monthAgo.getMonth() - 1);
+          where.applied_at = { gte: monthAgo };
+          break;
+      }
+    }
+
+    // Fetch paginated applications
+    const [applications, total] = await Promise.all([
+      prisma.jobApplication.findMany({
+        where,
+        include: {
+          job: {
+            include: {
+              employer: {
+                include: {
+                  user: {
+                    select: { email: true, full_name: true }
+                  }
+                }
+              },
+              status: true
+            }
+          },
+          seeker: {
+            include: {
+              user: {
+                select: { email: true, full_name: true }
+              }
+            }
+          },
+          status: true
+        },
+        orderBy: { applied_at: 'desc' },
+        skip,
+        take: pageSize
+      }),
+      prisma.jobApplication.count({ where })
+    ]);
+
+    // Get statistics
+    const stats = await prisma.jobApplicationStatus.findMany({
+      include: {
+        _count: {
+          select: { applications: true }
+        }
+      }
+    });
+
+    const statsFormatted = {
+      total: total,
+      pending: stats.find(s => s.status_name === 'Pending')?._count.applications || 0,
+      reviewed: stats.find(s => s.status_name === 'Reviewed')?._count.applications || 0,
+      shortlisted: stats.find(s => s.status_name === 'Shortlisted')?._count.applications || 0,
+      interview: stats.find(s => s.status_name === 'Interview')?._count.applications || 0,
+      accepted: stats.find(s => s.status_name === 'Accepted')?._count.applications || 0,
+      rejected: stats.find(s => s.status_name === 'Rejected')?._count.applications || 0
+    };
+
+    const totalPages = Math.ceil(total / pageSize);
+
+    res.json({
+      success: true,
+      data: applications,
+      pagination: {
+        current_page: pageNum,
+        pages: totalPages,
+        total: total,
+        limit: pageSize
+      },
+      stats: statsFormatted
+    });
+  } catch (error) {
+    console.error('Get applications error:', error);
+    res.status(500).json({ success: false, message: (error as Error).message });
+  }
+};
+
+// Update application status (admin version)
+export const updateApplicationStatus = async (req: Request, res: Response) => {
+  try {
+    const { applicationId } = req.params;
+    const { status, note } = req.body;
+    
+    if (!status) {
+      return res.status(400).json({ success: false, message: 'Status is required' });
+    }
+
+    // Find the status by name
+    const statusRecord = await prisma.jobApplicationStatus.findFirst({
+      where: { status_name: status }
+    });
+
+    if (!statusRecord) {
+      return res.status(400).json({ success: false, message: 'Invalid status' });
+    }
+
+    const application = await prisma.jobApplication.findUnique({
+      where: { id: applicationId },
+      include: { job: true, seeker: true, status: true }
+    });
+
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'Application not found' });
+    }
+
+    const updatedApplication = await prisma.jobApplication.update({
+      where: { id: applicationId },
+      data: {
+        status_id: statusRecord.id,
+        employer_notes: note || null,
+        updated_at: new Date()
+      },
+      include: { 
+        job: {
+          include: {
+            employer: {
+              include: {
+                user: {
+                  select: { email: true, full_name: true }
+                }
+              }
+            }
+          }
+        },
+        seeker: {
+          include: {
+            user: {
+              select: { email: true, full_name: true }
+            }
+          }
+        },
+        status: true 
+      }
+    });
+
+    // Send notification to applicant
+    await prisma.notification.create({
+      data: {
+        user_id: application.seeker.user_id,
+        title: 'Application Status Updated',
+        message: `Your application for ${application.job.title} has been updated to ${status}`,
+        type: 'status_change',
+        created_at: new Date()
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      data: updatedApplication, 
+      message: `Application status updated to ${status}` 
+    });
+  } catch (error) {
+    console.error('Update application status error:', error);
+    res.status(500).json({ success: false, message: (error as Error).message });
+  }
+};

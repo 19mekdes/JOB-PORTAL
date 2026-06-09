@@ -125,6 +125,8 @@ const AdminApplications: React.FC = () => {
   const [moderationNote, setModerationNote] = useState('')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  const [totalItems, setTotalItems] = useState(0)
   const [companies, setCompanies] = useState<string[]>([])
   const [stats, setStats] = useState<ApplicationStats>({
     total: 0,
@@ -142,7 +144,7 @@ const AdminApplications: React.FC = () => {
       setLoading(true)
       const params = new URLSearchParams()
       params.append('page', page.toString())
-      params.append('limit', '20')
+      params.append('limit', pageSize.toString())
       if (searchTerm) params.append('search', searchTerm)
       if (statusFilter !== 'all') params.append('status', statusFilter)
       if (companyFilter !== 'all') params.append('company', companyFilter)
@@ -151,6 +153,7 @@ const AdminApplications: React.FC = () => {
       const response = await api.get(`/admin/applications?${params.toString()}`)
       setApplications(response.data.data || [])
       setTotalPages(response.data.pagination?.pages || 1)
+      setTotalItems(response.data.pagination?.total || 0)
       
       if (response.data.stats) {
         const totalProcessed = response.data.stats.reviewed + response.data.stats.shortlisted + 
@@ -178,11 +181,16 @@ const AdminApplications: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }, [page, searchTerm, statusFilter, companyFilter, dateRange])
+  }, [page, pageSize, searchTerm, statusFilter, companyFilter, dateRange])
 
   useEffect(() => {
     fetchApplications()
   }, [fetchApplications])
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setPage(1)
+  }, [searchTerm, statusFilter, companyFilter, dateRange, pageSize])
 
   const updateApplicationStatus = async (applicationId: string, status: string, note?: string) => {
     try {
@@ -288,16 +296,7 @@ const AdminApplications: React.FC = () => {
     return `${days} days ago`
   }
 
-  const filteredApplications = applications.filter(app => {
-    const matchesSearch = 
-      app.job?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.seeker?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.job?.employer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || app.status?.status_name === statusFilter
-    const matchesCompany = companyFilter === 'all' || app.job?.employer?.company_name === companyFilter
-    const matchesTab = activeTab === 'all' || app.status?.status_name.toLowerCase() === activeTab
-    return matchesSearch && matchesStatus && matchesCompany && matchesTab
-  })
+  const filteredApplications = applications
 
   if (loading) {
     return (
@@ -413,7 +412,7 @@ const AdminApplications: React.FC = () => {
                    activeTab === 'shortlisted' ? 'Shortlisted Applications' :
                    activeTab === 'interview' ? 'Interview Applications' :
                    activeTab === 'accepted' ? 'Accepted Applications' : 'Rejected Applications'}
-                  <span className="text-sm text-gray-500 ml-2">({filteredApplications.length})</span>
+                  <span className="text-sm text-gray-500 ml-2">({totalItems})</span>
                 </CardTitle>
                 <div className="flex gap-3 flex-wrap">
                   <div className="relative w-64">
@@ -531,28 +530,137 @@ const AdminApplications: React.FC = () => {
               
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex justify-center gap-2 mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="bg-white border-gray-300"
-                  >
-                    Previous
-                  </Button>
-                  <span className="px-4 py-2 text-sm text-gray-700">
-                    Page {page} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="bg-white border-gray-300"
-                  >
-                    Next
-                  </Button>
+                <div className="flex flex-col gap-4 mt-6 pt-4 border-t border-gray-200">
+                  {/* Pagination Stats */}
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="text-sm text-gray-600">
+                      Showing <span className="font-semibold">{(page - 1) * pageSize + 1}</span> to <span className="font-semibold">{Math.min(page * pageSize, totalItems)}</span> of <span className="font-semibold">{totalItems}</span> applications
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <label className="text-sm text-gray-600">Items per page:</label>
+                      <Select value={pageSize.toString()} onValueChange={(val) => setPageSize(Number(val))}>
+                        <SelectTrigger className="w-32 bg-white border-gray-300">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-gray-200">
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="20">20</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                          <SelectItem value="100">100</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Page Navigation */}
+                  <div className="flex justify-center items-center gap-2 flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(1)}
+                      disabled={page === 1}
+                      className="bg-white border-gray-300"
+                    >
+                      First
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="bg-white border-gray-300"
+                    >
+                      Previous
+                    </Button>
+
+                    {/* Page Numbers */}
+                    <div className="flex gap-1">
+                      {(() => {
+                        const pages = [];
+                        const maxButtons = 5;
+                        let startPage = Math.max(1, page - Math.floor(maxButtons / 2));
+                        const endPage = Math.min(totalPages, startPage + maxButtons - 1);
+                        
+                        if (endPage - startPage < maxButtons - 1) {
+                          startPage = Math.max(1, endPage - maxButtons + 1);
+                        }
+
+                        if (startPage > 1) {
+                          pages.push(
+                            <Button key="first-1" variant="outline" size="sm" onClick={() => setPage(1)} className="bg-white border-gray-300">1</Button>
+                          );
+                          if (startPage > 2) {
+                            pages.push(<span key="ellipsis-start" className="px-2 py-1 text-gray-500">...</span>);
+                          }
+                        }
+
+                        for (let i = startPage; i <= endPage; i++) {
+                          pages.push(
+                            <Button
+                              key={i}
+                              variant={page === i ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setPage(i)}
+                              className={page === i ? "bg-blue-600 border-blue-600" : "bg-white border-gray-300"}
+                            >
+                              {i}
+                            </Button>
+                          );
+                        }
+
+                        if (endPage < totalPages) {
+                          if (endPage < totalPages - 1) {
+                            pages.push(<span key="ellipsis-end" className="px-2 py-1 text-gray-500">...</span>);
+                          }
+                          pages.push(
+                            <Button key={`last-${totalPages}`} variant="outline" size="sm" onClick={() => setPage(totalPages)} className="bg-white border-gray-300">{totalPages}</Button>
+                          );
+                        }
+
+                        return pages;
+                      })()}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="bg-white border-gray-300"
+                    >
+                      Next
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(totalPages)}
+                      disabled={page === totalPages}
+                      className="bg-white border-gray-300"
+                    >
+                      Last
+                    </Button>
+                  </div>
+
+                  {/* Go to page input */}
+                  <div className="flex justify-center gap-2">
+                    <Input
+                      type="number"
+                      min="1"
+                      max={totalPages}
+                      placeholder="Go to page"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const pageNum = parseInt((e.target as HTMLInputElement).value);
+                          if (pageNum >= 1 && pageNum <= totalPages) {
+                            setPage(pageNum);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }
+                      }}
+                      className="w-32 bg-white border-gray-300 text-center"
+                    />
+                    <span className="text-sm text-gray-600">Page {page} of {totalPages}</span>
+                  </div>
                 </div>
               )}
             </CardContent>

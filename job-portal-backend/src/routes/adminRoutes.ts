@@ -14,7 +14,9 @@ import {
   bulkUpdateUserStatus,
   updateUser,
   resetPassword,
-  deleteUser
+  deleteUser,
+  getApplications,
+  updateApplicationStatus
 } from '../controllers/adminController';
 import { authMiddleware, isAdmin, isSuperAdmin, authorizeAny } from '../middleware/authMiddleware';
 
@@ -55,6 +57,10 @@ router.delete('/jobs/:jobId', isSuperAdmin, deleteJob);
 // ========== BULK ACTIONS (Super Admin only) ==========
 router.post('/jobs/bulk-delete', isSuperAdmin, bulkDeleteJobs);
 router.post('/users/bulk-status', isSuperAdmin, bulkUpdateUserStatus);
+
+// ========== APPLICATION MANAGEMENT ==========
+router.get('/applications', getApplications);
+router.put('/applications/:applicationId/status', updateApplicationStatus);
 
 console.log('✅ Admin routes registered successfully:');
 console.log('   GET    /users');
