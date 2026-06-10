@@ -19,6 +19,11 @@ import {
   updateApplicationStatus
 } from '../controllers/adminController';
 import { authMiddleware, isAdmin, isSuperAdmin, authorizeAny } from '../middleware/authMiddleware';
+import {
+  getSettings,
+  updateSettings
+} from '../controllers/settingsController'
+
 
 const router = express.Router();
 
@@ -27,7 +32,9 @@ router.use((req, res, next) => {
   console.log(`📌 [Admin Route] ${req.method} ${req.originalUrl}`);
   next();
 });
-
+// Add to your admin routes (after auth middleware)
+router.get('/settings', getSettings)
+router.put('/settings', updateSettings)
 // Apply authentication to all admin routes
 router.use(authMiddleware);
 
