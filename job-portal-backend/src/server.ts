@@ -1,6 +1,5 @@
 import 'dotenv/config'
 
-// Add this at the top of server.ts right after imports
 process.on('uncaughtException', (error) => {
   console.error('❌ Uncaught Exception:', error)
   process.exit(1)
@@ -40,7 +39,7 @@ const app = express()
 
 // CORS configuration - IMMEDIATELY AFTER creating app
 app.use(cors({
-  origin: true, // Allow all origins for development
+  origin: true, 
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
@@ -58,10 +57,6 @@ app.options('*', (req, res) => {
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-// Then your routes
-// ... rest of your code
-
-// Express Request Interface Extension
 
 
 
@@ -90,11 +85,6 @@ const getPublicIdFromUrl = (url: string): string | null => {
     return null
   }
 }
-
-
-
-
-
 // ========== MULTER CONFIGURATION ==========
 // 1. Keep Local Engine for Resumes
 const storage = multer.diskStorage({
