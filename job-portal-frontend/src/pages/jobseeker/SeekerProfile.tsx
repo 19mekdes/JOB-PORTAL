@@ -113,9 +113,7 @@ const SeekerProfile: React.FC = () => {
 
   // Profile Picture (Avatar) state
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
-  const [profilePicturePreview, setProfilePicturePreview] = useState<
-    string | null
-  >(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
 
   // Skills state
@@ -164,7 +162,6 @@ const SeekerProfile: React.FC = () => {
 
   useEffect(() => {
     fetchProfile();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchProfile = async () => {
@@ -175,40 +172,41 @@ const SeekerProfile: React.FC = () => {
       const profileData = data.profile;
 
       console.log("Raw profile data:", profileData);
+      console.log("Title from API:", profileData?.title);
+      console.log("LinkedIn from API:", profileData?.linkedin_url);
+      console.log("GitHub from API:", profileData?.github_url);
+      console.log("Experience from API:", profileData?.experience);
+      console.log("Education from API:", profileData?.education);
 
-      // Parse experience - handle JSON string from database
+      // Parse experience - handle both string and array
       let experienceData: Experience[] = [];
       const expField = profileData?.experience;
-
       if (expField) {
-        if (typeof expField === "string") {
+        if (Array.isArray(expField)) {
+          experienceData = expField;
+        } else if (typeof expField === "string") {
           try {
             experienceData = JSON.parse(expField);
-            console.log("Parsed experience:", experienceData);
           } catch (e) {
             console.error("Error parsing experience:", e);
             experienceData = [];
           }
-        } else if (Array.isArray(expField)) {
-          experienceData = expField;
         }
       }
 
-      // Parse education - handle JSON string from database
+      // Parse education - handle both string and array
       let educationData: Education[] = [];
       const eduField = profileData?.education;
-
       if (eduField) {
-        if (typeof eduField === "string") {
+        if (Array.isArray(eduField)) {
+          educationData = eduField;
+        } else if (typeof eduField === "string") {
           try {
             educationData = JSON.parse(eduField);
-            console.log("Parsed education:", educationData);
           } catch (e) {
             console.error("Error parsing education:", e);
             educationData = [];
           }
-        } else if (Array.isArray(eduField)) {
-          educationData = eduField;
         }
       }
 
@@ -264,8 +262,7 @@ const SeekerProfile: React.FC = () => {
     if (profileData.title) completed++;
     if (profileData.bio) completed++;
     if (profileData.skills && profileData.skills.length > 0) completed++;
-    if (profileData.experience && profileData.experience.length > 0)
-      completed++;
+    if (profileData.experience && profileData.experience.length > 0) completed++;
     if (profileData.education && profileData.education.length > 0) completed++;
     if (profileData.resume_url) completed++;
     if (profileData.phone) completed++;
@@ -300,9 +297,7 @@ const SeekerProfile: React.FC = () => {
     }
   };
 
-  const handleProfilePictureChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith("image/")) {
@@ -376,19 +371,35 @@ const SeekerProfile: React.FC = () => {
     }
   };
 
+  // FIXED: handleSubmit - sends all data including title, linkedin, github, etc.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await api.put("/auth/profile", formData);
+      const payload = {
+        full_name: formData.full_name,
+        phone: formData.phone,
+        location: formData.location,
+        title: formData.title,
+        bio: formData.bio,
+        linkedin_url: formData.linkedin_url,
+        github_url: formData.github_url,
+        portfolio_url: formData.portfolio_url,
+        availability: formData.availability,
+      };
+      
+      console.log("Saving profile payload:", payload);
+      
+      await api.put("/auth/profile", payload);
       toast({ title: "Success", description: "Profile updated successfully" });
       await fetchProfile();
       setIsEditing(false);
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error saving profile:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to update profile",
+        description: error.response?.data?.message || "Failed to update profile",
       });
     } finally {
       setIsSaving(false);
@@ -412,6 +423,7 @@ const SeekerProfile: React.FC = () => {
     }
   };
 
+  // FIXED: addSkill - sends skills correctly
   const addSkill = async () => {
     if (!newSkill.trim()) return;
     if (skills.includes(newSkill.trim())) {
@@ -431,9 +443,15 @@ const SeekerProfile: React.FC = () => {
       await fetchProfile();
     } catch (error) {
       console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add skill",
+      });
     }
   };
 
+  // FIXED: removeSkill - sends skills correctly
   const removeSkill = async (skillToRemove: string) => {
     const updatedSkills = skills.filter((s) => s !== skillToRemove);
     setSkills(updatedSkills);
@@ -443,6 +461,11 @@ const SeekerProfile: React.FC = () => {
       await fetchProfile();
     } catch (error) {
       console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to remove skill",
+      });
     }
   };
 
@@ -466,6 +489,7 @@ const SeekerProfile: React.FC = () => {
     setShowExpDialog(true);
   };
 
+  // FIXED: saveExperience - properly sends experience as JSON string
   const saveExperience = async () => {
     if (!expFormData.title || !expFormData.company) {
       toast({
@@ -497,6 +521,7 @@ const SeekerProfile: React.FC = () => {
       setShowExpDialog(false);
       await fetchProfile();
     } catch (error) {
+      console.error("Error saving experience:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -543,6 +568,7 @@ const SeekerProfile: React.FC = () => {
     setShowEduDialog(true);
   };
 
+  // FIXED: saveEducation - properly sends education as JSON string
   const saveEducation = async () => {
     if (!eduFormData.institution || !eduFormData.degree) {
       toast({
@@ -574,6 +600,7 @@ const SeekerProfile: React.FC = () => {
       setShowEduDialog(false);
       await fetchProfile();
     } catch (error) {
+      console.error("Error saving education:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -677,7 +704,7 @@ const SeekerProfile: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full flex-col bg-linear-to-r from-blue-500 to-purple-600">
+            <div className="flex items-center justify-center h-full flex-col bg-gradient-to-r from-blue-500 to-purple-600">
               <Upload className="h-10 w-10 text-white/50 mb-2" />
               <p className="text-white/70 text-sm">
                 Click camera icon to upload cover image
@@ -791,7 +818,7 @@ const SeekerProfile: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Contact Information Card - UPDATED with Email, LinkedIn, GitHub */}
+          {/* Contact Information Card */}
           <Card className="border border-gray-200 shadow-sm bg-white">
             <CardHeader>
               <CardTitle className="text-lg text-gray-900">
@@ -799,7 +826,6 @@ const SeekerProfile: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {/* Phone - Clickable */}
               {formData.phone && (
                 <div className="flex items-center gap-2 text-sm">
                   <Phone className="h-4 w-4 text-gray-400 shrink-0" />
@@ -811,8 +837,6 @@ const SeekerProfile: React.FC = () => {
                   </a>
                 </div>
               )}
-
-              {/* LinkedIn - Clickable */}
               {formData.linkedin_url && (
                 <div className="flex items-center gap-2 text-sm">
                   <FaLinkedin className="h-4 w-4 text-[#0077b5] shrink-0" />
@@ -826,8 +850,6 @@ const SeekerProfile: React.FC = () => {
                   </a>
                 </div>
               )}
-
-              {/* GitHub - Clickable */}
               {formData.github_url && (
                 <div className="flex items-center gap-2 text-sm">
                   <FaGithub className="h-4 w-4 text-gray-700 shrink-0" />
@@ -847,39 +869,23 @@ const SeekerProfile: React.FC = () => {
 
         {/* Main Content - Tabs */}
         <div className="lg:col-span-2">
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="space-y-6"
-          >
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-4 bg-gray-100">
-              <TabsTrigger
-                value="basic"
-                className="data-[state=active]:bg-white"
-              >
+              <TabsTrigger value="basic" className="data-[state=active]:bg-white">
                 Basic Info
               </TabsTrigger>
-              <TabsTrigger
-                value="skills"
-                className="data-[state=active]:bg-white"
-              >
+              <TabsTrigger value="skills" className="data-[state=active]:bg-white">
                 Skills
               </TabsTrigger>
-              <TabsTrigger
-                value="experience"
-                className="data-[state=active]:bg-white"
-              >
+              <TabsTrigger value="experience" className="data-[state=active]:bg-white">
                 Experience
               </TabsTrigger>
-              <TabsTrigger
-                value="education"
-                className="data-[state=active]:bg-white"
-              >
+              <TabsTrigger value="education" className="data-[state=active]:bg-white">
                 Education
               </TabsTrigger>
             </TabsList>
 
-            {/* Basic Info Tab - ADDED LinkedIn, GitHub, Portfolio fields */}
+            {/* Basic Info Tab */}
             <TabsContent value="basic">
               <Card className="border border-gray-200 shadow-sm bg-white">
                 <CardHeader>
@@ -932,19 +938,14 @@ const SeekerProfile: React.FC = () => {
                       <Input
                         value={formData.full_name}
                         onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            full_name: e.target.value,
-                          })
+                          setFormData({ ...formData, full_name: e.target.value })
                         }
                         disabled={!isEditing}
                         className="bg-white border-gray-300"
                       />
                     </div>
                     <div>
-                      <Label className="text-gray-700">
-                        Professional Title
-                      </Label>
+                      <Label className="text-gray-700">Professional Title</Label>
                       <Input
                         value={formData.title}
                         onChange={(e) =>
@@ -954,7 +955,6 @@ const SeekerProfile: React.FC = () => {
                         className="bg-white border-gray-300"
                       />
                     </div>
-
                     <div>
                       <Label className="text-gray-700">Phone Number</Label>
                       <Input
@@ -998,7 +998,6 @@ const SeekerProfile: React.FC = () => {
                         ))}
                       </select>
                     </div>
-                    {/* LinkedIn URL Field */}
                     <div>
                       <Label className="text-gray-700">LinkedIn URL</Label>
                       <Input
@@ -1014,7 +1013,6 @@ const SeekerProfile: React.FC = () => {
                         className="bg-white border-gray-300"
                       />
                     </div>
-                    {/* GitHub URL Field */}
                     <div>
                       <Label className="text-gray-700">GitHub URL</Label>
                       <Input
@@ -1030,7 +1028,6 @@ const SeekerProfile: React.FC = () => {
                         className="bg-white border-gray-300"
                       />
                     </div>
-                    {/* Portfolio URL Field */}
                     <div>
                       <Label className="text-gray-700">Portfolio URL</Label>
                       <Input
@@ -1138,8 +1135,7 @@ const SeekerProfile: React.FC = () => {
                 <CardContent>
                   {!profile.experience || profile.experience.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
-                      No work experience added yet. Click "Add Experience" to
-                      start.
+                      No work experience added yet. Click "Add Experience" to start.
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -1183,7 +1179,7 @@ const SeekerProfile: React.FC = () => {
                             {exp.current ? "Present" : exp.end_date || ""}
                           </p>
                           {exp.description && (
-                            <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">
+                            <p className="text-sm text-gray-600 mt-2">
                               {exp.description}
                             </p>
                           )}
@@ -1255,7 +1251,7 @@ const SeekerProfile: React.FC = () => {
                             {edu.current ? "Present" : edu.end_date || ""}
                           </p>
                           {edu.description && (
-                            <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">
+                            <p className="text-sm text-gray-600 mt-2">
                               {edu.description}
                             </p>
                           )}
@@ -1319,10 +1315,7 @@ const SeekerProfile: React.FC = () => {
                   type="month"
                   value={expFormData.start_date}
                   onChange={(e) =>
-                    setExpFormData({
-                      ...expFormData,
-                      start_date: e.target.value,
-                    })
+                    setExpFormData({ ...expFormData, start_date: e.target.value })
                   }
                   className="bg-white border-gray-300"
                 />
@@ -1334,10 +1327,7 @@ const SeekerProfile: React.FC = () => {
                     type="month"
                     value={expFormData.end_date}
                     onChange={(e) =>
-                      setExpFormData({
-                        ...expFormData,
-                        end_date: e.target.value,
-                      })
+                      setExpFormData({ ...expFormData, end_date: e.target.value })
                     }
                     className="bg-white border-gray-300"
                   />
@@ -1358,10 +1348,7 @@ const SeekerProfile: React.FC = () => {
               <Textarea
                 value={expFormData.description}
                 onChange={(e) =>
-                  setExpFormData({
-                    ...expFormData,
-                    description: e.target.value,
-                  })
+                  setExpFormData({ ...expFormData, description: e.target.value })
                 }
                 rows={4}
                 placeholder="Describe your responsibilities and achievements..."
@@ -1377,10 +1364,7 @@ const SeekerProfile: React.FC = () => {
             >
               Cancel
             </Button>
-            <Button
-              onClick={saveExperience}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
+            <Button onClick={saveExperience} className="bg-blue-600 hover:bg-blue-700 text-white">
               Save
             </Button>
           </DialogFooter>
@@ -1401,10 +1385,7 @@ const SeekerProfile: React.FC = () => {
               <Input
                 value={eduFormData.institution}
                 onChange={(e) =>
-                  setEduFormData({
-                    ...eduFormData,
-                    institution: e.target.value,
-                  })
+                  setEduFormData({ ...eduFormData, institution: e.target.value })
                 }
                 placeholder="e.g., Addis Ababa University"
                 className="bg-white border-gray-300"
@@ -1426,10 +1407,7 @@ const SeekerProfile: React.FC = () => {
               <Input
                 value={eduFormData.field_of_study}
                 onChange={(e) =>
-                  setEduFormData({
-                    ...eduFormData,
-                    field_of_study: e.target.value,
-                  })
+                  setEduFormData({ ...eduFormData, field_of_study: e.target.value })
                 }
                 placeholder="e.g., Computer Science"
                 className="bg-white border-gray-300"
@@ -1442,10 +1420,7 @@ const SeekerProfile: React.FC = () => {
                   type="month"
                   value={eduFormData.start_date}
                   onChange={(e) =>
-                    setEduFormData({
-                      ...eduFormData,
-                      start_date: e.target.value,
-                    })
+                    setEduFormData({ ...eduFormData, start_date: e.target.value })
                   }
                   className="bg-white border-gray-300"
                 />
@@ -1457,10 +1432,7 @@ const SeekerProfile: React.FC = () => {
                     type="month"
                     value={eduFormData.end_date}
                     onChange={(e) =>
-                      setEduFormData({
-                        ...eduFormData,
-                        end_date: e.target.value,
-                      })
+                      setEduFormData({ ...eduFormData, end_date: e.target.value })
                     }
                     className="bg-white border-gray-300"
                   />
@@ -1481,10 +1453,7 @@ const SeekerProfile: React.FC = () => {
               <Textarea
                 value={eduFormData.description}
                 onChange={(e) =>
-                  setEduFormData({
-                    ...eduFormData,
-                    description: e.target.value,
-                  })
+                  setEduFormData({ ...eduFormData, description: e.target.value })
                 }
                 rows={3}
                 placeholder="Additional details about your education..."
@@ -1500,10 +1469,7 @@ const SeekerProfile: React.FC = () => {
             >
               Cancel
             </Button>
-            <Button
-              onClick={saveEducation}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
+            <Button onClick={saveEducation} className="bg-blue-600 hover:bg-blue-700 text-white">
               Save
             </Button>
           </DialogFooter>

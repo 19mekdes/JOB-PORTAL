@@ -133,8 +133,8 @@ model JobSeekerProfile {
   phone         String?
   resume_url    String?
   skills        String[]
-  experience    String?
-  education     String?
+  experience    Json?                // ← CHANGE from String? to Json?
+  education     Json?                // ← CHANGE from String? to Json?
   location      String?
   cover_image   String?
   avatar        String?
@@ -152,7 +152,6 @@ model JobSeekerProfile {
 
   @@index([user_id])
 }
-
 model JobSeekerPreference {
   id                     String           @id @default(uuid())
   seeker_id              String           @unique

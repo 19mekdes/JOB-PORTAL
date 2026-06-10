@@ -535,16 +535,60 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
   }
 })
 
-// ========== PROFILE ROUTES ==========
+// FIXED: GET profile endpoint - properly handles both seeker and employer profiles
 app.get('/api/profile/me', authMiddleware, async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
-      include: { user_type: true, seeker_profile: true, employer_profile: { include: { industry: true } } }
+      include: { 
+        user_type: true, 
+        seeker_profile: true, 
+        employer_profile: { include: { industry: true } } 
+      }
     })
     if (!user) return res.status(404).json({ success: false, message: 'User not found' })
     
-    const profile = user.seeker_profile || user.employer_profile
+    // Only return seeker_profile fields if it's a job seeker
+    let profile = null
+    if (user.seeker_profile) {
+      profile = {
+        id: user.seeker_profile.id,
+        full_name: user.seeker_profile.full_name,
+        phone: user.seeker_profile.phone,
+        location: user.seeker_profile.location,
+        title: user.seeker_profile.title,
+        bio: user.seeker_profile.bio,
+        skills: user.seeker_profile.skills,
+        experience: user.seeker_profile.experience,
+        education: user.seeker_profile.education,
+        linkedin_url: user.seeker_profile.linkedin_url,
+        github_url: user.seeker_profile.github_url,
+        portfolio_url: user.seeker_profile.portfolio_url,
+        availability: user.seeker_profile.availability,
+        cover_image: user.seeker_profile.cover_image,
+        avatar: user.seeker_profile.avatar,
+        resume_url: user.seeker_profile.resume_url
+      }
+    } else if (user.employer_profile) {
+      profile = {
+        id: user.employer_profile.id,
+        company_name: user.employer_profile.company_name,
+        company_description: user.employer_profile.company_description,
+        location: user.employer_profile.location,
+        phone: user.employer_profile.phone,
+        website: user.employer_profile.website,
+        logo_url: user.employer_profile.logo_url,
+        cover_image: user.employer_profile.cover_image,
+        is_verified: user.employer_profile.is_verified
+      }
+    }
+    
+    console.log('📤 Returning profile type:', user.seeker_profile ? 'Job Seeker' : 'Employer')
+    if (user.seeker_profile) {
+      console.log('Title:', profile?.title)
+      console.log('LinkedIn:', profile?.linkedin_url)
+    }
+    
     res.json({ 
       success: true, 
       data: { 
@@ -553,54 +597,173 @@ app.get('/api/profile/me', authMiddleware, async (req: Request, res: Response) =
       } 
     })
   } catch (error: any) {
+    console.error('Profile fetch error:', error)
     res.status(500).json({ success: false, message: error.message })
   }
 })
-
-app.put('/api/auth/profile', authMiddleware, uploadImage.single('avatar'), async (req: Request, res: Response) => {
+// FIXED: PUT profile endpoint - only updates seeker profile fields
+app.put('/api/auth/profile', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id
-    const { full_name, phone, location, title, bio, linkedin_url, github_url, portfolio_url, availability, skills, cover_image } = req.body
+    const { 
+      title, 
+      linkedin_url, 
+      github_url, 
+      portfolio_url, 
+      availability,
+      full_name,
+      phone,
+      location,
+      bio,
+      skills,
+      experience,
+      education
+    } = req.body
     
-    let profile = await prisma.jobSeekerProfile.findFirst({ where: { user_id: userId } })
-    if (!profile) {
-      const user = await prisma.user.findUnique({ where: { id: userId } })
-      profile = await prisma.jobSeekerProfile.create({ data: { user_id: userId, full_name: user?.full_name || 'Job Seeker', skills: [] } })
+    console.log('📝 ========== PROFILE UPDATE ==========')
+    console.log('User ID:', userId)
+    console.log('Title received:', title)
+    console.log('LinkedIn received:', linkedin_url)
+    console.log('GitHub received:', github_url)
+    console.log('Portfolio received:', portfolio_url)
+    console.log('Availability received:', availability)
+    
+    // Check if user is a job seeker
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { seeker_profile: true }
+    })
+    
+    if (!user?.seeker_profile) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Only job seekers can update these profile fields' 
+      })
     }
     
+    // Build update data
     const updateData: any = {}
     
-    if (req.file) {
-      if (profile.avatar) {
-        const oldPublicId = getPublicIdFromUrl(profile.avatar)
-        if (oldPublicId) await cloudinary.uploader.destroy(oldPublicId)
-      }
-      updateData.avatar = req.file.path // Cloudinary URL
+    if (title !== undefined && title !== '') updateData.title = title
+    if (linkedin_url !== undefined && linkedin_url !== '') updateData.linkedin_url = linkedin_url
+    if (github_url !== undefined && github_url !== '') updateData.github_url = github_url
+    if (portfolio_url !== undefined && portfolio_url !== '') updateData.portfolio_url = portfolio_url
+    if (availability !== undefined && availability !== '') updateData.availability = availability
+    if (full_name !== undefined && full_name !== '') updateData.full_name = full_name
+    if (phone !== undefined && phone !== '') updateData.phone = phone
+    if (location !== undefined && location !== '') updateData.location = location
+    if (bio !== undefined && bio !== '') updateData.bio = bio
+    
+    // Skills
+    if (skills !== undefined) {
+      updateData.skills = Array.isArray(skills) ? skills : 
+        (typeof skills === 'string' ? skills.split(',').map(s => s.trim()) : [])
     }
     
-    if (cover_image && cover_image !== 'undefined') updateData.cover_image = cover_image
-    if (full_name && full_name !== 'undefined') updateData.full_name = full_name
-    if (phone && phone !== 'undefined') updateData.phone = phone
-    if (location && location !== 'undefined') updateData.location = location
-    if (title && title !== 'undefined') updateData.title = title
-    if (bio && bio !== 'undefined') updateData.bio = bio
-    if (linkedin_url && linkedin_url !== 'undefined') updateData.linkedin_url = linkedin_url
-    if (github_url && github_url !== 'undefined') updateData.github_url = github_url
-    if (portfolio_url && portfolio_url !== 'undefined') updateData.portfolio_url = portfolio_url
-    if (availability && availability !== 'undefined') updateData.availability = availability
-    
-    if (skills && skills !== 'undefined') {
-      updateData.skills = typeof skills === 'string' ? skills.split(',').map(s => s.trim()).filter(s => s) : skills
+    // Experience
+    if (experience !== undefined) {
+      updateData.experience = typeof experience === 'string' ? JSON.parse(experience) : experience
     }
     
-    const updatedProfile = await prisma.jobSeekerProfile.update({ where: { id: profile.id }, data: updateData })
-    
-    if (full_name) {
-      await prisma.user.update({ where: { id: userId }, data: { full_name } })
+    // Education
+    if (education !== undefined) {
+      updateData.education = typeof education === 'string' ? JSON.parse(education) : education
     }
     
-    res.json({ success: true, data: { profile: updatedProfile }, message: 'Profile updated successfully' })
+    console.log('Updating fields:', Object.keys(updateData))
+    
+    // Update profile
+    const updatedProfile = await prisma.jobSeekerProfile.update({
+      where: { id: user.seeker_profile.id },
+      data: updateData
+    })
+    
+    console.log('✅ Profile updated - New Title:', updatedProfile.title)
+    console.log('✅ Profile updated - New LinkedIn:', updatedProfile.linkedin_url)
+    console.log('=========================================\n')
+    
+    res.json({
+      success: true,
+      data: { profile: updatedProfile },
+      message: 'Profile updated successfully'
+    })
+    
   } catch (error: any) {
+    console.error('❌ Profile update error:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+// NEW DEDICATED PROFILE UPDATE ENDPOINT
+app.put('/api/profile/update-info', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id
+    const { 
+      title, 
+      linkedin_url, 
+      github_url, 
+      portfolio_url, 
+      availability,
+      full_name,
+      phone,
+      location,
+      bio
+    } = req.body
+    
+    console.log('📝 ========== PROFILE UPDATE (NEW ENDPOINT) ==========')
+    console.log('User ID:', userId)
+    console.log('Title:', title)
+    console.log('LinkedIn:', linkedin_url)
+    console.log('GitHub:', github_url)
+    console.log('Portfolio:', portfolio_url)
+    console.log('Availability:', availability)
+    
+    // Find the profile
+    let profile = await prisma.jobSeekerProfile.findFirst({
+      where: { user_id: userId }
+    })
+    
+    if (!profile) {
+      console.log('Profile not found, creating new one...')
+      const user = await prisma.user.findUnique({ where: { id: userId } })
+      profile = await prisma.jobSeekerProfile.create({
+        data: {
+          user_id: userId,
+          full_name: user?.full_name || 'Job Seeker',
+          skills: []
+        }
+      })
+    }
+    
+    // Update the profile - DIRECT UPDATE
+    const updatedProfile = await prisma.jobSeekerProfile.update({
+      where: { id: profile.id },
+      data: {
+        title: title || null,
+        linkedin_url: linkedin_url || null,
+        github_url: github_url || null,
+        portfolio_url: portfolio_url || null,
+        availability: availability || null,
+        full_name: full_name || profile.full_name,
+        phone: phone || profile.phone,
+        location: location || profile.location,
+        bio: bio || profile.bio,
+        
+      }
+    })
+    
+    console.log('✅ Profile updated successfully!')
+    console.log('New Title in DB:', updatedProfile.title)
+    console.log('New LinkedIn in DB:', updatedProfile.linkedin_url)
+    console.log('=========================================\n')
+    
+    res.json({
+      success: true,
+      data: updatedProfile,
+      message: 'Profile updated successfully'
+    })
+    
+  } catch (error: any) {
+    console.error('❌ Error:', error)
     res.status(500).json({ success: false, message: error.message })
   }
 })
