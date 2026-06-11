@@ -132,6 +132,7 @@ const Home: React.FC = () => {
       if (diffHours < 24) return `${diffHours} hours ago`
       if (diffDays < 7) return `${diffDays} days ago`
       return date.toLocaleDateString()
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       return 'Recently'
     }

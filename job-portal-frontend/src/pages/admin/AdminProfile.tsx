@@ -1,25 +1,16 @@
 /* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// src/pages/admin/AdminProfile.tsx
 import React, { useState, useEffect, useRef } from 'react'
 import {
   User,
-  Mail,
-  Phone,
-  MapPin,
   Lock,
   Bell,
   Shield,
   Save,
   RefreshCw,
   Camera,
-  Eye,
-  EyeOff,
-  CheckCircle,
-  AlertCircle,
   Key,
-  Smartphone,
   X,
   Upload
 } from 'lucide-react'
@@ -32,7 +23,6 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
