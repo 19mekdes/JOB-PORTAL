@@ -1,4 +1,4 @@
-// src/pages/superadmin/SuperAdminSettings.tsx
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,10 +10,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { 
   Save, RefreshCw, Globe, Users, Briefcase, FileText, 
-  Shield, Server, AlertTriangle, CheckCircle, Loader2, 
-  Mail, Lock, Database, Bell, DollarSign,
-  Key, Send, Settings, Layout
-} from 'lucide-react'
+  AlertTriangle, Loader2, 
+  Mail, Lock, Database, Bell, 
+  Key, Send} from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
@@ -167,6 +166,7 @@ const SuperAdminSettings: React.FC = () => {
     }
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchSettings() }, [])
 
   if (loading) {

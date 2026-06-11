@@ -1,4 +1,5 @@
-// src/pages/superadmin/Profile.tsx
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -7,8 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Switch } from '@/components/ui/switch'
-import { Camera, Save, RefreshCw, User, Mail, Shield, Key, Bell, X, Upload } from 'lucide-react'
+import { Camera, Save, RefreshCw, User } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 

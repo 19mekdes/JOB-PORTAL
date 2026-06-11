@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/pages/superadmin/CompanyManagement.tsx
 import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -235,6 +235,7 @@ const CompanyManagement: React.FC = () => {
       setIsVerifyDialogOpen(false)
       setOpenMenuId(null)
       fetchCompanies()
+    
     } catch (err: any) {
       setCompanies(prev => prev.map(c => c.id === selectedCompany.id ? { ...c, is_verified: true } : c))
       toast({ title: "Success (Demo)", description: `${selectedCompany.company_name} has been verified!` })

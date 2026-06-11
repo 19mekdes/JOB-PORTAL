@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import api from '../../services/api'
 
-// ========== TYPES ==========
 export interface BookmarkedJob {
   id: number
   job: {

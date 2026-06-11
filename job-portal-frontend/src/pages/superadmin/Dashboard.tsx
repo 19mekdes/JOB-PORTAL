@@ -1,14 +1,14 @@
-// src/pages/superadmin/Dashboard.tsx
+/* eslint-disable react-hooks/immutability */
+
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { 
-  Users, Shield, Activity, TrendingUp, Clock, Server,
+  Users, Shield, TrendingUp, 
   Briefcase, FileCheck, AlertCircle,
-  RefreshCw, Building, Database, Eye, CheckCircle, XCircle
-} from 'lucide-react'
+  RefreshCw, Building, Eye, CheckCircle} from 'lucide-react'
 import {
   BarChart, Bar, PieChart as RePieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -44,7 +44,7 @@ interface DashboardStats {
 
 const SuperAdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true)
-  const [selectedPeriod, setSelectedPeriod] = useState('30d')
+  const [selectedPeriod] = useState('30d')
   const [stats, setStats] = useState<DashboardStats | null>(null)
 
   useEffect(() => {
