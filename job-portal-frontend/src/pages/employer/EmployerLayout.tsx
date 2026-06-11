@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link, Outlet, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { RootState } from '@/redux/store'
+import { AppDispatch, RootState } from '@/redux/store'
 import { logout } from '@/redux/slices/authSlice'
 import {
   LayoutDashboard,
@@ -51,7 +51,7 @@ interface Notification {
 const EmployerLayout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
   const { user } = useSelector((state: RootState) => state.auth)
   const { darkMode } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(true)

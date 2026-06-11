@@ -66,6 +66,32 @@ const Home: React.FC = () => {
     fetchAllData()
   }, [])
 
+  // ✅ NEW: Function to get correct dashboard route based on user role
+  const getDashboardRoute = () => {
+    if (!user) return '/register'
+    
+    const userType = user.user_type || user.role
+    
+    switch (userType) {
+      case 'Super Admin':
+        return '/super-admin/dashboard'
+      case 'Admin':
+        return '/admin/dashboard'
+      case 'Employer':
+        return '/employer/dashboard'
+      case 'Job Seeker':
+        return '/jobseeker/dashboard'
+      default:
+        return '/dashboard'
+    }
+  }
+
+  // ✅ NEW: Handle Go to Dashboard click
+  const handleGoToDashboard = () => {
+    const route = getDashboardRoute()
+    navigate(route)
+  }
+
   const handleCompanyClick = (companyName: string) => {
     navigate(`/jobs?search=${encodeURIComponent(companyName)}`)
   }
@@ -83,7 +109,6 @@ const Home: React.FC = () => {
       handleSearch()
     }
   }
-
 
   const formatSalary = (min: number | null, max: number | null) => {
     if (!min && !max) return 'Competitive'
@@ -107,7 +132,6 @@ const Home: React.FC = () => {
       if (diffHours < 24) return `${diffHours} hours ago`
       if (diffDays < 7) return `${diffDays} days ago`
       return date.toLocaleDateString()
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       return 'Recently'
     }
@@ -157,9 +181,6 @@ const Home: React.FC = () => {
             style={{ opacity: videoPlaying ? 1 : 0.8 }}
           >
             <source src="https://www.pexels.com/download/video/6325851/" type="video/mp4" />
-
-            
-            {/* Fallback image if video doesn't load */}
             <img 
               src="https://images.pexels.com/photos/3184416/pexels-photo-3184416.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&dpr=2"
               alt="Office background"
@@ -227,8 +248,6 @@ const Home: React.FC = () => {
               </div>
             </div>
 
-            
-
             {/* Trust Badges */}
             <div className="flex flex-wrap justify-center gap-3 sm:gap-6 mt-6 sm:mt-8 text-white text-xs sm:text-sm px-2 animate-slide-up animation-delay-400">
               <div className="flex items-center gap-1 sm:gap-2"><CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" /><span>Verified Companies</span></div>
@@ -259,7 +278,6 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Rest of the sections remain the same as previous responsive version */}
       {/* Recent Jobs Section */}
       <section className="py-12 sm:py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -359,18 +377,31 @@ const Home: React.FC = () => {
         </section>
       )}
 
-      {/* CTA Section */}
+      {/* ✅ FIXED CTA Section */}
       <section className="py-12 sm:py-20 bg-linear-to-r from-blue-600 to-blue-800">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4">Ready to Start Your Journey?</h2>
           <p className="text-base sm:text-xl text-blue-100 mb-6 sm:mb-8">Join {stats.totalUsers.toLocaleString()}+ successful job seekers</p>
           <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-            <Link to={!user ? "/register" : "/dashboard"} className="w-full sm:w-auto">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 shadow-lg px-6 sm:px-8 py-3 sm:py-6 text-base sm:text-lg w-full sm:w-auto hover:scale-105 transition-all duration-300">
-                {!user ? "Create Free Account" : "Go to Dashboard"}
+            {!user ? (
+              // ✅ User not logged in - Show Register button
+              <Link to="/register" className="w-full sm:w-auto">
+                <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 shadow-lg px-6 sm:px-8 py-3 sm:py-6 text-base sm:text-lg w-full sm:w-auto hover:scale-105 transition-all duration-300">
+                  Create Free Account
+                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+                </Button>
+              </Link>
+            ) : (
+              // ✅ User logged in - Go to correct dashboard based on role
+              <Button 
+                size="lg" 
+                onClick={handleGoToDashboard}
+                className="bg-white text-blue-600 hover:bg-gray-100 shadow-lg px-6 sm:px-8 py-3 sm:py-6 text-base sm:text-lg w-full sm:w-auto hover:scale-105 transition-all duration-300 cursor-pointer"
+              >
+                Go to Dashboard
                 <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
-            </Link>
+            )}
             <Link to="/jobs" className="w-full sm:w-auto">
               <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-6 sm:px-8 py-3 sm:py-6 text-base sm:text-lg w-full sm:w-auto hover:scale-105 transition-all duration-300">
                 Browse Jobs
@@ -386,7 +417,7 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Add animation styles in your global CSS or add this style tag */}
+      {/* Animation styles */}
       <style>{`
         @keyframes fade-in {
           from { opacity: 0; }

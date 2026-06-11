@@ -180,13 +180,14 @@ const JobSeekerPreferences: React.FC = () => {
       }
 
       // Show test notification
-      const notification = new Notification('🔔 Test Notification', {
+      const notificationOptions: NotificationOptions & { vibrate?: number[] } = {
         body: 'Your push notification settings are working correctly!',
         icon: '/logo192.png',
         badge: '/favicon.ico',
         vibrate: [200, 100, 200],
         silent: false
-      })
+      }
+      const notification = new Notification('🔔 Test Notification', notificationOptions)
 
       notification.onclick = () => {
         window.focus()

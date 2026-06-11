@@ -466,7 +466,7 @@ const UserManagement: React.FC = () => {
     suspended: users.filter(u => !u.is_active).length,
     employers: users.filter(u => u.user_type.type_name === ROLES.EMPLOYER).length,
     jobSeekers: users.filter(u => u.user_type.type_name === ROLES.JOB_SEEKER).length,
-    admins: users.filter(u => [ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(u.user_type.type_name)).length
+    admins: users.filter(u => u.user_type.type_name === ROLES.ADMIN || u.user_type.type_name === ROLES.SUPER_ADMIN).length
   }
 
   if (isLoading) {

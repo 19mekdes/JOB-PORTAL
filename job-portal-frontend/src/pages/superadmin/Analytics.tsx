@@ -428,7 +428,7 @@ const Analytics: React.FC = () => {
                           outerRadius={80} 
                           dataKey="count" 
                           nameKey="status" 
-                          label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`}
+                          label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                         >
                           {applicationStatusData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={statusColors[index % statusColors.length]} />

@@ -62,6 +62,43 @@ interface Company {
   jobs_count: number
 }
 
+const getDemoCompanies = (): Company[] => [
+  {
+    id: 'demo-1',
+    user_id: 'user-1',
+    company_name: 'Demo Company One',
+    company_description: 'Leading demo technology provider.',
+    website: 'https://demo-one.example.com',
+    location: 'Remote',
+    company_size: '50-100',
+    logo_url: null,
+    is_verified: false,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    industry_name: 'Technology',
+    email: 'contact@demoone.example.com',
+    phone: '123-456-7890',
+    jobs_count: 12
+  },
+  {
+    id: 'demo-2',
+    user_id: 'user-2',
+    company_name: 'Demo Company Two',
+    company_description: 'Global demo staffing solutions.',
+    website: 'https://demo-two.example.com',
+    location: 'New York, NY',
+    company_size: '100-500',
+    logo_url: null,
+    is_verified: true,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    industry_name: 'Recruitment',
+    email: 'hello@demotwo.example.com',
+    phone: '987-654-3210',
+    jobs_count: 8
+  }
+]
+
 // Helper function to get token
 const getAuthToken = (): string | null => {
   const token = localStorage.getItem('token') || 

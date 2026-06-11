@@ -186,7 +186,7 @@ const AdminDashboard: React.FC = () => {
         newApplicationsThisMonth: totalApplications,
         totalViews: 0,
         averageViewsPerJob: 0,
-        averageApplicationsPerJob: totalJobs > 0 ? (totalApplications / totalJobs).toFixed(1) : 0,
+        averageApplicationsPerJob: totalJobs > 0 ? parseFloat((totalApplications / totalJobs).toFixed(1)) : 0,
         conversionRate: totalApplications > 0 ? Math.round((acceptedApps / totalApplications) * 100) : 0
       })
       
@@ -358,7 +358,7 @@ const AdminDashboard: React.FC = () => {
                   innerRadius={60}
                   outerRadius={100}
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                 >
                   {statusData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />

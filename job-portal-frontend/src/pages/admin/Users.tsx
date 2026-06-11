@@ -27,7 +27,7 @@ interface User {
   created_at: string
   updated_at: string
   last_login?: string
-  seeker_profile?: { skills: string[]; experience: string; education: string; resume_url: string; title?: string; bio?: string; phone?: string; location?: string }
+  seeker_profile?: { full_name?: string; skills: string[]; experience: string; education: string; resume_url: string; title?: string; bio?: string; phone?: string; location?: string }
   employer_profile?: { company_name: string; company_description: string; website: string; location: string; jobs_count?: number; logo_url?: string }
   stats?: { jobs_count?: number; applications_count?: number; views_count?: number }
 }

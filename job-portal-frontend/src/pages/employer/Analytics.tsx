@@ -99,11 +99,11 @@ const Analytics: React.FC = () => {
       
       // Fetch all jobs to calculate monthly stats
       const jobsRes = await api.get('/employer/jobs')
-      const jobs = jobsRes.data.data || []
+      const jobs: any[] = jobsRes.data.data || []
       
       // Fetch all applications
       const appsRes = await api.get('/employer/applications')
-      const applications = appsRes.data.data || []
+      const applications: any[] = appsRes.data.data || []
       
       // Calculate real statistics
       const now = new Date()
@@ -392,7 +392,7 @@ const Analytics: React.FC = () => {
                       innerRadius={60} 
                       outerRadius={90} 
                       dataKey="value" 
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                     >
                       {statusData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />

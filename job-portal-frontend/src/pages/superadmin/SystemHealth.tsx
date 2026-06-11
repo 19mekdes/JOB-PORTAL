@@ -94,13 +94,13 @@ const SystemHealth: React.FC = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchHealthData()
     
-    let interval: NodeJS.Timeout
+    let interval: number | null = null
     if (autoRefresh) {
-      interval = setInterval(fetchHealthData, 30000) // Refresh every 30 seconds
+      interval = window.setInterval(fetchHealthData, 30000) // Refresh every 30 seconds
     }
     
     return () => {
-      if (interval) clearInterval(interval)
+      if (interval !== null) window.clearInterval(interval)
     }
   }, [fetchHealthData, autoRefresh])
 

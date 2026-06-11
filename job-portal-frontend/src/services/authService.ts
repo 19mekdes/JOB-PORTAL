@@ -48,14 +48,13 @@ export interface AuthResponse {
   token: string
   refreshToken?: string
   user: {
-    user: any
-    user(arg0: string, user: any): unknown
     id: string
     email: string
     user_type: string
     full_name?: string
     email_verified?: boolean
     profile_completed?: boolean
+    [key: string]: any
   }
   message?: string
 }

@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link, Outlet, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { RootState } from '@/redux/store'
+import { AppDispatch, RootState } from '@/redux/store'
 import { logout } from '@/redux/slices/authSlice'
 import {
   LayoutDashboard,
@@ -64,7 +64,7 @@ interface AdminProfile {
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
   const { user } = useSelector((state: RootState) => state.auth)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)

@@ -315,7 +315,7 @@ const SuperAdminDashboard: React.FC = () => {
                       outerRadius={80}
                       dataKey="count"
                       nameKey="status"
-                      label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                     >
                       {applicationStatusData.map((entry, index) => {
                         const colors = ['#f59e0b', '#06b6d4', '#10b981', '#ef4444']

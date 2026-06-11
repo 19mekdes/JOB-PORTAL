@@ -1,4 +1,3 @@
-// src/pages/jobseeker/SkillsForm.tsx
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -141,7 +140,7 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
 
   return (
     <Card className="border border-gray-200 shadow-sm rounded-xl overflow-hidden">
-      <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white">
+      <CardHeader className="border-b border-gray-100 bg-linear-to-r from-blue-50 to-white">
         <CardTitle className="flex items-center gap-2 text-xl">
           <Sparkles className="h-5 w-5 text-blue-600" />
           Skills & Expertise
@@ -178,7 +177,7 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
         {/* Your Skills Section */}
         <div className="space-y-3">
           <Label className="text-gray-700 font-semibold">Your Skills ({skills.length})</Label>
-          <div className="min-h-[120px] p-4 bg-gray-50 rounded-lg border border-gray-100">
+          <div className="min-h-30 p-4 bg-gray-50 rounded-lg border border-gray-100">
             {skills.length === 0 ? (
               <div className="text-center py-8">
                 <TrendingUp className="h-10 w-10 text-gray-300 mx-auto mb-2" />

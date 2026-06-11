@@ -22,7 +22,7 @@ import NotFound from '@/pages/NotFound'
 import Unauthorized from '@/pages/Unauthorized'
 
 // Protected Pages - Job Seeker
-import Dashboard from '@/pages/Dashboard'
+import Dashboard from '@/pages/DashboardContent'
 import ProfilePage from '@/pages/ProfilePage'
 import ApplicationsPage from '@/pages/ApplicationsPage'
 import ApplicationStatus from '@/components/applications/ApplicationStatus'

@@ -4,6 +4,7 @@ export * from './auth'
 export * from './user'
 export * from './job'
 export * from './application'
+export type { BookmarkedJob } from './api'
 
 // ========== CORE TYPES ==========
 

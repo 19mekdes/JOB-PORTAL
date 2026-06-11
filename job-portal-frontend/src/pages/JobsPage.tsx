@@ -82,13 +82,13 @@ const JobsPage: React.FC = () => {
       const data = response.data
       
       if (data?.data && Array.isArray(data.data)) {
-        savedIds = data.data.map((item: BookmarkedJob) => String(item.job?.id || item.job?._id))
+        savedIds = data.data.map((item: BookmarkedJob) => String(item.job?.id || (item.job as any)?._id))
       } 
       else if (Array.isArray(data)) {
-        savedIds = data.map((item: BookmarkedJob) => String(item.job?.id || item.job?._id))
+        savedIds = data.map((item: BookmarkedJob) => String(item.job?.id || (item.job as any)?._id))
       }
       else if (data?.bookmarks && Array.isArray(data.bookmarks)) {
-        savedIds = data.bookmarks.map((item: BookmarkedJob) => String(item.job?.id || item.job?._id))
+        savedIds = data.bookmarks.map((item: BookmarkedJob) => String(item.job?.id || (item.job as any)?._id))
       }
       
       setSavedJobIds(new Set(savedIds))
@@ -128,7 +128,7 @@ const JobsPage: React.FC = () => {
         const bookmarksData = bookmarksResponse.data?.data || bookmarksResponse.data || []
         if (Array.isArray(bookmarksData)) {
           const bookmark = bookmarksData.find((b: BookmarkedJob) => 
-            String(b.job?.id) === String(jobId) || String(b.job?._id) === String(jobId)
+            String(b.job?.id) === String(jobId) || String((b.job as any)?._id) === String(jobId)
           )
           if (bookmark) {
             bookmarkId = bookmark.id

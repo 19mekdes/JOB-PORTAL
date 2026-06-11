@@ -72,6 +72,78 @@ export const getMe = createAsyncThunk('auth/getMe', async () => {
   return response
 })
 
+export const updateProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (profileData: any, thunkAPI) => {
+    try {
+      const response = await authService.updateProfile(profileData)
+      return response
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message || 'Failed to update profile')
+    }
+  }
+)
+
+export const changePassword = createAsyncThunk(
+  'auth/changePassword',
+  async ({ current_password, new_password }: { current_password: string; new_password: string }, thunkAPI) => {
+    try {
+      const response = await authService.changePassword(current_password, new_password)
+      return response
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message || 'Failed to change password')
+    }
+  }
+)
+
+export const forgotPassword = createAsyncThunk(
+  'auth/forgotPassword',
+  async (email: string, thunkAPI) => {
+    try {
+      const response = await authService.forgotPassword(email)
+      return response
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message || 'Failed to send reset email')
+    }
+  }
+)
+
+export const resetPassword = createAsyncThunk(
+  'auth/resetPassword',
+  async ({ token, new_password }: { token: string; new_password: string }, thunkAPI) => {
+    try {
+      const response = await authService.resetPassword(token, new_password)
+      return response
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message || 'Failed to reset password')
+    }
+  }
+)
+
+export const verifyEmail = createAsyncThunk(
+  'auth/verifyEmail',
+  async (token: string, thunkAPI) => {
+    try {
+      const response = await authService.verifyEmail(token)
+      return response
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message || 'Failed to verify email')
+    }
+  }
+)
+
+export const resendVerification = createAsyncThunk(
+  'auth/resendVerification',
+  async (email: string, thunkAPI) => {
+    try {
+      const response = await authService.resendVerification(email)
+      return response
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response?.data?.message || error.message || 'Failed to resend verification email')
+    }
+  }
+)
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,

@@ -15,7 +15,6 @@ import {
   TrendingUp,
   Star
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import {
   Popover,
   PopoverContent,
@@ -102,7 +101,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
   const [isLoading, setIsLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [isMarkingAll, setIsMarkingAll] = useState(false)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const intervalRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -235,7 +234,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
           )}
         </div>
         
-        <ScrollArea className="h-[400px]">
+        <ScrollArea className="h-100">
           {isLoading ? (
             <div className="p-4 space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (
