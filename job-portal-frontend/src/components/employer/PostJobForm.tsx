@@ -38,6 +38,16 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import api from "../../services/api";
 
@@ -78,6 +88,12 @@ const PostJobForm: React.FC = () => {
   const [activeTab, setActiveTab] = useState("basic");
   const [previewMode, setPreviewMode] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
+  
+  const [duplicateAlert, setDuplicateAlert] = useState<{
+    show: boolean;
+    message: string;
+    existingJobId?: string;
+  }>({ show: false, message: "" });
 
   const [formData, setFormData] = useState<JobFormData>({
     title: "",
@@ -97,7 +113,6 @@ const PostJobForm: React.FC = () => {
     if (id) {
       fetchJobForEdit();
     }
-    // Check company verification status on load
     checkVerificationStatus();
   }, [id]);
 
@@ -108,7 +123,7 @@ const PostJobForm: React.FC = () => {
         const profile = response.data.data;
         if (!profile.is_verified) {
           setVerificationError(
-            "Your company is not verified yet. You need to complete verification before posting jobs. Please contact support."
+            "Your company is not verified yet. You need to complete verification before posting jobs."
           );
         } else if (profile.is_active === false) {
           setVerificationError(
@@ -243,7 +258,6 @@ const PostJobForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent, status: "draft" | "published") => {
     e.preventDefault();
     
-    // Check verification error before submitting
     if (verificationError) {
       toast({
         variant: "destructive",
@@ -256,6 +270,8 @@ const PostJobForm: React.FC = () => {
     if (!validateForm()) return;
 
     setIsLoading(true);
+    setDuplicateAlert({ show: false, message: "" });
+    
     const submitData = {
       ...formData,
       requirements: requirementsList.join("\n"),
@@ -273,6 +289,7 @@ const PostJobForm: React.FC = () => {
           title: "Success",
           description: "Job updated successfully",
         });
+        navigate("/employer/jobs");
       } else {
         await api.post("/jobs", submitData);
         toast({
@@ -281,28 +298,36 @@ const PostJobForm: React.FC = () => {
             ? "Job posted successfully! Pending admin approval." 
             : "Job saved as draft",
         });
+        navigate("/employer/jobs");
       }
-      navigate("/employer/jobs");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Error saving job:", error);
       
-      // Handle specific error codes from backend
-      if (error.response?.data?.code === 'COMPANY_NOT_VERIFIED') {
+      if (error.response?.status === 409) {
+        setDuplicateAlert({
+          show: true,
+          message: error.response?.data?.message || "A job with this title already exists.",
+          existingJobId: error.response?.data?.existingJobId
+        });
+      } 
+      else if (error.response?.data?.code === 'COMPANY_NOT_VERIFIED') {
         toast({
           variant: "destructive",
           title: "Company Not Verified",
-          description: error.response?.data?.message || "Your company must be verified before posting jobs. Please contact support.",
+          description: error.response?.data?.message || "Your company must be verified before posting jobs.",
         });
         setVerificationError(error.response?.data?.message);
-      } else if (error.response?.data?.code === 'ACCOUNT_SUSPENDED') {
+      } 
+      else if (error.response?.data?.code === 'ACCOUNT_SUSPENDED') {
         toast({
           variant: "destructive",
           title: "Account Suspended",
-          description: error.response?.data?.message || "Your account has been suspended. Please contact support.",
+          description: error.response?.data?.message || "Your account has been suspended.",
         });
         setVerificationError(error.response?.data?.message);
-      } else {
+      } 
+      else {
         toast({
           variant: "destructive",
           title: "Error",
@@ -339,7 +364,6 @@ const PostJobForm: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         
-        {/* Back Button */}
         <div className="mb-6">
           <button
             onClick={() => navigate('/employer/jobs')}
@@ -371,7 +395,6 @@ const PostJobForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Verification Warning Alert */}
         {verificationError && !id && (
           <Alert className="mb-6 bg-yellow-50 border-yellow-200">
             <AlertCircle className="h-4 w-4 text-yellow-600" />
@@ -456,6 +479,7 @@ const PostJobForm: React.FC = () => {
                 </TabsTrigger>
               </TabsList>
 
+              {/* Your existing form content remains the same */}
               <TabsContent value="basic" className="space-y-4">
                 <Card className="border border-gray-200 shadow-sm rounded-xl overflow-hidden">
                   <CardHeader className="border-b border-gray-100 pb-4">
@@ -664,7 +688,6 @@ const PostJobForm: React.FC = () => {
               </TabsContent>
             </Tabs>
 
-            {/* Action Buttons */}
             <div className="flex justify-end gap-3 mt-6">
               <Button
                 variant="outline"
@@ -697,6 +720,41 @@ const PostJobForm: React.FC = () => {
           </form>
         )}
       </div>
+
+      {/* Duplicate Job Alert Dialog */}
+      <AlertDialog open={duplicateAlert.show} onOpenChange={() => setDuplicateAlert({ show: false, message: "" })}>
+        <AlertDialogContent className="bg-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              Duplicate Job Detected
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-700">
+              {duplicateAlert.message}
+              <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                <p className="text-sm text-yellow-800">
+                  <strong>Note:</strong> Duplicate job postings are not allowed. 
+                  Please review your existing jobs or update the existing job instead of creating a new one.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-3">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            {duplicateAlert.existingJobId && (
+              <AlertDialogAction 
+                onClick={() => {
+                  setDuplicateAlert({ show: false, message: "" });
+                  navigate(`/employer/jobs/edit/${duplicateAlert.existingJobId}`);
+                }}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                View Existing Job
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

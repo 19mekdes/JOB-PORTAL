@@ -2,6 +2,7 @@ import { EmployerProfile, JobIndustry, EmploymentType, JobPostStatus } from './i
 
 // ========== JOB TYPES ==========
 export interface Job {
+  is_hybrid: boolean
   id: string
   title: string
   description: string

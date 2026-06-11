@@ -17,8 +17,7 @@ import {
   MoreVertical,
   CheckCircle,
   XCircle,
-  MessageCircle
-} from 'lucide-react'
+  MessageCircle} from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -105,8 +104,68 @@ const EmployerApplications: React.FC = () => {
     }
   }
 
+  // ✅ WORKING EXPORT FUNCTION - Same style as AdminApplications
+  const exportToCSV = () => {
+    // Get filtered applications based on current filters
+    let filteredApps = [...applications]
+    
+    // Filter by status
+    if (statusFilter !== 'all') {
+      filteredApps = filteredApps.filter(app => 
+        (app.status?.status_name || 'Pending').toLowerCase() === statusFilter.toLowerCase()
+      )
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      filteredApps = filteredApps.filter(app => {
+        const name = getSeekerName(app).toLowerCase()
+        const job = getJobTitle(app).toLowerCase()
+        const email = getSeekerEmail(app).toLowerCase()
+        return name.includes(searchTerm.toLowerCase()) || 
+               job.includes(searchTerm.toLowerCase()) || 
+               email.includes(searchTerm.toLowerCase())
+      })
+    }
+    
+    if (filteredApps.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "No Data",
+        description: "No applications to export",
+      })
+      return
+    }
+    
+    // Create CSV headers and data
+    const headers = ['Applicant Name', 'Email', 'Job Title', 'Location', 'Status', 'Applied Date']
+    const csvData = filteredApps.map(app => [
+      getSeekerName(app),
+      getSeekerEmail(app),
+      getJobTitle(app),
+      getSeekerLocation(app),
+      app.status?.status_name || 'Pending',
+      new Date(app.applied_at).toLocaleDateString()
+    ])
+    
+    // Create CSV content
+    const csvContent = [headers, ...csvData].map(row => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `applications_${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    
+    toast({
+      title: "Export Started",
+      description: `Exported ${filteredApps.length} applications to CSV`,
+    })
+  }
+
   const getStatusBadge = (status: string) => {
-    if (!status) return <Badge variant="secondary" className="rounded-full px-3 py-1">Pending</Badge>
+    if (!status) return <Badge className="bg-amber-50 text-amber-700 border-0 rounded-full px-3 py-1">Pending</Badge>
     
     switch (status.toLowerCase()) {
       case 'pending':
@@ -155,7 +214,6 @@ const EmployerApplications: React.FC = () => {
     return name.charAt(0).toUpperCase()
   }
 
-  // FIXED: Bulletproof fallbacks matching both explicit nested joins and flat server responses
   const getSeekerName = (application: Application) => {
     return application.candidate_name || 
            application.seeker?.full_name || 
@@ -230,48 +288,50 @@ const EmployerApplications: React.FC = () => {
         Back to Dashboard
       </Button>
 
-      {/* Header */}
+      {/* Header with Export Button */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Job Applications</h1>
           <p className="text-sm text-gray-500 mt-1">Review and manage candidate applications</p>
         </div>
+        
+        {/* ✅ EXPORT BUTTON - Same style as AdminApplications */}
         <Button 
           variant="outline" 
-          onClick={fetchApplications}
-          className="border-gray-200 rounded-xl hover:bg-gray-50"
+          onClick={exportToCSV}
+          className="bg-white border-gray-300 hover:bg-gray-50"
         >
           <Download className="h-4 w-4 mr-2" />
-          Export
+          Export CSV
         </Button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
+        <Card className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
           <p className="text-xl font-bold text-gray-900">{stats.total}</p>
           <p className="text-xs text-gray-500">Total</p>
-        </div>
-        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
+        </Card>
+        <Card className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
           <p className="text-xl font-bold text-amber-600">{stats.pending}</p>
           <p className="text-xs text-gray-500">Pending</p>
-        </div>
-        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
+        </Card>
+        <Card className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
           <p className="text-xl font-bold text-purple-600">{stats.shortlisted}</p>
           <p className="text-xs text-gray-500">Shortlisted</p>
-        </div>
-        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
+        </Card>
+        <Card className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
           <p className="text-xl font-bold text-indigo-600">{stats.interview}</p>
           <p className="text-xs text-gray-500">Interview</p>
-        </div>
-        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
+        </Card>
+        <Card className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
           <p className="text-xl font-bold text-emerald-600">{stats.accepted}</p>
           <p className="text-xs text-gray-500">Accepted</p>
-        </div>
-        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
+        </Card>
+        <Card className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 text-center">
           <p className="text-xl font-bold text-rose-600">{stats.rejected}</p>
           <p className="text-xs text-gray-500">Rejected</p>
-        </div>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -387,7 +447,7 @@ const EmployerApplications: React.FC = () => {
                           <MoreVertical className="h-4 w-4 text-gray-500" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 bg-white border border-gray-200 shadow-md">
+                      <DropdownMenuContent align="end" className="w-48 bg-white border border-gray-200 shadow-md rounded-xl">
                         <DropdownMenuItem onClick={() => window.location.href = `mailto:${getSeekerEmail(application)}`} className="cursor-pointer">
                           <Mail className="h-4 w-4 mr-2 text-gray-500" />
                           Send Email

@@ -40,16 +40,17 @@ export const login = createAsyncThunk(
   }
 )
 
-// ✅ FIXED REGISTER ACTION
+// ✅ FIXED REGISTER ACTION - NO AUTO LOGIN
 export const register = createAsyncThunk(
   'auth/register',
   async (userData: any, thunkAPI) => {
     try {
       const response = await authService.register(userData)
       
-      if (response.success && response.user) {
-        authService.storeUserData(response.user, response.token, response.refreshToken)
-        return response.user
+      // ✅ IMPORTANT: Only return success, NOT user data
+      if (response.success) {
+        // ✅ DO NOT store user data - just return success message
+        return { success: true, message: 'Registration successful! Please login.' }
       } else {
         return thunkAPI.rejectWithValue(response.message || 'Registration failed')
       }
@@ -153,6 +154,11 @@ const authSlice = createSlice({
       state.isError = false
       state.isSuccess = false
       state.message = ''
+    },
+    // ✅ Add a clearSuccess action
+    clearSuccess: (state) => {
+      state.isSuccess = false
+      state.message = ''
     }
   },
   extraReducers: (builder) => {
@@ -166,7 +172,7 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false
         state.isSuccess = true
-        state.user = action.payload // Now receives the direct user payload clean of wrappers
+        state.user = action.payload
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false
@@ -174,16 +180,19 @@ const authSlice = createSlice({
         state.message = action.payload as string
         state.user = null
       })
-      // Register
+      // ✅ FIXED REGISTER - DO NOT set user
       .addCase(register.pending, (state) => {
         state.isLoading = true
         state.isError = false
         state.isSuccess = false
+        state.message = ''
       })
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false
         state.isSuccess = true
-        state.user = action.payload
+        // ✅ IMPORTANT: Do NOT set state.user here
+        // state.user remains null (user needs to login)
+        state.message = action.payload.message || 'Registration successful!'
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false
@@ -205,5 +214,5 @@ const authSlice = createSlice({
   }
 })
 
-export const { reset } = authSlice.actions
+export const { reset, clearSuccess } = authSlice.actions
 export default authSlice.reducer

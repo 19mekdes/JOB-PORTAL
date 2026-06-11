@@ -240,7 +240,7 @@ const SuperAdminLayout: React.FC = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Desktop Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col shadow-sm hidden lg:flex`}>
+      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col shadow-sm lg:flex`}>
         {/* Logo Section */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
           {sidebarOpen ? (

@@ -585,7 +585,7 @@ const JobModeration: React.FC = () => {
           </AlertDialogHeader>
           <div className="space-y-2">
             <Label>Reason (optional)</Label>
-            <textarea className="w-full min-h-[80px] px-3 py-2 border rounded-md" placeholder="Enter reason..." value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} />
+            <textarea className="w-full min-h-20 px-3 py-2 border rounded-md" placeholder="Enter reason..." value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} />
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

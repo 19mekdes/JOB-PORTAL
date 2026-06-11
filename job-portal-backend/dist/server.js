@@ -582,65 +582,179 @@ async function sendApplicationStatusEmail(userEmail, userName, jobTitle, status,
             res.status(500).json({ success: false, message: error.message });
         }
     });
-    app.post('/api/jobs', authMiddleware, async (req, res) => {
-        try {
-            const { title, description, requirements, benefits, location, employment_type_id, industry_id, salary_min, salary_max, is_remote } = req.body;
-            const user = await prisma.user.findUnique({ where: { id: req.user.id }, include: { user_type: true, employer_profile: true } });
-            if (user?.user_type?.type_name !== 'Employer')
-                return res.status(403).json({ success: false, message: 'Only employers can post jobs' });
-            if (!user.employer_profile)
-                return res.status(403).json({ success: false, message: 'Please complete your employer profile first' });
-            if (!title || !description || !location || !employment_type_id || !industry_id)
-                return res.status(400).json({ success: false, message: 'Missing required fields' });
-            const openStatus = await prisma.jobPostStatus.findFirst({ where: { status_name: 'Open' } });
-            const job = await prisma.jobPost.create({
-                data: {
-                    title, description, requirements: requirements || '', benefits: benefits || '', location,
-                    employer_id: user.employer_profile.id, employment_type_id: parseInt(employment_type_id),
-                    industry_id: parseInt(industry_id), salary_min: salary_min ? parseFloat(salary_min) : null,
-                    salary_max: salary_max ? parseFloat(salary_max) : null, is_remote: is_remote || false,
-                    status_id: openStatus.id, created_at: new Date(), views_count: 0, applications_count: 0
-                }
-            });
-            res.status(201).json({ success: true, data: job, message: 'Job posted successfully' });
-        }
-        catch (error) {
-            res.status(500).json({ success: false, message: error.message });
-        }
+
+app.post('/api/jobs', authMiddleware, async (req, res) => {
+  try {
+    const { title, description, requirements, benefits, location, employment_type_id, industry_id, salary_min, salary_max, is_remote } = req.body;
+    
+    const user = await prisma.user.findUnique({ 
+      where: { id: req.user.id }, 
+      include: { user_type: true, employer_profile: true } 
     });
-    app.put('/api/jobs/:id', authMiddleware, async (req, res) => {
-        try {
-            const { id } = req.params;
-            const { title, description, requirements, benefits, location, employment_type_id, industry_id, salary_min, salary_max, is_remote, status_id } = req.body;
-            const user = await prisma.user.findUnique({ where: { id: req.user.id }, include: { employer_profile: true } });
-            if (!user?.employer_profile)
-                return res.status(403).json({ success: false, message: 'Employer not found' });
-            const existingJob = await prisma.jobPost.findFirst({ where: { id, employer_id: user.employer_profile.id } });
-            if (!existingJob)
-                return res.status(404).json({ success: false, message: 'Job not found' });
-            const updatedJob = await prisma.jobPost.update({
-                where: { id },
-                data: {
-                    title: title || existingJob.title,
-                    description: description || existingJob.description,
-                    requirements: requirements !== undefined ? requirements : existingJob.requirements,
-                    benefits: benefits !== undefined ? benefits : existingJob.benefits,
-                    location: location || existingJob.location,
-                    employment_type_id: employment_type_id ? parseInt(employment_type_id) : existingJob.employment_type_id,
-                    industry_id: industry_id ? parseInt(industry_id) : existingJob.industry_id,
-                    salary_min: salary_min !== undefined ? parseFloat(salary_min) : existingJob.salary_min,
-                    salary_max: salary_max !== undefined ? parseFloat(salary_max) : existingJob.salary_max,
-                    is_remote: is_remote !== undefined ? is_remote : existingJob.is_remote,
-                    status_id: status_id || existingJob.status_id,
-                    updated_at: new Date()
-                }
-            });
-            res.json({ success: true, data: updatedJob, message: 'Job updated successfully' });
-        }
-        catch (error) {
-            res.status(500).json({ success: false, message: error.message });
-        }
+    
+    if (user?.user_type?.type_name !== 'Employer') {
+      return res.status(403).json({ success: false, message: 'Only employers can post jobs' });
+    }
+    
+    if (!user.employer_profile) {
+      return res.status(403).json({ success: false, message: 'Please complete your employer profile first' });
+    }
+    
+    if (!user.employer_profile.is_verified) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Your company must be verified before posting jobs.',
+        code: 'COMPANY_NOT_VERIFIED'
+      });
+    }
+    
+    if (user.employer_profile.is_active === false) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Your account is suspended.',
+        code: 'ACCOUNT_SUSPENDED'
+      });
+    }
+    
+    if (!title || !description || !location || !employment_type_id || !industry_id) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+    
+    // ✅ THIS IS THE DUPLICATE CHECK - MAKE SURE IT'S HERE
+    const existingJob = await prisma.jobPost.findFirst({
+      where: {
+        employer_id: user.employer_profile.id,
+        title: title  // Exact match
+      }
     });
+    
+    if (existingJob) {
+      console.log(`❌ DUPLICATE BLOCKED: ${title}`);
+      return res.status(409).json({ 
+        success: false, 
+        message: `A job with title "${title}" already exists. Please use a different title.`,
+        code: 'DUPLICATE_JOB',
+        existingJobId: existingJob.id
+      });
+    }
+    
+    // Get PENDING status
+    let pendingStatus = await prisma.jobPostStatus.findFirst({ 
+      where: { status_name: 'Pending' } 
+    });
+    
+    if (!pendingStatus) {
+      pendingStatus = await prisma.jobPostStatus.create({
+        data: { status_name: 'Pending' }
+      });
+    }
+    
+    const job = await prisma.jobPost.create({
+      data: {
+        title, 
+        description, 
+        requirements: requirements || '', 
+        benefits: benefits || '', 
+        location,
+        employer_id: user.employer_profile.id, 
+        employment_type_id: parseInt(employment_type_id),
+        industry_id: parseInt(industry_id), 
+        salary_min: salary_min ? parseFloat(salary_min) : null,
+        salary_max: salary_max ? parseFloat(salary_max) : null, 
+        is_remote: is_remote || false,
+        status_id: pendingStatus.id,
+        created_at: new Date(), 
+        views_count: 0, 
+        applications_count: 0
+      }
+    });
+    
+    console.log(`✅ JOB CREATED: ${title}`);
+    
+    res.status(201).json({ 
+      success: true, 
+      data: job, 
+      message: 'Job submitted for approval.' 
+    });
+  }
+  catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+app.put('/api/jobs/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, requirements, benefits, location, employment_type_id, industry_id, salary_min, salary_max, is_remote, status_id } = req.body;
+    
+    const user = await prisma.user.findUnique({ 
+      where: { id: req.user.id }, 
+      include: { employer_profile: true } 
+    });
+    
+    if (!user?.employer_profile) {
+      return res.status(403).json({ success: false, message: 'Employer not found' });
+    }
+    
+    const existingJob = await prisma.jobPost.findFirst({ 
+      where: { id, employer_id: user.employer_profile.id } 
+    });
+    
+    if (!existingJob) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+    
+    // ✅ Check for duplicate when updating title
+    if (title && title.toLowerCase() !== existingJob.title.toLowerCase()) {
+      const duplicateJob = await prisma.jobPost.findFirst({
+        where: {
+          employer_id: user.employer_profile.id,
+          title: {
+            equals: title,
+            mode: 'insensitive'
+          },
+          id: { not: id }
+        }
+      });
+      
+      if (duplicateJob) {
+        return res.status(409).json({
+          success: false,
+          message: `A job with title "${title}" already exists. Please use a different title.`,
+          code: 'DUPLICATE_JOB'
+        });
+      }
+    }
+    
+    const updatedJob = await prisma.jobPost.update({
+      where: { id },
+      data: {
+        title: title || existingJob.title,
+        description: description || existingJob.description,
+        requirements: requirements !== undefined ? requirements : existingJob.requirements,
+        benefits: benefits !== undefined ? benefits : existingJob.benefits,
+        location: location || existingJob.location,
+        employment_type_id: employment_type_id ? parseInt(employment_type_id) : existingJob.employment_type_id,
+        industry_id: industry_id ? parseInt(industry_id) : existingJob.industry_id,
+        salary_min: salary_min !== undefined ? parseFloat(salary_min) : existingJob.salary_min,
+        salary_max: salary_max !== undefined ? parseFloat(salary_max) : existingJob.salary_max,
+        is_remote: is_remote !== undefined ? is_remote : existingJob.is_remote,
+        status_id: status_id || existingJob.status_id,
+        updated_at: new Date()
+      }
+    });
+    
+    res.json({ 
+      success: true, 
+      data: updatedJob, 
+      message: 'Job updated successfully' 
+    });
+  }
+  catch (error) {
+    console.error('Error updating job:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
     app.delete('/api/jobs/:id', authMiddleware, async (req, res) => {
         try {
             const { id } = req.params;

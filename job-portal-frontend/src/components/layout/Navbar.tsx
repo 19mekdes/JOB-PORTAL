@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
@@ -57,7 +58,6 @@ const Navbar: React.FC = () => {
   // Fetch company profile if user is employer
   useEffect(() => {
     if (user?.user_type === "Employer") {
-      // eslint-disable-next-line react-hooks/immutability
       fetchCompanyProfile();
     }
   }, [user]);
@@ -127,7 +127,11 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur shadow-sm">
+    // ✅ SOLID WHITE BACKGROUND - NO BLUR, NO TRANSPARENCY
+    <header 
+      className="sticky top-0 z-50 w-full border-b bg-white shadow-md"
+      style={{ backgroundColor: '#ffffff', backdropFilter: 'none' }}
+    >
       <div className="max-w-7xl mx-auto px-4 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo with Local PNG Image */}
@@ -141,7 +145,6 @@ const Navbar: React.FC = () => {
               alt="JobPortal Logo"
               className="h-10 w-auto object-contain"
               onError={(e) => {
-                // Fallback to briefcase icon if image fails to load
                 (e.target as HTMLImageElement).style.display = "none";
                 const parent = (e.target as HTMLImageElement).parentElement;
                 if (parent) {
@@ -258,11 +261,10 @@ const Navbar: React.FC = () => {
                 </Button>
               </SheetTrigger>
 
-              <SheetContent side="left" className="w-72 p-0">
+              <SheetContent side="left" className="w-72 p-0 bg-white">
                 {/* Mobile Header */}
-                <div className="border-b p-5">
+                <div className="border-b p-5 bg-white">
                   <div className="flex items-center gap-2 font-bold text-lg">
-                    {/* Use local PNG image logo in mobile menu */}
                     <img
                       src={logoImage}
                       alt="JobPortal Logo"
@@ -306,8 +308,8 @@ const Navbar: React.FC = () => {
                   )}
                 </div>
 
-                {/* Mobile Nav */}
-                <div className="p-4 space-y-2">
+                {/* Rest of mobile menu - same as before */}
+                <div className="p-4 space-y-2 bg-white">
                   {navLinks.map((item) => {
                     const Icon = item.icon;
                     return (
@@ -433,7 +435,7 @@ const Navbar: React.FC = () => {
                 </div>
 
                 {/* Mobile Auth */}
-                <div className="border-t p-4 space-y-2">
+                <div className="border-t p-4 space-y-2 bg-white">
                   {user ? (
                     <>
                       <Link to="/profile" onClick={() => setOpen(false)}>

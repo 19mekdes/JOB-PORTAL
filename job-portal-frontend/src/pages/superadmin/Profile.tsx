@@ -144,7 +144,7 @@ const SuperAdminProfile: React.FC = () => {
                 {avatarPreview ? (
                   <AvatarImage src={avatarPreview} />
                 ) : (
-                  <AvatarFallback className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white text-2xl font-bold">
+                  <AvatarFallback className="bg-linear-to-r from-yellow-500 to-amber-600 text-white text-2xl font-bold">
                     {getInitials()}
                   </AvatarFallback>
                 )}

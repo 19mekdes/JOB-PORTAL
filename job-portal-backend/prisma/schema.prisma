@@ -292,6 +292,9 @@ model JobPost {
   managed_company    ManagedCompany?  @relation(fields: [managed_company_id], references: [id])
   status             JobPostStatus    @relation(fields: [status_id], references: [id])
 
+  // ✅ ADD THIS UNIQUE CONSTRAINT TO PREVENT DUPLICATE JOBS
+  @@unique([employer_id, title])
+  
   @@index([employer_id])
   @@index([status_id])
   @@index([industry_id])

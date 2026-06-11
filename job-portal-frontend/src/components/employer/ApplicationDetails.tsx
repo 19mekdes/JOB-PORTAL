@@ -88,8 +88,8 @@ interface Application {
     phone: string | null
     location: string | null
     skills: string[]
-    experience: any // Can be array or JSON string
-    education: any // Can be array or JSON string
+    experience: any
+    education: any
     email?: string
   }
   notes: Array<{
@@ -102,7 +102,6 @@ interface Application {
   }>
 }
 
-// ========== HELPER FUNCTION TO PARSE JSON FIELDS ==========
 const parseJSONArray = (data: any): any[] => {
   if (!data) return []
   if (Array.isArray(data)) return data
@@ -138,6 +137,7 @@ const ApplicationDetails: React.FC = () => {
   const [showStatusDialog, setShowStatusDialog] = useState(false)
   const [activeTab, setActiveTab] = useState('profile')
   const [isAddingNote, setIsAddingNote] = useState(false)
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
 
   useEffect(() => {
     fetchApplicationDetails()
@@ -163,8 +163,12 @@ const ApplicationDetails: React.FC = () => {
     }
   }
 
+  // ✅ FIXED: Send both status AND feedback message
   const handleStatusUpdate = async () => {
     if (!selectedStatus) return
+    
+    setIsUpdatingStatus(true)
+    
     try {
       const statusMap: { [key: string]: number } = {
         'Pending': 1,
@@ -175,14 +179,32 @@ const ApplicationDetails: React.FC = () => {
         'Rejected': 6
       }
       
-      await api.put(`/applications/${id}/status`, { statusId: statusMap[selectedStatus] })
-      toast({ title: "Success", description: `Status updated to ${selectedStatus}` })
-      setShowStatusDialog(false)
-      setFeedback('')
-      fetchApplicationDetails()
-    } catch (error) {
+      // ✅ Send both statusId AND feedback message
+      const response = await api.put(`/applications/${id}/status`, { 
+        statusId: statusMap[selectedStatus],
+        message: feedback  // ✅ This is the feedback that will be emailed to candidate
+      })
+      
+      if (response.data.success) {
+        toast({ 
+          title: "Success", 
+          description: `Status updated to ${selectedStatus}. Feedback sent to candidate via email.` 
+        })
+        setShowStatusDialog(false)
+        setFeedback('')
+        fetchApplicationDetails()
+      } else {
+        throw new Error(response.data.message || "Failed to update status")
+      }
+    } catch (error: any) {
       console.error('Error updating status:', error)
-      toast({ variant: "destructive", title: "Error", description: "Failed to update status" })
+      toast({ 
+        variant: "destructive", 
+        title: "Error", 
+        description: error.response?.data?.message || "Failed to update status" 
+      })
+    } finally {
+      setIsUpdatingStatus(false)
     }
   }
 
@@ -249,7 +271,6 @@ const ApplicationDetails: React.FC = () => {
     return application?.seeker?.email || ''
   }
 
-  // ========== PARSE EXPERIENCE AND EDUCATION ==========
   const experienceList = parseJSONArray(application?.seeker?.experience)
   const educationList = parseJSONArray(application?.seeker?.education)
   const skillsList = application?.seeker?.skills || []
@@ -366,7 +387,7 @@ const ApplicationDetails: React.FC = () => {
                   )}
                 </div>
 
-                {/* Tabs for Skills, Experience, Education */}
+                {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-3 mb-4">
                     <TabsTrigger value="skills">Skills</TabsTrigger>
@@ -374,7 +395,6 @@ const ApplicationDetails: React.FC = () => {
                     <TabsTrigger value="education">Education</TabsTrigger>
                   </TabsList>
 
-                  {/* Skills Tab */}
                   <TabsContent value="skills">
                     {skillsList.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
@@ -389,7 +409,6 @@ const ApplicationDetails: React.FC = () => {
                     )}
                   </TabsContent>
 
-                  {/* Experience Tab - FIXED: using parsed experienceList */}
                   <TabsContent value="experience">
                     {experienceList.length > 0 ? (
                       <div className="space-y-4">
@@ -424,7 +443,6 @@ const ApplicationDetails: React.FC = () => {
                     )}
                   </TabsContent>
 
-                  {/* Education Tab - FIXED: using parsed educationList */}
                   <TabsContent value="education">
                     {educationList.length > 0 ? (
                       <div className="space-y-4">
@@ -596,14 +614,14 @@ const ApplicationDetails: React.FC = () => {
         </div>
       </div>
 
-      {/* UPDATE STATUS DIALOG */}
+      {/* UPDATE STATUS DIALOG - FIXED to show feedback will be emailed */}
       <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
         <DialogContent className="bg-white rounded-xl shadow-2xl border border-gray-200 p-0 max-w-md">
           <div className="p-6">
             <DialogHeader className="mb-4">
               <DialogTitle className="text-xl font-bold text-gray-900">Update Application Status</DialogTitle>
               <DialogDescription className="text-gray-500 mt-1">
-                Change the status of this application
+                Change the status of this application. The candidate will receive an email notification.
               </DialogDescription>
             </DialogHeader>
             
@@ -630,19 +648,19 @@ const ApplicationDetails: React.FC = () => {
                 </Select>
               </div>
 
-              {/* Feedback */}
+              {/* Feedback - This will be emailed to the candidate */}
               <div className="space-y-2">
                 <Label className="text-sm font-semibold text-gray-700">
-                  Feedback <span className="text-gray-400 font-normal">(Optional)</span>
+                  Feedback Message <span className="text-blue-600 font-normal">(Will be emailed to candidate)</span>
                 </Label>
                 <Textarea
-                  placeholder="Add feedback or notes for the candidate..."
+                  placeholder="Write a message to the candidate explaining this status update..."
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
                   rows={3}
                   className="w-full border border-gray-300 rounded-lg p-3 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-400">This feedback will be shared with the candidate</p>
+                <p className="text-xs text-blue-600">✉️ This message will be sent to the candidate's email address</p>
               </div>
 
               {/* Divider */}
@@ -673,9 +691,17 @@ const ApplicationDetails: React.FC = () => {
               </Button>
               <Button
                 onClick={handleStatusUpdate}
+                disabled={isUpdatingStatus}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2"
               >
-                Update Status
+                {isUpdatingStatus ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                    Sending...
+                  </>
+                ) : (
+                  'Send Update & Email'
+                )}
               </Button>
             </DialogFooter>
           </div>
