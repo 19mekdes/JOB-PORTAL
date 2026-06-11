@@ -170,7 +170,7 @@ const JobDetailsPage: React.FC = () => {
     return `${Math.floor(diff / 30)} months ago`
   }
 
-  // ✅ CRITICAL: Convert stored text to bullet points
+  
   const formatTextToBulletPoints = (text: string | null): string[] => {
     if (!text) return []
     if (text.trim() === '') return []

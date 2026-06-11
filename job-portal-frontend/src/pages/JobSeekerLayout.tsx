@@ -1,5 +1,4 @@
 /* eslint-disable react-hooks/immutability */
-// src/pages/JobSeekerLayout.tsx
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link, Outlet, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'

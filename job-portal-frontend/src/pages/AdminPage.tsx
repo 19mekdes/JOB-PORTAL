@@ -18,7 +18,6 @@ import {
   CheckCircle,
   XCircle,
   TrendingUp,
-  Database
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -32,7 +31,6 @@ import UsersManagement from './admin/Users'
 import JobsManagement from './admin/Jobs'
 import ApplicationsManagement from './admin/Applications'
 import Analytics from './admin/Analytics'
-import BackupRestore from './admin/BackupRestore'
 import SettingsPage from './admin/Settings'
 
 const AdminPage: React.FC = () => {
@@ -49,7 +47,6 @@ const AdminPage: React.FC = () => {
     { path: '/admin/jobs', label: 'Job Moderation', icon: Briefcase, component: JobsManagement },
     { path: '/admin/applications', label: 'Applications', icon: FileText, component: ApplicationsManagement },
     { path: '/admin/analytics', label: 'Analytics', icon: BarChart3, component: Analytics },
-    { path: '/admin/backup', label: 'Backup & Restore', icon: Database, component: BackupRestore },
     { path: '/admin/settings', label: 'Settings', icon: Settings, component: SettingsPage },
   ]
 

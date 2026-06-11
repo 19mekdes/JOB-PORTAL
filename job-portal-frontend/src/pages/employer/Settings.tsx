@@ -33,7 +33,7 @@ interface NotificationPreferences {
 
 const EmployerSettings = () => {
   const navigate = useNavigate()
-  const { user } = useSelector((state: RootState) => state.auth)
+  useSelector((state: RootState) => state.auth)
   const { darkMode, toggleDarkMode } = useTheme()
   
   const [activeTab, setActiveTab] = useState<ActiveTab>('security')

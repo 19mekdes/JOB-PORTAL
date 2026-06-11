@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/pages/DashboardContent.tsx
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'  // ADDED useNavigate
 import { useSelector } from 'react-redux'

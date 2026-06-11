@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// src/pages/employer/Analytics.tsx
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -87,7 +87,7 @@ const Analytics: React.FC = () => {
 
   useEffect(() => {
     fetchAnalytics()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, [period])
 
   const fetchAnalytics = async () => {
