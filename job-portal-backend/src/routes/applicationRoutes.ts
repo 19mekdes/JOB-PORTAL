@@ -7,7 +7,7 @@ import {
   updateApplicationStatus,
   addApplicationNote
 } from '../controllers/applicationController';
-import { protect } from '../middleware/authMiddleware';
+import{ protect } from '../middleware/authMiddleware';
 import { authorize } from '../middleware/roleMiddleware';
 
 const router = Router();

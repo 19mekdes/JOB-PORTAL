@@ -1,4 +1,3 @@
-// src/routes/uploadRoutes.ts
 import express, { Request, Response } from 'express'
 import fs from 'fs'
 import path from 'path'

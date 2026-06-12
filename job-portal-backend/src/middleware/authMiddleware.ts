@@ -164,3 +164,6 @@ export const authorizeAny = (...roles: string[]) => {
     }
   };
 };
+
+// Backwards-compatible alias: some files import `protect`
+export { authMiddleware as protect };

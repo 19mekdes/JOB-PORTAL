@@ -40,7 +40,7 @@ router.get('/me/completion', getProfileCompletion)
 // ========== CLOUDINARY MEDIA UPLOAD ROUTES ==========
 // Upload Cover Image (Job Seeker specific)
 router.post('/cover', authorize('Job Seeker'), uploadCover.single('cover_image'), async (req, res, next) => {
-  // If you move the logic code out of app.ts into controllers/profileController later,
+  
   // you can easily replace this inline function with a single named controller execution.
   try {
     const userId = req.user!.id;
