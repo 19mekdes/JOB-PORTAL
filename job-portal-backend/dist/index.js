@@ -59,7 +59,7 @@ app.use(express_1.default.urlencoded({ extended: true }));
 // API Routes
 app.use('/api/auth', authRoutes_1.default);
 app.use('/api/jobs', jobRoutes_1.default);
-app.use('/api/bookmarks', bookmarkRoutes); // ← THIS IS IMPORTANT
+app.use('/api/bookmarks', bookmarkRoutes);
 app.use('/api/applications', applicationRoutes_1.default);
 app.use('/api/notifications', notificationRoutes_1.default);
 app.use('/api/users', userRoutes_1.default);

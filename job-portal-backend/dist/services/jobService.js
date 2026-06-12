@@ -31,6 +31,18 @@ class JobService {
         if (!openStatus) {
             throw new errorMiddleware_js_1.ValidationError('Job status configuration error');
         }
+        const duplicateJob = await this.prisma.jobPost.findFirst({
+            where: {
+                employer_id: employerProfile.id,
+                title: { equals: title, mode: 'insensitive' },
+                location: { equals: location, mode: 'insensitive' },
+                employment_type_id,
+                industry_id
+            }
+        });
+        if (duplicateJob) {
+            throw new errorMiddleware_js_1.ValidationError('Duplicate job detected. A similar job has already been posted.');
+        }
         let salaryRange = null;
         if (salary_min && salary_max) {
             salaryRange = `$${salary_min.toLocaleString()} - $${salary_max.toLocaleString()}`;
@@ -282,6 +294,21 @@ class JobService {
         });
         if (!existingJob) {
             throw new errorMiddleware_js_1.AppError('Job not found or you do not have permission to update it', 403);
+        }
+        const duplicateJob = await this.prisma.jobPost.findFirst({
+            where: {
+                employer_id: employerProfile.id,
+                title: title !== undefined ? { equals: title, mode: 'insensitive' } : existingJob.title,
+                location: location !== undefined ? { equals: location, mode: 'insensitive' } : existingJob.location,
+                employment_type_id: employment_type_id !== undefined ? employment_type_id : existingJob.employment_type_id,
+                industry_id: industry_id !== undefined ? industry_id : existingJob.industry_id,
+                NOT: {
+                    id: jobId
+                }
+            }
+        });
+        if (duplicateJob) {
+            throw new errorMiddleware_js_1.AppError('Duplicate job detected. Another job with these details already exists.', 409, 'CONFLICT');
         }
         let salaryRange = existingJob.salary_range;
         if (salary_min !== undefined || salary_max !== undefined) {

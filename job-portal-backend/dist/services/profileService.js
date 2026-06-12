@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProfileService = void 0;
 const client_1 = require("@prisma/client");
 const errorMiddleware_js_1 = require("../middleware/errorMiddleware.js");
+const safeJson_1 = require("../utils/safeJson");
 const prisma = new client_1.PrismaClient();
 // ========== PROFILE SERVICE ==========
 class ProfileService {
@@ -33,7 +34,7 @@ class ProfileService {
         if (profileType === 'Job Seeker' && user.seeker_profile) {
             if (user.seeker_profile.experience) {
                 try {
-                    parsedProfile.experience = JSON.parse(user.seeker_profile.experience);
+                    parsedProfile.experience = (0, safeJson_1.safeJsonParse)(user.seeker_profile.experience);
                 }
                 catch {
                     parsedProfile.experience = [];
@@ -41,7 +42,7 @@ class ProfileService {
             }
             if (user.seeker_profile.education) {
                 try {
-                    parsedProfile.education = JSON.parse(user.seeker_profile.education);
+                    parsedProfile.education = (0, safeJson_1.safeJsonParse)(user.seeker_profile.education);
                 }
                 catch {
                     parsedProfile.education = [];
@@ -233,7 +234,7 @@ class ProfileService {
                 throw new errorMiddleware_js_1.ValidationError('End date must be after start date');
             }
         }
-        const currentExperiences = profile.experience ? JSON.parse(profile.experience) : [];
+        const currentExperiences = (0, safeJson_1.safeJsonParse)(profile.experience);
         const newExperience = {
             id: Date.now().toString(),
             ...experience,
@@ -255,7 +256,7 @@ class ProfileService {
         if (!profile) {
             throw new errorMiddleware_js_1.NotFoundError('Job seeker profile');
         }
-        const experiences = profile.experience ? JSON.parse(profile.experience) : [];
+        const experiences = (0, safeJson_1.safeJsonParse)(profile.experience);
         const experienceIndex = experiences.findIndex((exp) => exp.id === experienceId);
         if (experienceIndex === -1) {
             throw new errorMiddleware_js_1.NotFoundError('Experience');
@@ -279,7 +280,7 @@ class ProfileService {
         if (!profile) {
             throw new errorMiddleware_js_1.NotFoundError('Job seeker profile');
         }
-        const experiences = profile.experience ? JSON.parse(profile.experience) : [];
+        const experiences = (0, safeJson_1.safeJsonParse)(profile.experience);
         const filteredExperiences = experiences.filter((exp) => exp.id !== experienceId);
         await this.prisma.jobSeekerProfile.update({
             where: { user_id: userId },
@@ -295,7 +296,7 @@ class ProfileService {
         if (!profile) {
             throw new errorMiddleware_js_1.NotFoundError('Job seeker profile');
         }
-        const currentEducations = profile.education ? JSON.parse(profile.education) : [];
+        const currentEducations = (0, safeJson_1.safeJsonParse)(profile.education);
         const newEducation = {
             id: Date.now().toString(),
             ...education,
@@ -317,7 +318,7 @@ class ProfileService {
         if (!profile) {
             throw new errorMiddleware_js_1.NotFoundError('Job seeker profile');
         }
-        const educations = profile.education ? JSON.parse(profile.education) : [];
+        const educations = (0, safeJson_1.safeJsonParse)(profile.education);
         const educationIndex = educations.findIndex((edu) => edu.id === educationId);
         if (educationIndex === -1) {
             throw new errorMiddleware_js_1.NotFoundError('Education');
@@ -341,7 +342,7 @@ class ProfileService {
         if (!profile) {
             throw new errorMiddleware_js_1.NotFoundError('Job seeker profile');
         }
-        const educations = profile.education ? JSON.parse(profile.education) : [];
+        const educations = (0, safeJson_1.safeJsonParse)(profile.education);
         const filteredEducations = educations.filter((edu) => edu.id !== educationId);
         await this.prisma.jobSeekerProfile.update({
             where: { user_id: userId },
@@ -372,7 +373,7 @@ class ProfileService {
             profileData = { ...user.seeker_profile };
             if (user.seeker_profile.experience) {
                 try {
-                    profileData.experience = JSON.parse(user.seeker_profile.experience);
+                    profileData.experience = (0, safeJson_1.safeJsonParse)(user.seeker_profile.experience);
                 }
                 catch {
                     profileData.experience = [];
@@ -380,7 +381,7 @@ class ProfileService {
             }
             if (user.seeker_profile.education) {
                 try {
-                    profileData.education = JSON.parse(user.seeker_profile.education);
+                    profileData.education = (0, safeJson_1.safeJsonParse)(user.seeker_profile.education);
                 }
                 catch {
                     profileData.education = [];

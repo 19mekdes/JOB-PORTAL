@@ -4,6 +4,8 @@ import { AuthRequest } from '../types'
 
 const prisma = new PrismaClient()
 
+import { safeJsonParse } from '../utils/safeJson'
+
 // ========== GET PROFILE ==========
 export const getProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -36,14 +38,14 @@ export const getProfile = async (req: AuthRequest, res: Response): Promise<void>
     if (profileType === 'Job Seeker' && user.seeker_profile) {
       if (user.seeker_profile.experience) {
         try {
-          parsedProfile.experience = JSON.parse(user.seeker_profile.experience)
+          parsedProfile.experience = safeJsonParse(user.seeker_profile.experience)
         } catch {
           parsedProfile.experience = []
         }
       }
       if (user.seeker_profile.education) {
         try {
-          parsedProfile.education = JSON.parse(user.seeker_profile.education)
+          parsedProfile.education = safeJsonParse(user.seeker_profile.education)
         } catch {
           parsedProfile.education = []
         }
@@ -281,7 +283,7 @@ export const addExperience = async (req: AuthRequest, res: Response): Promise<vo
       return
     }
 
-    const currentExperiences = seekerProfile.experience ? JSON.parse(seekerProfile.experience) : []
+    const currentExperiences = safeJsonParse(seekerProfile.experience)
     
     const newExperience = {
       id: Date.now().toString(),
@@ -332,7 +334,7 @@ export const updateExperience = async (req: AuthRequest, res: Response): Promise
       return
     }
 
-    const currentExperiences = seekerProfile.experience ? JSON.parse(seekerProfile.experience) : []
+    const currentExperiences = safeJsonParse(seekerProfile.experience)
     const experienceIndex = currentExperiences.findIndex((exp: any) => exp.id === expId)
 
     if (experienceIndex === -1) {
@@ -388,7 +390,7 @@ export const deleteExperience = async (req: AuthRequest, res: Response): Promise
       return
     }
 
-    const currentExperiences = seekerProfile.experience ? JSON.parse(seekerProfile.experience) : []
+    const currentExperiences = safeJsonParse(seekerProfile.experience)
     const filteredExperiences = currentExperiences.filter((exp: any) => exp.id !== expId)
 
     await prisma.jobSeekerProfile.update({
@@ -425,7 +427,7 @@ export const addEducation = async (req: AuthRequest, res: Response): Promise<voi
       return
     }
 
-    const currentEducations = seekerProfile.education ? JSON.parse(seekerProfile.education) : []
+    const currentEducations = safeJsonParse(seekerProfile.education)
     
     const newEducation = {
       id: Date.now().toString(),
@@ -476,7 +478,7 @@ export const updateEducation = async (req: AuthRequest, res: Response): Promise<
       return
     }
 
-    const currentEducations = seekerProfile.education ? JSON.parse(seekerProfile.education) : []
+    const currentEducations = safeJsonParse(seekerProfile.education)
     const educationIndex = currentEducations.findIndex((edu: any) => edu.id === eduId)
 
     if (educationIndex === -1) {
@@ -532,7 +534,7 @@ export const deleteEducation = async (req: AuthRequest, res: Response): Promise<
       return
     }
 
-    const currentEducations = seekerProfile.education ? JSON.parse(seekerProfile.education) : []
+    const currentEducations = safeJsonParse(seekerProfile.education)
     const filteredEducations = currentEducations.filter((edu: any) => edu.id !== eduId)
 
     await prisma.jobSeekerProfile.update({
@@ -703,14 +705,14 @@ export const getPublicProfile = async (req: AuthRequest, res: Response): Promise
       profileData = { ...user.seeker_profile }
       if (user.seeker_profile.experience) {
         try {
-          profileData.experience = JSON.parse(user.seeker_profile.experience)
+          profileData.experience = safeJsonParse(user.seeker_profile.experience)
         } catch {
           profileData.experience = []
         }
       }
       if (user.seeker_profile.education) {
         try {
-          profileData.education = JSON.parse(user.seeker_profile.education)
+          profileData.education = safeJsonParse(user.seeker_profile.education)
         } catch {
           profileData.education = []
         }
@@ -769,7 +771,7 @@ export const getSeekerProfileById = async (req: AuthRequest, res: Response): Pro
     
     try {
       if (seekerProfile.experience) {
-        parsedExperience = JSON.parse(seekerProfile.experience)
+        parsedExperience = safeJsonParse(seekerProfile.experience)
       }
     } catch (e) {
       parsedExperience = []
@@ -777,7 +779,7 @@ export const getSeekerProfileById = async (req: AuthRequest, res: Response): Pro
     
     try {
       if (seekerProfile.education) {
-        parsedEducation = JSON.parse(seekerProfile.education)
+        parsedEducation = safeJsonParse(seekerProfile.education)
       }
     } catch (e) {
       parsedEducation = []

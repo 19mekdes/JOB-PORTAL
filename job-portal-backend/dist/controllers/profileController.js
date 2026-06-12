@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEmployerProfileById = exports.getSeekerProfileById = exports.getPublicProfile = exports.getProfileCompletion = exports.deleteCompanyLogo = exports.uploadCompanyLogo = exports.deleteEducation = exports.updateEducation = exports.addEducation = exports.deleteExperience = exports.updateExperience = exports.addExperience = exports.updateSkills = exports.deleteResume = exports.uploadResume = exports.updateEmployerProfile = exports.updateSeekerProfile = exports.getProfile = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
+const safeJson_1 = require("../utils/safeJson");
 // ========== GET PROFILE ==========
 const getProfile = async (req, res) => {
     try {
@@ -32,7 +33,7 @@ const getProfile = async (req, res) => {
         if (profileType === 'Job Seeker' && user.seeker_profile) {
             if (user.seeker_profile.experience) {
                 try {
-                    parsedProfile.experience = JSON.parse(user.seeker_profile.experience);
+                    parsedProfile.experience = (0, safeJson_1.safeJsonParse)(user.seeker_profile.experience);
                 }
                 catch {
                     parsedProfile.experience = [];
@@ -40,7 +41,7 @@ const getProfile = async (req, res) => {
             }
             if (user.seeker_profile.education) {
                 try {
-                    parsedProfile.education = JSON.parse(user.seeker_profile.education);
+                    parsedProfile.education = (0, safeJson_1.safeJsonParse)(user.seeker_profile.education);
                 }
                 catch {
                     parsedProfile.education = [];
@@ -250,7 +251,7 @@ const addExperience = async (req, res) => {
             });
             return;
         }
-        const currentExperiences = seekerProfile.experience ? JSON.parse(seekerProfile.experience) : [];
+        const currentExperiences = (0, safeJson_1.safeJsonParse)(seekerProfile.experience);
         const newExperience = {
             id: Date.now().toString(),
             title,
@@ -295,7 +296,7 @@ const updateExperience = async (req, res) => {
             });
             return;
         }
-        const currentExperiences = seekerProfile.experience ? JSON.parse(seekerProfile.experience) : [];
+        const currentExperiences = (0, safeJson_1.safeJsonParse)(seekerProfile.experience);
         const experienceIndex = currentExperiences.findIndex((exp) => exp.id === expId);
         if (experienceIndex === -1) {
             res.status(404).json({
@@ -345,7 +346,7 @@ const deleteExperience = async (req, res) => {
             });
             return;
         }
-        const currentExperiences = seekerProfile.experience ? JSON.parse(seekerProfile.experience) : [];
+        const currentExperiences = (0, safeJson_1.safeJsonParse)(seekerProfile.experience);
         const filteredExperiences = currentExperiences.filter((exp) => exp.id !== expId);
         await prisma.jobSeekerProfile.update({
             where: { user_id: req.user.id },
@@ -378,7 +379,7 @@ const addEducation = async (req, res) => {
             });
             return;
         }
-        const currentEducations = seekerProfile.education ? JSON.parse(seekerProfile.education) : [];
+        const currentEducations = (0, safeJson_1.safeJsonParse)(seekerProfile.education);
         const newEducation = {
             id: Date.now().toString(),
             degree,
@@ -423,7 +424,7 @@ const updateEducation = async (req, res) => {
             });
             return;
         }
-        const currentEducations = seekerProfile.education ? JSON.parse(seekerProfile.education) : [];
+        const currentEducations = (0, safeJson_1.safeJsonParse)(seekerProfile.education);
         const educationIndex = currentEducations.findIndex((edu) => edu.id === eduId);
         if (educationIndex === -1) {
             res.status(404).json({
@@ -473,7 +474,7 @@ const deleteEducation = async (req, res) => {
             });
             return;
         }
-        const currentEducations = seekerProfile.education ? JSON.parse(seekerProfile.education) : [];
+        const currentEducations = (0, safeJson_1.safeJsonParse)(seekerProfile.education);
         const filteredEducations = currentEducations.filter((edu) => edu.id !== eduId);
         await prisma.jobSeekerProfile.update({
             where: { user_id: req.user.id },
@@ -642,7 +643,7 @@ const getPublicProfile = async (req, res) => {
             profileData = { ...user.seeker_profile };
             if (user.seeker_profile.experience) {
                 try {
-                    profileData.experience = JSON.parse(user.seeker_profile.experience);
+                    profileData.experience = (0, safeJson_1.safeJsonParse)(user.seeker_profile.experience);
                 }
                 catch {
                     profileData.experience = [];
@@ -650,7 +651,7 @@ const getPublicProfile = async (req, res) => {
             }
             if (user.seeker_profile.education) {
                 try {
-                    profileData.education = JSON.parse(user.seeker_profile.education);
+                    profileData.education = (0, safeJson_1.safeJsonParse)(user.seeker_profile.education);
                 }
                 catch {
                     profileData.education = [];
@@ -707,7 +708,7 @@ const getSeekerProfileById = async (req, res) => {
         let parsedEducation = [];
         try {
             if (seekerProfile.experience) {
-                parsedExperience = JSON.parse(seekerProfile.experience);
+                parsedExperience = (0, safeJson_1.safeJsonParse)(seekerProfile.experience);
             }
         }
         catch (e) {
@@ -715,7 +716,7 @@ const getSeekerProfileById = async (req, res) => {
         }
         try {
             if (seekerProfile.education) {
-                parsedEducation = JSON.parse(seekerProfile.education);
+                parsedEducation = (0, safeJson_1.safeJsonParse)(seekerProfile.education);
             }
         }
         catch (e) {

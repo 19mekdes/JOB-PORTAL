@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../types';
 import { PrismaClient } from '@prisma/client';
+import { safeJsonParse } from '../utils/safeJson';
 
 const prisma = new PrismaClient();
 
@@ -377,12 +378,8 @@ export const updateCompanyProfile = async (req: AuthRequest, res: Response): Pro
 
     // Parse social_links if it's a string
     let socialLinks = updateData.social_links;
-    if (typeof socialLinks === 'string') {
-      try {
-        socialLinks = JSON.parse(socialLinks);
-      } catch (e) {
-        socialLinks = null;
-      }
+    if (socialLinks !== undefined) {
+      socialLinks = safeJsonParse(socialLinks, null)
     }
 
     // Prepare data for update

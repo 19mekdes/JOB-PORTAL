@@ -26,6 +26,7 @@ import { CloudinaryStorage } from "multer-storage-cloudinary";
 import adminRoutes from "./routes/adminRoutes";
 import nodemailer from "nodemailer";
 import employerRoutes from "./routes/employerRoutes";
+import { safeJsonParse } from './utils/safeJson';
 
 import {
   testEmailConfig,
@@ -878,14 +879,12 @@ app.put(
 
       // Experience
       if (experience !== undefined) {
-        updateData.experience =
-          typeof experience === "string" ? JSON.parse(experience) : experience;
+        updateData.experience = safeJsonParse(experience)
       }
 
       // Education
       if (education !== undefined) {
-        updateData.education =
-          typeof education === "string" ? JSON.parse(education) : education;
+        updateData.education = safeJsonParse(education)
       }
 
       console.log("Updating fields:", Object.keys(updateData));

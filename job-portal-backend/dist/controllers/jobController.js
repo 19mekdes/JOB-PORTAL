@@ -7,6 +7,8 @@ const prisma = new client_1.PrismaClient();
 const createJob = async (req, res) => {
     try {
         const { title, description, requirements, benefits, location, employment_type_id, industry_id, salary_min, salary_max, is_remote } = req.body;
+        const normalizedTitle = title?.trim() ?? '';
+        const normalizedLocation = location?.trim() ?? '';
         // Get employer profile
         const employerProfile = await prisma.employerProfile.findUnique({
             where: { user_id: req.user.id }
@@ -22,6 +24,25 @@ const createJob = async (req, res) => {
         const openStatus = await prisma.jobPostStatus.findFirst({
             where: { status_name: 'Open' }
         });
+        // Check for duplicate job posting by this employer
+        const duplicateJob = await prisma.jobPost.findFirst({
+            where: {
+                employer_id: employerProfile.id,
+                title: { equals: normalizedTitle, mode: 'insensitive' },
+                location: { equals: normalizedLocation, mode: 'insensitive' },
+                employment_type_id,
+                industry_id
+            }
+        });
+        if (duplicateJob) {
+            res.status(409).json({
+                success: false,
+                message: 'Duplicate job detected. A similar job has already been posted.',
+                existingJobId: duplicateJob.id,
+                code: 'DUPLICATE_JOB'
+            });
+            return;
+        }
         // Generate salary range string
         let salaryRange = null;
         if (salary_min && salary_max) {
@@ -36,11 +57,11 @@ const createJob = async (req, res) => {
         // Create job
         const job = await prisma.jobPost.create({
             data: {
-                title,
+                title: normalizedTitle,
                 description,
                 requirements: requirements || null,
                 benefits: benefits || null,
-                location,
+                location: normalizedLocation,
                 is_remote: is_remote || false,
                 salary_min: salary_min || null,
                 salary_max: salary_max || null,
@@ -68,6 +89,14 @@ const createJob = async (req, res) => {
         });
     }
     catch (error) {
+        if (error instanceof client_1.Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+            res.status(409).json({
+                success: false,
+                message: 'Duplicate job detected. A similar job has already been posted.',
+                code: 'DUPLICATE_FIELD'
+            });
+            return;
+        }
         res.status(500).json({
             success: false,
             message: error.message
@@ -310,6 +339,32 @@ const updateJob = async (req, res) => {
             });
             return;
         }
+        const normalizedTitle = title !== undefined ? title.trim() : existingJob.title;
+        const normalizedLocation = location !== undefined ? location.trim() : existingJob.location;
+        const normalizedEmploymentTypeId = employment_type_id !== undefined ? employment_type_id : existingJob.employment_type_id;
+        const normalizedIndustryId = industry_id !== undefined ? industry_id : existingJob.industry_id;
+        // Prevent updating to a duplicate job title/location/industry/employment combination
+        const duplicateJob = await prisma.jobPost.findFirst({
+            where: {
+                employer_id: employerProfile.id,
+                title: { equals: normalizedTitle, mode: 'insensitive' },
+                location: { equals: normalizedLocation, mode: 'insensitive' },
+                employment_type_id: normalizedEmploymentTypeId,
+                industry_id: normalizedIndustryId,
+                NOT: {
+                    id: req.params.id
+                }
+            }
+        });
+        if (duplicateJob) {
+            res.status(409).json({
+                success: false,
+                message: 'Duplicate job detected. Another job with these details already exists.',
+                existingJobId: duplicateJob.id,
+                code: 'DUPLICATE_JOB'
+            });
+            return;
+        }
         // Generate salary range string
         let salaryRange = existingJob.salary_range;
         if (salary_min !== undefined || salary_max !== undefined) {
@@ -329,11 +384,11 @@ const updateJob = async (req, res) => {
         const updatedJob = await prisma.jobPost.update({
             where: { id: req.params.id },
             data: {
-                title: title !== undefined ? title : undefined,
+                title: title !== undefined ? normalizedTitle : undefined,
                 description: description !== undefined ? description : undefined,
                 requirements: requirements !== undefined ? requirements : undefined,
                 benefits: benefits !== undefined ? benefits : undefined,
-                location: location !== undefined ? location : undefined,
+                location: location !== undefined ? normalizedLocation : undefined,
                 is_remote: is_remote !== undefined ? is_remote : undefined,
                 salary_min: salary_min !== undefined ? salary_min : undefined,
                 salary_max: salary_max !== undefined ? salary_max : undefined,

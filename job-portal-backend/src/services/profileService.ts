@@ -1,5 +1,6 @@
 import { PrismaClient, Prisma } from '@prisma/client'
 import { AppError, NotFoundError, ValidationError } from '../middleware/errorMiddleware.js'
+import { safeJsonParse } from '../utils/safeJson'
 
 const prisma = new PrismaClient()
 
@@ -93,14 +94,14 @@ export class ProfileService {
     if (profileType === 'Job Seeker' && user.seeker_profile) {
       if (user.seeker_profile.experience) {
         try {
-          parsedProfile.experience = JSON.parse(user.seeker_profile.experience)
+          parsedProfile.experience = safeJsonParse(user.seeker_profile.experience)
         } catch {
           parsedProfile.experience = []
         }
       }
       if (user.seeker_profile.education) {
         try {
-          parsedProfile.education = JSON.parse(user.seeker_profile.education)
+          parsedProfile.education = safeJsonParse(user.seeker_profile.education)
         } catch {
           parsedProfile.education = []
         }
@@ -350,7 +351,7 @@ export class ProfileService {
       }
     }
 
-    const currentExperiences = profile.experience ? JSON.parse(profile.experience) : []
+    const currentExperiences = safeJsonParse(profile.experience)
     
     const newExperience = {
       id: Date.now().toString(),
@@ -381,7 +382,7 @@ export class ProfileService {
       throw new NotFoundError('Job seeker profile')
     }
 
-    const experiences = profile.experience ? JSON.parse(profile.experience) : []
+    const experiences = safeJsonParse(profile.experience)
     const experienceIndex = experiences.findIndex((exp: Experience) => exp.id === experienceId)
 
     if (experienceIndex === -1) {
@@ -412,7 +413,7 @@ export class ProfileService {
       throw new NotFoundError('Job seeker profile')
     }
 
-    const experiences = profile.experience ? JSON.parse(profile.experience) : []
+    const experiences = safeJsonParse(profile.experience)
     const filteredExperiences = experiences.filter((exp: Experience) => exp.id !== experienceId)
 
     await this.prisma.jobSeekerProfile.update({
@@ -433,7 +434,7 @@ export class ProfileService {
       throw new NotFoundError('Job seeker profile')
     }
 
-    const currentEducations = profile.education ? JSON.parse(profile.education) : []
+    const currentEducations = safeJsonParse(profile.education)
     
     const newEducation = {
       id: Date.now().toString(),
@@ -464,7 +465,7 @@ export class ProfileService {
       throw new NotFoundError('Job seeker profile')
     }
 
-    const educations = profile.education ? JSON.parse(profile.education) : []
+    const educations = safeJsonParse(profile.education)
     const educationIndex = educations.findIndex((edu: Education) => edu.id === educationId)
 
     if (educationIndex === -1) {
@@ -495,7 +496,7 @@ export class ProfileService {
       throw new NotFoundError('Job seeker profile')
     }
 
-    const educations = profile.education ? JSON.parse(profile.education) : []
+    const educations = safeJsonParse(profile.education)
     const filteredEducations = educations.filter((edu: Education) => edu.id !== educationId)
 
     await this.prisma.jobSeekerProfile.update({
@@ -532,14 +533,14 @@ export class ProfileService {
       profileData = { ...user.seeker_profile }
       if (user.seeker_profile.experience) {
         try {
-          profileData.experience = JSON.parse(user.seeker_profile.experience)
+          profileData.experience = safeJsonParse(user.seeker_profile.experience)
         } catch {
           profileData.experience = []
         }
       }
       if (user.seeker_profile.education) {
         try {
-          profileData.education = JSON.parse(user.seeker_profile.education)
+          profileData.education = safeJsonParse(user.seeker_profile.education)
         } catch {
           profileData.education = []
         }
