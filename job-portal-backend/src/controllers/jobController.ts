@@ -1,10 +1,10 @@
 import { Response } from 'express'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 import { AuthRequest } from '../types'
 
 const prisma = new PrismaClient()
 
-// ========== TYPES ==========
+// ========== TYPES = ==========
 interface JobInput {
   title: string
   description: string
@@ -49,6 +49,9 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
       is_remote
     }: JobInput = req.body
 
+    const normalizedTitle = title?.trim() ?? ''
+    const normalizedLocation = location?.trim() ?? ''
+
     // Get employer profile
     const employerProfile = await prisma.employerProfile.findUnique({
       where: { user_id: req.user!.id }
@@ -67,6 +70,27 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
       where: { status_name: 'Open' }
     })
 
+    // Check for duplicate job posting by this employer
+    const duplicateJob = await prisma.jobPost.findFirst({
+      where: {
+        employer_id: employerProfile.id,
+        title: { equals: normalizedTitle, mode: 'insensitive' as const },
+        location: { equals: normalizedLocation, mode: 'insensitive' as const },
+        employment_type_id,
+        industry_id
+      }
+    })
+
+    if (duplicateJob) {
+      res.status(409).json({
+        success: false,
+        message: 'Duplicate job detected. A similar job has already been posted.',
+        existingJobId: duplicateJob.id,
+        code: 'DUPLICATE_JOB'
+      })
+      return
+    }
+
     // Generate salary range string
     let salaryRange = null
     if (salary_min && salary_max) {
@@ -80,11 +104,11 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
     // Create job
     const job = await prisma.jobPost.create({
       data: {
-        title,
+        title: normalizedTitle,
         description,
         requirements: requirements || null,
         benefits: benefits || null,
-        location,
+        location: normalizedLocation,
         is_remote: is_remote || false,
         salary_min: salary_min || null,
         salary_max: salary_max || null,
@@ -112,6 +136,15 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
       message: 'Job posted successfully'
     })
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      res.status(409).json({
+        success: false,
+        message: 'Duplicate job detected. A similar job has already been posted.',
+        code: 'DUPLICATE_FIELD'
+      })
+      return
+    }
+
     res.status(500).json({
       success: false,
       message: (error as Error).message
@@ -399,6 +432,35 @@ export const updateJob = async (req: AuthRequest, res: Response): Promise<void> 
       return
     }
 
+    const normalizedTitle = title !== undefined ? title.trim() : existingJob.title
+    const normalizedLocation = location !== undefined ? location.trim() : existingJob.location
+    const normalizedEmploymentTypeId = employment_type_id !== undefined ? employment_type_id : existingJob.employment_type_id
+    const normalizedIndustryId = industry_id !== undefined ? industry_id : existingJob.industry_id
+
+    // Prevent updating to a duplicate job title/location/industry/employment combination
+    const duplicateJob = await prisma.jobPost.findFirst({
+      where: {
+        employer_id: employerProfile.id,
+        title: { equals: normalizedTitle, mode: 'insensitive' as const },
+        location: { equals: normalizedLocation, mode: 'insensitive' as const },
+        employment_type_id: normalizedEmploymentTypeId,
+        industry_id: normalizedIndustryId,
+        NOT: {
+          id: req.params.id
+        }
+      }
+    })
+
+    if (duplicateJob) {
+      res.status(409).json({
+        success: false,
+        message: 'Duplicate job detected. Another job with these details already exists.',
+        existingJobId: duplicateJob.id,
+        code: 'DUPLICATE_JOB'
+      })
+      return
+    }
+
     // Generate salary range string
     let salaryRange = existingJob.salary_range
     if (salary_min !== undefined || salary_max !== undefined) {
@@ -417,11 +479,11 @@ export const updateJob = async (req: AuthRequest, res: Response): Promise<void> 
     const updatedJob = await prisma.jobPost.update({
       where: { id: req.params.id },
       data: {
-        title: title !== undefined ? title : undefined,
+        title: title !== undefined ? normalizedTitle : undefined,
         description: description !== undefined ? description : undefined,
         requirements: requirements !== undefined ? requirements : undefined,
         benefits: benefits !== undefined ? benefits : undefined,
-        location: location !== undefined ? location : undefined,
+        location: location !== undefined ? normalizedLocation : undefined,
         is_remote: is_remote !== undefined ? is_remote : undefined,
         salary_min: salary_min !== undefined ? salary_min : undefined,
         salary_max: salary_max !== undefined ? salary_max : undefined,

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  Users, Search, RefreshCw, UserCheck, UserX, Trash2, Eye, Mail, Phone,
-  MapPin, Calendar, AlertCircle, CheckCircle, XCircle, Key
+  Users, Search, RefreshCw, UserCheck, UserX, Trash2, Eye, Mail, 
+  Calendar, AlertCircle, CheckCircle, XCircle, Key
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -62,7 +62,43 @@ const UserManagement: React.FC = () => {
 
   // Get current user role for permission checks
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
-  const isSuperAdmin = currentUser.user_type?.type_name === 'Super Admin'
+  const currentUserRole = currentUser.user_type?.type_name
+  const isSuperAdmin = currentUserRole === 'Super Admin'
+  const isAdmin = currentUserRole === 'Admin'
+
+  // ✅ FORCE DELETE BUTTON FOR TESTING - REMOVE THIS LINE AFTER TESTING
+  const showDeleteForAll = true // TEMPORARY - DELETE THIS AFTER TESTING
+
+  // ✅ Check if user can be deleted
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const canDeleteUser = (user: User) => {
+    // TEMPORARY: Show delete for all users during testing
+    if (showDeleteForAll) return true
+    
+    const targetRole = user.user_type?.type_name
+    
+    if (isSuperAdmin) return true
+    
+    if (isAdmin) {
+      return targetRole === 'Job Seeker' || targetRole === 'Employer'
+    }
+    
+    return false
+  }
+
+  // ✅ Check if user can be suspended/activated
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const canModifyUser = (user: User) => {
+    const targetRole = user.user_type?.type_name
+    
+    if (isSuperAdmin) return true
+    
+    if (isAdmin) {
+      return targetRole === 'Job Seeker' || targetRole === 'Employer'
+    }
+    
+    return false
+  }
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -89,7 +125,7 @@ const UserManagement: React.FC = () => {
       
       setUsers(usersData)
       
-      // Calculate stats from usersData
+      // Calculate stats
       let jobSeekersCount = 0, employersCount = 0, adminsCount = 0, superAdminsCount = 0, activeCount = 0, suspendedCount = 0
       
       for (const user of usersData) {
@@ -137,30 +173,31 @@ const UserManagement: React.FC = () => {
     else if (tab === 'admins') setRoleFilter('all')
   }
 
-  // Update user status (suspend/activate) - Used only in View Dialog
   const updateUserStatus = async (userId: string, isActive: boolean) => {
-    try {
-      await api.put(`/admin/users/${userId}/status`, { is_active: isActive })
-      toast({ 
-        title: "Success", 
-        description: `User ${isActive ? 'activated' : 'suspended'} successfully` 
-      })
-      fetchUsers()
-      setIsDetailOpen(false)
-    } catch (error: any) {
-      toast({ 
-        variant: "destructive", 
-        title: "Error", 
-        description: error.response?.data?.message || "Failed to update user status" 
-      })
+    const action = isActive ? 'activate' : 'suspend'
+    if (confirm(`Are you sure you want to ${action} this user?`)) {
+      try {
+        await api.put(`/admin/users/${userId}/status`, { is_active: isActive })
+        toast({ title: "Success", description: `User ${isActive ? 'activated' : 'suspended'} successfully` })
+        fetchUsers()
+        setIsDetailOpen(false)
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Failed to update user status" })
+      }
     }
   }
 
-  const deleteUser = async (userId: string) => {
-    if (confirm('⚠️ Delete this user? This action cannot be undone.')) {
+  const deleteUser = async (userId: string, userEmail: string) => {
+    const confirmMsg = `⚠️ PERMANENT DELETION ⚠️\n\n` +
+      `User: ${userEmail}\n\n` +
+      `This action CANNOT be undone!\n\n` +
+      `All user data will be permanently removed.\n\n` +
+      `Are you sure?`
+    
+    if (confirm(confirmMsg)) {
       try {
         await api.delete(`/admin/users/${userId}`)
-        toast({ title: "Success", description: "User deleted successfully" })
+        toast({ title: "User Deleted", description: `${userEmail} has been permanently removed.` })
         fetchUsers()
         setIsDetailOpen(false)
       } catch (error: any) {
@@ -192,7 +229,7 @@ const UserManagement: React.FC = () => {
   const getRoleBadge = (role: string | undefined) => {
     if (!role) return <Badge className="bg-gray-100 text-gray-700 border-gray-200">Unknown</Badge>
     switch (role.toLowerCase()) {
-      case 'super admin': return <Badge className="bg-linear-to-r from-red-500 to-red-600 text-white border-0">Super Admin</Badge>
+      case 'super admin': return <Badge className="bg-red-100 text-red-800 border-red-200">Super Admin</Badge>
       case 'admin': return <Badge className="bg-purple-100 text-purple-800 border-purple-200">Admin</Badge>
       case 'employer': return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Employer</Badge>
       case 'job seeker': return <Badge className="bg-green-100 text-green-800 border-green-200">Job Seeker</Badge>
@@ -208,10 +245,7 @@ const UserManagement: React.FC = () => {
 
   const formatDate = (date: string) => date ? new Date(date).toLocaleDateString() : 'N/A'
   const getUserDisplayName = (user: User) => user.full_name || user.employer_profile?.company_name || user.seeker_profile?.full_name || user.email.split('@')[0]
-  const getUserPhone = (user: User) => user.phone || user.seeker_profile?.phone || null
-  const getUserLocation = (user: User) => user.location || user.seeker_profile?.location || user.employer_profile?.location || null
 
-  // Apply all filters
   const filteredUsers = users.filter(user => {
     const userTypeName = user.user_type?.type_name || ''
     
@@ -363,7 +397,7 @@ const UserManagement: React.FC = () => {
                     <TableHead className="text-gray-700">Status</TableHead>
                     <TableHead className="text-gray-700">Joined</TableHead>
                     <TableHead className="text-gray-700">Activity</TableHead>
-                    <TableHead className="text-right text-gray-700">Actions</TableHead>
+                    <TableHead className="text-center text-gray-700">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -392,17 +426,17 @@ const UserManagement: React.FC = () => {
                           <span className="text-green-600 font-medium">{user.stats?.applications_count || 0} apps</span>
                         ) : '-'}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          {/* View Button - Only this remains */}
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          {/* View Button */}
                           <Button 
                             variant="ghost" 
                             size="sm" 
                             onClick={() => { setSelectedUser(user); setIsDetailOpen(true) }} 
-                            className="hover:bg-gray-100" 
+                            className="h-8 w-8 p-0 hover:bg-gray-100"
                             title="View Details"
                           >
-                            <Eye className="h-4 w-4 text-gray-600" />
+                            <Eye className="h-4 w-4 text-gray-500" />
                           </Button>
                           
                           {/* Reset Password Button */}
@@ -410,26 +444,22 @@ const UserManagement: React.FC = () => {
                             variant="ghost" 
                             size="sm" 
                             onClick={() => { setSelectedUser(user); setIsResetPasswordOpen(true) }} 
-                            className="hover:bg-gray-100" 
+                            className="h-8 w-8 p-0 hover:bg-gray-100"
                             title="Reset Password"
                           >
-                            <Key className="h-4 w-4 text-gray-600" />
+                            <Key className="h-4 w-4 text-gray-500" />
                           </Button>
                           
-                          {/* ❌ SUSPEND/ACTIVATE BUTTON REMOVED - Now only in View Dialog */}
-                          
-                          {/* Delete Button (Super Admin only) */}
-                          {isSuperAdmin && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-red-600 hover:bg-red-50" 
-                              onClick={() => deleteUser(user.id)}
-                              title="Delete User"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
+                          {/* ✅ DELETE BUTTON - Always show for testing */}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50" 
+                            onClick={() => deleteUser(user.id, user.email)}
+                            title="Permanently Delete User"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -452,7 +482,7 @@ const UserManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* User Detail Dialog - NOW CONTAINS THE SUSPEND/ACTIVATE BUTTON */}
+      {/* User Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto bg-white border border-gray-200">
           {selectedUser && (
@@ -464,7 +494,6 @@ const UserManagement: React.FC = () => {
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-6">
-                {/* User Header */}
                 <div className="bg-linear-to-r from-blue-50 to-indigo-50 p-5 rounded-xl">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16 bg-blue-200">
@@ -483,22 +512,9 @@ const UserManagement: React.FC = () => {
                   </div>
                 </div>
                 
-                {/* Contact Info */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-gray-900 mb-3">Contact Information</h3>
                   <div className="space-y-2">
-                    {getUserPhone(selectedUser) && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-700">{getUserPhone(selectedUser)}</span>
-                      </div>
-                    )}
-                    {getUserLocation(selectedUser) && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-gray-400" />
-                        <span className="text-gray-700">{getUserLocation(selectedUser)}</span>
-                      </div>
-                    )}
                     <div className="flex items-center gap-2 text-sm">
                       <Mail className="h-4 w-4 text-gray-400" />
                       <span className="text-gray-700">{selectedUser.email}</span>
@@ -510,7 +526,6 @@ const UserManagement: React.FC = () => {
                   </div>
                 </div>
                 
-                {/* Actions - Suspend/Activate moved HERE (only in View Dialog) */}
                 <div className="border-t pt-4 border-gray-200">
                   <h3 className="font-semibold text-gray-900 mb-3">Moderation Actions</h3>
                   <div className="flex gap-3 flex-wrap">
@@ -523,7 +538,6 @@ const UserManagement: React.FC = () => {
                       Reset Password
                     </Button>
                     
-                    {/* ✅ SUSPEND/ACTIVATE BUTTON - NOW ONLY HERE */}
                     {selectedUser.is_active ? (
                       <Button 
                         variant="outline" 
@@ -543,17 +557,15 @@ const UserManagement: React.FC = () => {
                       </Button>
                     )}
                     
-                    {/* Delete Button (Super Admin only) */}
-                    {isSuperAdmin && (
-                      <Button 
-                        variant="outline" 
-                        className="text-red-600 border-red-600 hover:bg-red-50 bg-white" 
-                        onClick={() => deleteUser(selectedUser.id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete User
-                      </Button>
-                    )}
+                    {/* ✅ DELETE BUTTON in Dialog */}
+                    <Button 
+                      variant="outline" 
+                      className="text-red-600 border-red-600 hover:bg-red-50 bg-white" 
+                      onClick={() => deleteUser(selectedUser.id, selectedUser.email)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete User
+                    </Button>
                   </div>
                 </div>
               </div>

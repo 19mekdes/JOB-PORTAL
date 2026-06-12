@@ -177,14 +177,37 @@ export const postJob = async (req: AuthRequest, res: Response): Promise<void> =>
     } else if (salary_max) {
       salaryRange = `Up to $${salary_max}`;
     }
+    const normalizedTitle = title?.trim() ?? ''
+    const normalizedLocation = location?.trim() ?? ''
+
+    // Prevent duplicate jobs (same employer, title, location, employment_type, industry)
+    const duplicateJob = await prisma.jobPost.findFirst({
+      where: {
+        employer_id: employerProfile.id,
+        title: { equals: normalizedTitle, mode: 'insensitive' as const },
+        location: { equals: normalizedLocation, mode: 'insensitive' as const },
+        employment_type_id: Number(employment_type_id),
+        industry_id: Number(industry_id)
+      }
+    })
+
+    if (duplicateJob) {
+      res.status(409).json({
+        success: false,
+        message: 'Duplicate job detected. A similar job already exists for your company.',
+        existingJobId: duplicateJob.id,
+        code: 'DUPLICATE_JOB'
+      })
+      return
+    }
 
     const job = await prisma.jobPost.create({
       data: {
-        title,
+        title: normalizedTitle,
         description,
         requirements: requirements || null,
         benefits: benefits || null,
-        location,
+        location: normalizedLocation,
         is_remote: is_remote || false,
         employer_id: employerProfile.id,
         industry_id: Number(industry_id),

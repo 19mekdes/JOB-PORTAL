@@ -40,7 +40,7 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     { resource: 'notifications', actions: ['read', 'update'] }
   ],
   [UserRoles.ADMIN]: [
-    { resource: 'users', actions: ['read', 'update', 'suspend', 'activate'] },
+    { resource: 'users', actions: ['read', 'update', 'suspend', 'activate', 'delete'] },
     { resource: 'jobs', actions: ['read', 'moderate', 'delete'] },
     { resource: 'applications', actions: ['read'] },
     { resource: 'reports', actions: ['read'] },

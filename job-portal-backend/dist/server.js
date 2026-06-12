@@ -620,21 +620,31 @@ app.post('/api/jobs', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
     
-    // ✅ THIS IS THE DUPLICATE CHECK - MAKE SURE IT'S HERE
-    const existingJob = await prisma.jobPost.findFirst({
+    const normalizedTitle = title.trim();
+    const normalizedLocation = location.trim();
+    const duplicateJob = await prisma.jobPost.findFirst({
       where: {
         employer_id: user.employer_profile.id,
-        title: title  // Exact match
+        title: {
+          equals: normalizedTitle,
+          mode: 'insensitive'
+        },
+        location: {
+          equals: normalizedLocation,
+          mode: 'insensitive'
+        },
+        employment_type_id: parseInt(employment_type_id),
+        industry_id: parseInt(industry_id)
       }
     });
-    
-    if (existingJob) {
+
+    if (duplicateJob) {
       console.log(`❌ DUPLICATE BLOCKED: ${title}`);
       return res.status(409).json({ 
         success: false, 
-        message: `A job with title "${title}" already exists. Please use a different title.`,
+        message: `A job with these details already exists. Please update the existing job instead of creating a duplicate.`,
         code: 'DUPLICATE_JOB',
-        existingJobId: existingJob.id
+        existingJobId: duplicateJob.id
       });
     }
     
@@ -651,11 +661,11 @@ app.post('/api/jobs', authMiddleware, async (req, res) => {
     
     const job = await prisma.jobPost.create({
       data: {
-        title, 
+        title: normalizedTitle, 
         description, 
         requirements: requirements || '', 
         benefits: benefits || '', 
-        location,
+        location: normalizedLocation,
         employer_id: user.employer_profile.id, 
         employment_type_id: parseInt(employment_type_id),
         industry_id: parseInt(industry_id), 
@@ -704,26 +714,34 @@ app.put('/api/jobs/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Job not found' });
     }
     
-    // ✅ Check for duplicate when updating title
-    if (title && title.toLowerCase() !== existingJob.title.toLowerCase()) {
-      const duplicateJob = await prisma.jobPost.findFirst({
-        where: {
-          employer_id: user.employer_profile.id,
-          title: {
-            equals: title,
-            mode: 'insensitive'
-          },
-          id: { not: id }
-        }
-      });
-      
-      if (duplicateJob) {
-        return res.status(409).json({
-          success: false,
-          message: `A job with title "${title}" already exists. Please use a different title.`,
-          code: 'DUPLICATE_JOB'
-        });
+    const normalizedTitle = title ? title.trim() : existingJob.title;
+    const normalizedLocation = location ? location.trim() : existingJob.location;
+    const normalizedEmploymentTypeId = employment_type_id ? parseInt(employment_type_id) : existingJob.employment_type_id;
+    const normalizedIndustryId = industry_id ? parseInt(industry_id) : existingJob.industry_id;
+
+    const duplicateJob = await prisma.jobPost.findFirst({
+      where: {
+        employer_id: user.employer_profile.id,
+        title: {
+          equals: normalizedTitle,
+          mode: 'insensitive'
+        },
+        location: {
+          equals: normalizedLocation,
+          mode: 'insensitive'
+        },
+        employment_type_id: normalizedEmploymentTypeId,
+        industry_id: normalizedIndustryId,
+        id: { not: id }
       }
+    });
+    
+    if (duplicateJob) {
+      return res.status(409).json({
+        success: false,
+        message: 'A job with these details already exists. Please update the existing job instead of creating a duplicate.',
+        code: 'DUPLICATE_JOB'
+      });
     }
     
     const updatedJob = await prisma.jobPost.update({

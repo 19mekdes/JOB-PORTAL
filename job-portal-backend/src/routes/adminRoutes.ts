@@ -53,7 +53,8 @@ router.put('/users/:userId/status', updateUserStatus);
 // Super Admin only routes
 router.put('/users/:userId', isSuperAdmin, updateUser);
 router.post('/users/:userId/reset-password', isSuperAdmin, resetPassword);
-router.delete('/users/:userId', isSuperAdmin, deleteUser);
+// Allow Admins to delete users (employers/seekers) as well as Super Admins
+router.delete('/users/:userId', isAdmin, deleteUser);
 
 // ========== JOB MANAGEMENT ==========
 router.get('/jobs', getAllJobs);

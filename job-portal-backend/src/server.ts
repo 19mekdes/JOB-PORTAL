@@ -921,9 +921,10 @@ app.put(
     }
   }
 );
+
+
 // NEW DEDICATED PROFILE UPDATE ENDPOINT
-app.put(
-  "/api/profile/update-info",
+app.put( "/api/profile/update-info",
   authMiddleware,
   async (req: Request, res: Response) => {
     try {
@@ -999,8 +1000,7 @@ app.put(
 );
 
 // ========== JOB SEEKER PROFILE CLOUD UPLOADS ==========
-app.post(
-  "/api/profile/cover",
+app.post("/api/profile/cover",
   authMiddleware,
   uploadImage.single("cover_image"),
   async (req: Request, res: Response) => {
@@ -1294,7 +1294,6 @@ app.delete(
 
 // ========== SUPER ADMIN - COMPANY MANAGEMENT ENDPOINTS ==========
 
-// GET all companies
 app.get(
   "/api/super-admin/companies",
   authMiddleware,
@@ -2004,7 +2003,6 @@ async function createAuditLog(data: {
 }
 
 // ========== SUPER ADMIN - FULL ADMIN MANAGEMENT ENDPOINTS ==========
-// Add these after your existing routes but BEFORE app.listen()
 
 // 1. UPDATE ADMIN - Edit admin details
 app.put(
@@ -2277,7 +2275,6 @@ app.get(
 );
 
 // ========== SUPER ADMIN - FULL ADMIN MANAGEMENT ENDPOINTS ==========
-// Add these BEFORE app.listen()
 
 // 1. UPDATE ADMIN - Edit admin details
 app.put(
@@ -2717,14 +2714,37 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
       console.log("✅ Created Pending status");
     }
 
+    const normalizedTitle = title.trim()
+    const normalizedLocation = location.trim()
+
+    // Detect duplicate jobs for this employer
+    const duplicateJob = await prisma.jobPost.findFirst({
+      where: {
+        employer_id: user.employer_profile.id,
+        title: { equals: normalizedTitle, mode: 'insensitive' as const },
+        location: { equals: normalizedLocation, mode: 'insensitive' as const },
+        employment_type_id: parseInt(employment_type_id),
+        industry_id: parseInt(industry_id)
+      }
+    })
+
+    if (duplicateJob) {
+      return res.status(409).json({
+        success: false,
+        message: 'Duplicate job detected. A similar job has already been submitted.',
+        existingJobId: duplicateJob.id,
+        code: 'DUPLICATE_JOB'
+      })
+    }
+
     // Create job with PENDING status (requires admin approval)
     const job = await prisma.jobPost.create({
       data: {
-        title,
+        title: normalizedTitle,
         description,
         requirements: requirements || "",
         benefits: benefits || "",
-        location,
+        location: normalizedLocation,
         employer_id: user.employer_profile.id,
         employment_type_id: parseInt(employment_type_id),
         industry_id: parseInt(industry_id),
@@ -2894,6 +2914,35 @@ app.put(
         return res
           .status(404)
           .json({ success: false, message: "Job not found" });
+
+      const normalizedTitle = title !== undefined ? title.trim() : existingJob.title
+      const normalizedLocation = location !== undefined ? location.trim() : existingJob.location
+      const normalizedEmploymentTypeId = employment_type_id
+        ? parseInt(employment_type_id)
+        : existingJob.employment_type_id
+      const normalizedIndustryId = industry_id
+        ? parseInt(industry_id)
+        : existingJob.industry_id
+
+      const duplicateJob = await prisma.jobPost.findFirst({
+        where: {
+          employer_id: user.employer_profile.id,
+          title: { equals: normalizedTitle, mode: 'insensitive' as const },
+          location: { equals: normalizedLocation, mode: 'insensitive' as const },
+          employment_type_id: normalizedEmploymentTypeId,
+          industry_id: normalizedIndustryId,
+          NOT: { id }
+        }
+      })
+
+      if (duplicateJob) {
+        return res.status(409).json({
+          success: false,
+          message: 'Duplicate job detected. Another job with these details already exists.',
+          existingJobId: duplicateJob.id,
+          code: 'DUPLICATE_JOB'
+        })
+      }
 
       const updatedJob = await prisma.jobPost.update({
         where: { id },
@@ -3322,6 +3371,467 @@ app.put(
     }
   }
 );
+
+// ========== GET ALL USERS (Admin & Super Admin) ==========
+app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    // Check if user is Admin or Super Admin
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    });
+    
+    const currentRole = currentUser?.user_type?.type_name;
+    
+    if (currentRole !== 'Admin' && currentRole !== 'Super Admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied. Admin or Super Admin role required.' 
+      });
+    }
+    
+    const { search, role, status, page = 1, limit = 20 } = req.query;
+    
+    let where: any = {};
+    
+    // Search filter
+    if (search) {
+      where.OR = [
+        { email: { contains: search as string, mode: 'insensitive' } },
+        { full_name: { contains: search as string, mode: 'insensitive' } },
+        { seeker_profile: { full_name: { contains: search as string, mode: 'insensitive' } } },
+        { employer_profile: { company_name: { contains: search as string, mode: 'insensitive' } } }
+      ];
+    }
+    
+    // Role filter
+    if (role && role !== 'all') {
+      where.user_type = { type_name: role as string };
+    }
+    
+    // Status filter
+    if (status && status !== 'all') {
+      where.is_active = status === 'active';
+    }
+    
+    // Get users
+    const users = await prisma.user.findMany({
+      where,
+      include: {
+        user_type: true,
+        seeker_profile: true,
+        employer_profile: true
+      },
+      orderBy: { created_at: 'desc' },
+      skip: (Number(page) - 1) * Number(limit),
+      take: Number(limit)
+    });
+    
+    // Get stats
+    const stats = {
+      total: await prisma.user.count(),
+      active: await prisma.user.count({ where: { is_active: true } }),
+      suspended: await prisma.user.count({ where: { is_active: false } }),
+      jobSeekers: await prisma.user.count({ where: { user_type: { type_name: 'Job Seeker' } } }),
+      employers: await prisma.user.count({ where: { user_type: { type_name: 'Employer' } } }),
+      admins: await prisma.user.count({ where: { user_type: { type_name: 'Admin' } } }),
+      superAdmins: await prisma.user.count({ where: { user_type: { type_name: 'Super Admin' } } })
+    };
+    
+    // Add stats to each user
+    const usersWithStats = await Promise.all(users.map(async (user) => {
+      let jobsCount = 0;
+      let applicationsCount = 0;
+      
+      if (user.employer_profile) {
+        jobsCount = await prisma.jobPost.count({
+          where: { employer_id: user.employer_profile.id }
+        });
+      }
+      
+      if (user.seeker_profile) {
+        applicationsCount = await prisma.jobApplication.count({
+          where: { seeker_id: user.seeker_profile.id }
+        });
+      }
+      
+      return {
+        ...user,
+        stats: {
+          jobs_count: jobsCount,
+          applications_count: applicationsCount
+        }
+      };
+    }));
+    
+    res.json({
+      success: true,
+      data: usersWithStats,
+      stats,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total: await prisma.user.count({ where }),
+        pages: Math.ceil(await prisma.user.count({ where }) / Number(limit))
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ========== UPDATE USER STATUS (Suspend/Activate) ==========
+app.put('/api/admin/users/:userId/status', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { is_active } = req.body;
+    
+    // Check current user role
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    });
+    
+    if (!currentUser) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    
+    const currentRole = currentUser.user_type?.type_name;
+    
+    if (currentRole !== 'Admin' && currentRole !== 'Super Admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied. Only Admin or Super Admin can update user status.' 
+      });
+    }
+    
+    // Don't allow modifying own status
+    if (userId === req.user!.id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot modify your own account status' 
+      });
+    }
+    
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { user_type: true }
+    });
+    
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const targetRole = targetUser.user_type?.type_name;
+    
+    // Admin can only modify Job Seekers and Employers
+    if (currentRole === 'Admin') {
+      if (targetRole !== 'Job Seeker' && targetRole !== 'Employer') {
+        return res.status(403).json({ 
+          success: false, 
+          message: `Admin cannot ${is_active ? 'activate' : 'suspend'} ${targetRole} accounts. Only Job Seekers and Employers can be managed.`,
+          allowed_roles: ['Job Seeker', 'Employer'],
+          your_role: currentRole,
+          target_role: targetRole
+        });
+      }
+    }
+    
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { is_active: is_active, updated_at: new Date() }
+    });
+    
+    // Create notification for the user
+    await prisma.notification.create({
+      data: {
+        user_id: userId,
+        title: is_active ? 'Account Activated' : 'Account Suspended',
+        message: is_active 
+          ? 'Your account has been reactivated. You can now log in.'
+          : 'Your account has been suspended. Please contact support.',
+        type: 'account_status',
+        created_at: new Date()
+      }
+    });
+    
+    res.json({ 
+      success: true, 
+      message: `User ${is_active ? 'activated' : 'suspended'} successfully` 
+    });
+    
+  } catch (error: any) {
+    console.error('Error updating user status:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ========== DELETE USER ==========
+app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    
+    console.log(`🗑️ Delete user request for ID: ${userId}`);
+    
+    // Get current user with their role
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    });
+    
+    if (!currentUser) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    
+    const currentRole = currentUser.user_type?.type_name;
+    
+    // Check if user has permission to delete
+    if (currentRole !== 'Admin' && currentRole !== 'Super Admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied. Only Admin or Super Admin can delete users.',
+        your_role: currentRole,
+        required_roles: ['Admin', 'Super Admin']
+      });
+    }
+    
+    // Don't allow deleting yourself
+    if (userId === req.user!.id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot delete your own account' 
+      });
+    }
+    
+    // Get target user with full details
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { 
+        user_type: true,
+        seeker_profile: true,
+        employer_profile: true
+      }
+    });
+    
+    if (!targetUser) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+    
+    const targetRole = targetUser.user_type?.type_name;
+    const targetEmail = targetUser.email;
+    
+    // Role-based permission check
+    if (currentRole === 'Admin') {
+      // Admin can ONLY delete Job Seekers and Employers
+      if (targetRole !== 'Job Seeker' && targetRole !== 'Employer') {
+        return res.status(403).json({ 
+          success: false, 
+          message: `Admin cannot delete ${targetRole} accounts. Only Job Seekers and Employers can be deleted.`,
+          allowed_roles: ['Job Seeker', 'Employer'],
+          your_role: currentRole,
+          target_role: targetRole
+        });
+      }
+    }
+    
+    console.log(`📝 Deleting user: ${targetEmail} (${targetRole})`);
+    
+    // ========== DELETE RELATED DATA ==========
+    
+    // 1. Delete job application notes (if job seeker)
+    if (targetUser.seeker_profile) {
+      const applications = await prisma.jobApplication.findMany({
+        where: { seeker_id: targetUser.seeker_profile.id }
+      });
+      
+      for (const app of applications) {
+        await prisma.jobApplicationNote.deleteMany({
+          where: { application_id: app.id }
+        });
+      }
+      
+      // 2. Delete job applications
+      await prisma.jobApplication.deleteMany({
+        where: { seeker_id: targetUser.seeker_profile.id }
+      });
+      
+      // 3. Delete bookmarks
+      await prisma.jobBookmark.deleteMany({
+        where: { seeker_id: targetUser.seeker_profile.id }
+      });
+      
+      // 4. Delete seeker profile
+      await prisma.jobSeekerProfile.delete({
+        where: { id: targetUser.seeker_profile.id }
+      });
+    }
+    
+    // 5. Delete employer related data (if employer)
+    if (targetUser.employer_profile) {
+      // Get all jobs by this employer
+      const jobs = await prisma.jobPost.findMany({
+        where: { employer_id: targetUser.employer_profile.id }
+      });
+      
+      for (const job of jobs) {
+        // Delete applications for each job
+        await prisma.jobApplication.deleteMany({
+          where: { job_id: job.id }
+        });
+        
+        // Delete bookmarks for each job
+        await prisma.jobBookmark.deleteMany({
+          where: { job_id: job.id }
+        });
+      }
+      
+      // Delete all jobs
+      await prisma.jobPost.deleteMany({
+        where: { employer_id: targetUser.employer_profile.id }
+      });
+      
+      // Delete employer profile
+      await prisma.employerProfile.delete({
+        where: { id: targetUser.employer_profile.id }
+      });
+    }
+    
+    // 6. Delete notifications
+    await prisma.notification.deleteMany({
+      where: { user_id: userId }
+    });
+    
+    // 7. Delete notification preferences
+    await prisma.notificationPreference.deleteMany({
+      where: { user_id: userId }
+    });
+    
+    // 8. Finally delete the user
+    await prisma.user.delete({
+      where: { id: userId }
+    });
+    
+    console.log(`✅ User deleted successfully: ${targetEmail}`);
+    
+    res.json({ 
+      success: true, 
+      message: `User ${targetEmail} (${targetRole}) has been permanently deleted`,
+      deleted_user: {
+        email: targetEmail,
+        role: targetRole,
+        deleted_at: new Date().toISOString(),
+        deleted_by: currentUser.email,
+        deleted_by_role: currentRole
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'An error occurred while deleting the user' 
+    });
+  }
+});
+
+// ========== RESET USER PASSWORD ==========
+app.post('/api/admin/users/:userId/reset-password', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { newPassword } = req.body;
+    
+    // Check current user role
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { user_type: true }
+    });
+    
+    if (!currentUser) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    
+    const currentRole = currentUser.user_type?.type_name;
+    
+    if (currentRole !== 'Admin' && currentRole !== 'Super Admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied. Only Admin or Super Admin can reset passwords.' 
+      });
+    }
+    
+    // Get target user
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+    
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    // Validate password
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Password must be at least 6 characters' 
+      });
+    }
+    
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Update password
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword, updated_at: new Date() }
+    });
+    
+    // Create notification
+    await prisma.notification.create({
+      data: {
+        user_id: userId,
+        title: 'Password Reset',
+        message: 'An administrator has reset your password. Please login with your new password.',
+        type: 'security',
+        created_at: new Date()
+      }
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Password reset successfully' 
+    });
+    
+  } catch (error: any) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+// ========== GET UNREAD NOTIFICATIONS COUNT ==========
+app.get('/api/notifications/unread/count', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    
+    const unreadCount = await prisma.notification.count({
+      where: { 
+        user_id: userId, 
+        is_read: false 
+      }
+    });
+    
+    res.json({ 
+      success: true, 
+      data: { unreadCount } 
+    });
+  } catch (error: any) {
+    console.error('Error fetching unread count:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 // ========== CONTACT FORM ENDPOINT ==========
 app.post("/api/contact", async (req: Request, res: Response) => {
