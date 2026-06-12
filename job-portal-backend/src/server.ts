@@ -34,10 +34,10 @@ import {
   sendNewApplicationNotification,
 } from "./services/emailService";
 
-// Create express app FIRST
+// Create express app 
 const app = express();
 
-// CORS configuration - IMMEDIATELY AFTER creating app
+// CORS configuration 
 app.use(
   cors({
     origin: true,
@@ -82,7 +82,7 @@ cloudinary.config({
 // Helper to extract Cloudinary Public ID from an image URL for deletion
 const getPublicIdFromUrl = (url: string): string | null => {
   try {
-    // Expected format: .../upload/v123456789/jobportal/images/img-name.jpg
+    
     const parts = url.split("/upload/");
     if (parts.length < 2) return null;
 
@@ -145,7 +145,7 @@ app.use("/api/auth", authRoutes);
 
 // Configure email transporter (use your email service)
 const emailTransporter = nodemailer.createTransport({
-  service: "gmail", // or 'outlook', 'yahoo', etc.
+  service: "gmail", 
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -360,8 +360,7 @@ const superAdminMiddleware = async (
   }
 };
 
-// ========== ADD THIS isAdmin MIDDLEWARE ==========
-// Check if user is Admin (includes Super Admin)
+// ==========  isAdmin MIDDLEWARE ==========
 const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await prisma.user.findUnique({
@@ -732,7 +731,7 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
   }
 });
 
-// FIXED: GET profile endpoint - properly handles both seeker and employer profiles
+// GET profile endpoint
 app.get(
   "/api/profile/me",
   authMiddleware,
@@ -751,7 +750,7 @@ app.get(
           .status(404)
           .json({ success: false, message: "User not found" });
 
-      // Only return seeker_profile fields if it's a job seeker
+      //  return seeker_profile fields if it's a job seeker
       let profile = null;
       if (user.seeker_profile) {
         profile = {
@@ -812,7 +811,7 @@ app.get(
     }
   }
 );
-// FIXED: PUT profile endpoint - only updates seeker profile fields
+//PUT profile endpoint - only updates seeker profile fields
 app.put(
   "/api/auth/profile",
   authMiddleware,
@@ -834,13 +833,7 @@ app.put(
         education,
       } = req.body;
 
-      console.log("📝 ========== PROFILE UPDATE ==========");
-      console.log("User ID:", userId);
-      console.log("Title received:", title);
-      console.log("LinkedIn received:", linkedin_url);
-      console.log("GitHub received:", github_url);
-      console.log("Portfolio received:", portfolio_url);
-      console.log("Availability received:", availability);
+      
 
       // Check if user is a job seeker
       const user = await prisma.user.findUnique({
@@ -923,7 +916,7 @@ app.put(
 );
 
 
-// NEW DEDICATED PROFILE UPDATE ENDPOINT
+// PROFILE UPDATE ENDPOINT
 app.put( "/api/profile/update-info",
   authMiddleware,
   async (req: Request, res: Response) => {
@@ -966,7 +959,7 @@ app.put( "/api/profile/update-info",
         });
       }
 
-      // Update the profile - DIRECT UPDATE
+      // Update the profile 
       const updatedProfile = await prisma.jobSeekerProfile.update({
         where: { id: profile.id },
         data: {
@@ -1608,39 +1601,8 @@ app.get(
       // If no backups in database, return mock data for demo
       if (backups.length === 0) {
         backups = [
-          {
-            id: "1",
-            name: "Full System Backup",
-            type: "full",
-            size: "2.4 GB",
-            size_bytes: 2576980377,
-            status: "completed",
-            created_at: new Date().toISOString(),
-            created_by: "System",
-            location: "/backups/full_backup_2024.sql.gz",
-          },
-          {
-            id: "2",
-            name: "Database Backup",
-            type: "database",
-            size: "856 MB",
-            size_bytes: 897581056,
-            status: "completed",
-            created_at: new Date(Date.now() - 86400000).toISOString(),
-            created_by: "System",
-            location: "/backups/db_backup_2024.sql.gz",
-          },
-          {
-            id: "3",
-            name: "User Data Backup",
-            type: "partial",
-            size: "124 MB",
-            size_bytes: 130023424,
-            status: "completed",
-            created_at: new Date(Date.now() - 172800000).toISOString(),
-            created_by: "System",
-            location: "/backups/user_backup_2024.sql.gz",
-          },
+          
+          
         ];
       }
 
@@ -1680,7 +1642,7 @@ app.get(
           total: totalGB,
           percentage: Math.min(percentage, 100),
           available: totalGB - totalSize,
-          backup_count: backups.length || 3, // Show at least 3 for demo
+          backup_count: backups.length || 3, 
         },
       });
     } catch (error: any) {
@@ -1688,8 +1650,8 @@ app.get(
       res.json({
         success: true,
         data: {
-          used: 3.4 * 1024 * 1024 * 1024, // 3.4 GB
-          total: 50 * 1024 * 1024 * 1024, // 50 GB
+          used: 3.4 * 1024 * 1024 * 1024, 
+          total: 50 * 1024 * 1024 * 1024, 
           percentage: 6.8,
           available: 46.6 * 1024 * 1024 * 1024,
           backup_count: 3,
@@ -1826,7 +1788,7 @@ app.post(
 
 // ========== AUDIT LOGS ENDPOINTS ==========
 
-// Get all audit logs - ONLY REAL DATA
+
 app.get(
   "/api/admin/audit-logs",
   authMiddleware,
@@ -1850,7 +1812,7 @@ app.get(
           });
       }
 
-      // Get audit logs from database - ONLY REAL DATA
+      // Get audit logs from database 
       let auditLogs = [];
       try {
         auditLogs = await prisma.auditLog.findMany({
@@ -1871,7 +1833,7 @@ app.get(
         return res.json({ success: true, data: [] });
       }
 
-      // Format the logs - NO SAMPLE DATA
+      // Format the logs 
       const formattedLogs = auditLogs.map((log) => ({
         id: log.id.toString(),
         action: log.action,
@@ -1888,13 +1850,13 @@ app.get(
       res.json({ success: true, data: formattedLogs });
     } catch (error: any) {
       console.error("Error fetching audit logs:", error);
-      // Return empty array on error - NO SAMPLE DATA
+      // Return empty array on error 
       res.json({ success: true, data: [] });
     }
   }
 );
 
-// Export audit logs as CSV - ONLY REAL DATA
+// Export audit logs as CSV 
 app.get(
   "/api/admin/audit-logs/export",
   authMiddleware,
@@ -1932,7 +1894,7 @@ app.get(
         return res.json({ success: true, data: [] });
       }
 
-      // Create CSV - ONLY REAL DATA
+      // Create CSV 
       const headers = [
         "ID",
         "Action",
@@ -1975,7 +1937,7 @@ app.get(
   }
 );
 
-// Helper function to create audit log (keep this)
+// Helper function to create audit log 
 async function createAuditLog(data: {
   admin_id: string;
   action: string;
@@ -2004,7 +1966,7 @@ async function createAuditLog(data: {
 
 // ========== SUPER ADMIN - FULL ADMIN MANAGEMENT ENDPOINTS ==========
 
-// 1. UPDATE ADMIN - Edit admin details
+// 1. UPDATE ADMIN 
 app.put(
   "/api/admin/users/:userId",
   authMiddleware,
@@ -2148,7 +2110,7 @@ app.post(
   }
 );
 
-// 3. DELETE ADMIN - Permanently delete admin
+// 3. DELETE ADMIN 
 app.delete(
   "/api/admin/users/:userId",
   authMiddleware,
@@ -2242,280 +2204,7 @@ app.delete(
   }
 );
 
-// 4. GET SINGLE USER - Get admin by ID
-app.get(
-  "/api/admin/users/:userId",
-  authMiddleware,
-  async (req: Request, res: Response) => {
-    try {
-      const { userId } = req.params;
-
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          user_type: true,
-          seeker_profile: true,
-          employer_profile: true,
-        },
-      });
-
-      if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found" });
-      }
-
-      const { password, ...userWithoutPassword } = user;
-      res.json({ success: true, data: userWithoutPassword });
-    } catch (error: any) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-);
-
-// ========== SUPER ADMIN - FULL ADMIN MANAGEMENT ENDPOINTS ==========
-
-// 1. UPDATE ADMIN - Edit admin details
-app.put(
-  "/api/admin/users/:userId",
-  authMiddleware,
-  superAdminMiddleware,
-  async (req: Request, res: Response) => {
-    try {
-      const { userId } = req.params;
-      const { full_name, phone, role } = req.body;
-
-      console.log(`🔄 UPDATE ADMIN: ${userId}`);
-      console.log(`   Data:`, { full_name, phone, role });
-
-      // Check if user exists
-      const existingUser = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { user_type: true, seeker_profile: true },
-      });
-
-      if (!existingUser) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found" });
-      }
-
-      // Prepare update data
-      const updateData: any = {
-        updated_at: new Date(),
-      };
-
-      if (full_name) {
-        updateData.full_name = full_name;
-      }
-
-      // Update role if provided
-      if (role && role !== existingUser.user_type?.type_name) {
-        const userType = await prisma.userType.findFirst({
-          where: { type_name: role },
-        });
-        if (userType) {
-          updateData.user_type_id = userType.id;
-          console.log(
-            `   Updating role: ${existingUser.user_type?.type_name} -> ${role}`
-          );
-        }
-      }
-
-      // Update user
-      const updatedUser = await prisma.user.update({
-        where: { id: userId },
-        data: updateData,
-        include: { user_type: true },
-      });
-
-      // Update phone in seeker profile if exists
-      if (existingUser.seeker_profile && phone !== undefined) {
-        await prisma.jobSeekerProfile.update({
-          where: { id: existingUser.seeker_profile.id },
-          data: { phone: phone || null },
-        });
-      }
-
-      console.log(`✅ Admin updated: ${updatedUser.email}`);
-
-      const { password, ...userWithoutPassword } = updatedUser;
-      res.json({
-        success: true,
-        data: userWithoutPassword,
-        message: "Admin updated successfully",
-      });
-    } catch (error: any) {
-      console.error("❌ Update error:", error);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-);
-
-// 2. RESET PASSWORD - Reset admin password
-app.post(
-  "/api/admin/users/:userId/reset-password",
-  authMiddleware,
-  superAdminMiddleware,
-  async (req: Request, res: Response) => {
-    try {
-      const { userId } = req.params;
-      const { password } = req.body;
-
-      console.log(`🔑 RESET PASSWORD for: ${userId}`);
-
-      if (!password || password.length < 6) {
-        return res.status(400).json({
-          success: false,
-          message: "Password must be at least 6 characters",
-        });
-      }
-
-      const existingUser = await prisma.user.findUnique({
-        where: { id: userId },
-      });
-
-      if (!existingUser) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found" });
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          password: hashedPassword,
-          updated_at: new Date(),
-        },
-      });
-
-      // Create notification
-      await prisma.notification.create({
-        data: {
-          user_id: userId,
-          title: "Password Reset",
-          message:
-            "An administrator has reset your password. Please login with your new password.",
-          type: "security",
-          created_at: new Date(),
-        },
-      });
-
-      console.log(`✅ Password reset for: ${existingUser.email}`);
-
-      res.json({
-        success: true,
-        message: `Password reset successfully for ${existingUser.email}`,
-      });
-    } catch (error: any) {
-      console.error("❌ Reset password error:", error);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-);
-
-// 3. DELETE ADMIN - Permanently delete admin
-app.delete(
-  "/api/admin/users/:userId",
-  authMiddleware,
-  superAdminMiddleware,
-  async (req: Request, res: Response) => {
-    try {
-      const { userId } = req.params;
-
-      console.log(`🗑️ DELETE ADMIN: ${userId}`);
-
-      // Prevent self-deletion
-      if (userId === req.user!.id) {
-        return res.status(400).json({
-          success: false,
-          message: "Cannot delete your own account",
-        });
-      }
-
-      const existingUser = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          user_type: true,
-          seeker_profile: true,
-          employer_profile: true,
-        },
-      });
-
-      if (!existingUser) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found" });
-      }
-
-      const userEmail = existingUser.email;
-      const userName = existingUser.full_name || userEmail;
-
-      // Delete related records
-      if (existingUser.seeker_profile) {
-        await prisma.jobApplication.deleteMany({
-          where: { seeker_id: existingUser.seeker_profile.id },
-        });
-        await prisma.jobBookmark.deleteMany({
-          where: { seeker_id: existingUser.seeker_profile.id },
-        });
-        await prisma.jobSeekerProfile.delete({
-          where: { id: existingUser.seeker_profile.id },
-        });
-        console.log(`   Deleted seeker profile for ${userEmail}`);
-      }
-
-      if (existingUser.employer_profile) {
-        const jobs = await prisma.jobPost.findMany({
-          where: { employer_id: existingUser.employer_profile.id },
-        });
-        for (const job of jobs) {
-          await prisma.jobApplication.deleteMany({
-            where: { job_id: job.id },
-          });
-        }
-        await prisma.jobPost.deleteMany({
-          where: { employer_id: existingUser.employer_profile.id },
-        });
-        await prisma.employerProfile.delete({
-          where: { id: existingUser.employer_profile.id },
-        });
-        console.log(
-          `   Deleted employer profile and ${jobs.length} jobs for ${userEmail}`
-        );
-      }
-
-      // Delete notifications
-      await prisma.notification.deleteMany({
-        where: { user_id: userId },
-      });
-
-      await prisma.notificationPreference.deleteMany({
-        where: { user_id: userId },
-      });
-
-      // Delete the user
-      await prisma.user.delete({
-        where: { id: userId },
-      });
-
-      console.log(`✅ User deleted: ${userEmail}`);
-
-      res.json({
-        success: true,
-        message: `User ${userName} deleted successfully`,
-      });
-    } catch (error: any) {
-      console.error("❌ Delete error:", error);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-);
-
-// 4. GET SINGLE USER - Get admin by ID
+// 4. GET SINGLE USER 
 app.get(
   "/api/admin/users/:userId",
   authMiddleware,
@@ -2669,7 +2358,7 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
         });
     }
 
-    // ✅ OPTION B: Require verification before posting
+    //  Require verification before posting
     if (!user.employer_profile.is_verified) {
       return res.status(403).json({
         success: false,
@@ -2679,7 +2368,7 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ Check if company is active (not suspended)
+    //  Check if company is active (not suspended)
     if (user.employer_profile.is_active === false) {
       return res.status(403).json({
         success: false,
@@ -3163,7 +2852,7 @@ app.get(
           app.seeker?.full_name ||
           app.seeker?.user?.full_name ||
           "Anonymous Applicant",
-        status: app.status?.status_name || "Pending", // ← Convert to string!
+        status: app.status?.status_name || "Pending", 
         applied_at: app.applied_at,
         applied_days_ago: Math.floor(
           (Date.now() - new Date(app.applied_at).getTime()) /
@@ -3976,7 +3665,7 @@ app.post("/api/contact", async (req: Request, res: Response) => {
     // Send to support email (mekdesw60@gmail.com)
     await transporter.sendMail({
       from: `"JobPortal Contact" <${process.env.EMAIL_USER}>`,
-      to: "mekdesw60@gmail.com", // ✅ Your support email
+      to: "mekdesw60@gmail.com", 
       subject: `📬 New Contact: ${subject} from ${name}`,
       html: supportEmailHtml,
     });
@@ -4472,7 +4161,7 @@ app.put(
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { status } = req.body; // 'Open' or 'Closed'
+      const { status } = req.body; 
 
       console.log(`Updating job ${id} status to:`, status);
 
@@ -4988,12 +4677,12 @@ app.put(
   }
 );
 
-// SPECIFIC ROUTES FIRST - put this BEFORE any generic routes
+// SPECIFIC ROUTES FIRST 
 app.put(
   "/api/jobs/:id/status",
   authMiddleware,
   async (req: Request, res: Response) => {
-    // ... status update logic
+    
   }
 );
 
@@ -5002,7 +4691,7 @@ app.put(
   "/api/jobs/:id",
   authMiddleware,
   async (req: Request, res: Response) => {
-    // ... general update logic
+    
   }
 );
 
@@ -5111,7 +4800,7 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
   }
 });
 
-// ========== ADMIN STATS ENDPOINT (MATCHES FRONTEND EXPECTATIONS) ==========
+// ========== ADMIN STATS ENDPOINT  ==========
 app.get(
   "/api/admin/stats",
   authMiddleware,
@@ -5350,8 +5039,6 @@ app.get(
 );
 
 // ========== ADMIN USER MANAGEMENT BACKEND ==========
-
-// Add this test route first to verify the route is working
 app.get(
   "/api/admin/test",
   authMiddleware,
@@ -5502,9 +5189,7 @@ app.get(
   }
 );
 
-// ========== ADMIN SETTINGS ENDPOINTS - SIMPLIFIED VERSION ==========
-
-// GET /api/admin/settings - Fetch all settings
+// ========== ADMIN SETTINGS ENDPOINTS ========
 app.get(
   "/api/admin/settings",
   authMiddleware,
@@ -5570,7 +5255,7 @@ app.get(
   }
 );
 
-// PUT /api/admin/settings - Update settings
+// PUT /api/admin/settings 
 app.put(
   "/api/admin/settings",
   authMiddleware,
@@ -5643,7 +5328,7 @@ app.put(
   }
 );
 
-// POST /api/admin/settings/test-email - Test email configuration (placeholder)
+// POST /api/admin/settings/test-email 
 app.post(
   "/api/admin/settings/test-email",
   authMiddleware,
@@ -6192,7 +5877,6 @@ app.post(
       });
 
       // Create profile based on role (for admin, create seeker profile or employer profile?)
-      // Admins typically don't need job seeker or employer profiles, but we'll create a basic one
       await prisma.jobSeekerProfile.create({
         data: {
           user_id: user.id,
@@ -6629,7 +6313,7 @@ app.put(
 
       // Super Admin can suspend/activate anyone except themselves (already checked)
       if (currentRole === "Super Admin") {
-        // Super Admin can do anything, continue
+      
       }
       // Admin can ONLY suspend/activate Job Seekers and Employers
       else if (currentRole === "Admin") {
@@ -6795,7 +6479,7 @@ app.put(
         );
       } catch (emailError) {
         console.error("Failed to send status email:", emailError);
-        // Don't block the status update if email fails
+        
       }
 
       // ========== CREATE IN-APP NOTIFICATION FOR TARGET USER ==========
@@ -6954,7 +6638,7 @@ app.delete(
 
       // Super Admin can delete anyone except themselves
       if (currentRole === "Super Admin") {
-        // Allow deletion, continue
+        
       }
       // Admin can ONLY delete Job Seekers and Employers
       else if (currentRole === "Admin") {
@@ -7222,7 +6906,7 @@ app.post(
               'Use the "Change Password" feature in your profile to update your own password.',
           });
         }
-        // Allow, continue
+        
       }
       // Admin can ONLY reset passwords for Job Seekers and Employers
       else if (currentRole === "Admin") {
@@ -7447,7 +7131,7 @@ app.post(
 );
 // ========== JOB SEEKER PREFERENCES ==========
 
-// Get job seeker preferences
+
 app.get(
   "/api/jobseeker/preferences",
   authMiddleware,
@@ -7710,7 +7394,7 @@ app.put(
       const userId = req.user!.id;
       const {
         email_notifications,
-        application_alerts, // Frontend sends this
+        application_alerts, 
         marketing_emails,
         push_notifications,
         status_changes,

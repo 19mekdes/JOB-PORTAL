@@ -27,7 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
-app.use('/api/bookmarks', bookmarkRoutes);  // ← THIS IS IMPORTANT
+app.use('/api/bookmarks', bookmarkRoutes);  
 app.use('/api/applications', applicationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/users', userRoutes);

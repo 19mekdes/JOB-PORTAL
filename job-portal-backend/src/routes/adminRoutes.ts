@@ -1,4 +1,3 @@
-// src/routes/adminRoutes.ts
 import express from 'express';
 import {
   getDashboardStats,

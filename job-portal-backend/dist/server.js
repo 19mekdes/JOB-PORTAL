@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// Add this at the top of server.ts right after imports
 process.on('uncaughtException', (error) => {
     console.error('❌ Uncaught Exception:', error);
     process.exit(1);
@@ -912,7 +911,7 @@ app.put('/api/jobs/:id', authMiddleware, async (req, res) => {
             const jobs = await prisma.jobPost.findMany({
                 where: { employer_id: employer.id },
                 include: {
-                    employment_type: true, // ← Add this
+                    employment_type: true, 
                     applications: {
                         where: {
                             applied_at: { gte: startDate }
