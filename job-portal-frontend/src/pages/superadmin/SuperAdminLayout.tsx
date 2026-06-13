@@ -227,7 +227,7 @@ const SuperAdminLayout: React.FC = () => {
     return currentItem ? currentItem.component : <SuperAdminDashboard />
   }
 
-  // Update active tab based on URL path
+  
   useEffect(() => {
     const currentPath = location.pathname
     const currentItem = navItems.find(item => item.path === currentPath)
