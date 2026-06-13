@@ -114,7 +114,7 @@ const PostJobPage: React.FC = () => {
     location: '',
     employment_type_id: '',
     industry_id: '',
-    status_id: '1', // Default to 'Open'
+    status_id: '1', 
     salary_min: '',
     salary_max: '',
     is_remote: false,
@@ -251,7 +251,7 @@ const PostJobPage: React.FC = () => {
     console.log('Submitting job data:', submitData)
 
     try {
-      // ✅ FIXED: Use the correct endpoint '/employer/jobs'
+      // Use the correct endpoint '/employer/jobs'
       const response = await api.post('/employer/jobs', submitData)
       
       console.log('Response:', response.data)

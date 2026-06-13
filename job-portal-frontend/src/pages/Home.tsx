@@ -66,7 +66,7 @@ const Home: React.FC = () => {
     fetchAllData()
   }, [])
 
-  // ✅ NEW: Function to get correct dashboard route based on user role
+  // Function to get correct dashboard route based on user role
   const getDashboardRoute = () => {
     if (!user) return '/register'
     
@@ -86,7 +86,7 @@ const Home: React.FC = () => {
     }
   }
 
-  // ✅ NEW: Handle Go to Dashboard click
+  // Handle Go to Dashboard click
   const handleGoToDashboard = () => {
     const route = getDashboardRoute()
     navigate(route)
@@ -378,14 +378,14 @@ const Home: React.FC = () => {
         </section>
       )}
 
-      {/* ✅ FIXED CTA Section */}
+      {/* CTA Section */}
       <section className="py-12 sm:py-20 bg-linear-to-r from-blue-600 to-blue-800">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4">Ready to Start Your Journey?</h2>
           <p className="text-base sm:text-xl text-blue-100 mb-6 sm:mb-8">Join {stats.totalUsers.toLocaleString()}+ successful job seekers</p>
           <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
             {!user ? (
-              // ✅ User not logged in - Show Register button
+              //  User not logged in - Show Register button
               <Link to="/register" className="w-full sm:w-auto">
                 <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 shadow-lg px-6 sm:px-8 py-3 sm:py-6 text-base sm:text-lg w-full sm:w-auto hover:scale-105 transition-all duration-300">
                   Create Free Account
@@ -393,7 +393,7 @@ const Home: React.FC = () => {
                 </Button>
               </Link>
             ) : (
-              // ✅ User logged in - Go to correct dashboard based on role
+              //  User logged in - Go to correct dashboard based on role
               <Button 
                 size="lg" 
                 onClick={handleGoToDashboard}
@@ -418,56 +418,7 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Animation styles */}
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes slide-up {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out forwards;
-        }
-        
-        .animate-slide-up {
-          animation: slide-up 0.6s ease-out forwards;
-        }
-        
-        .animation-delay-100 {
-          animation-delay: 0.1s;
-          opacity: 0;
-          animation-fill-mode: forwards;
-        }
-        
-        .animation-delay-200 {
-          animation-delay: 0.2s;
-          opacity: 0;
-          animation-fill-mode: forwards;
-        }
-        
-        .animation-delay-300 {
-          animation-delay: 0.3s;
-          opacity: 0;
-          animation-fill-mode: forwards;
-        }
-        
-        .animation-delay-400 {
-          animation-delay: 0.4s;
-          opacity: 0;
-          animation-fill-mode: forwards;
-        }
-      `}</style>
+      
     </div>
   )
 }

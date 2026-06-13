@@ -165,7 +165,7 @@ const JobSeekerLayout: React.FC = () => {
     return 'U'
   }
 
-  // ✅ FIXED: Complete logout function
+  //  Complete logout function
   const handleLogout = () => {
     console.log('🔓 Logging out...')
     
