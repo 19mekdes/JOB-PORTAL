@@ -1,4 +1,3 @@
-// src/middleware/uploadMiddleware.ts
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
