@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express'
 import { Prisma } from '@prisma/client'
 import { AuthRequest } from '../types'
 
-// ========== ERROR CLASSES ==========
 export class AppError extends Error {
   statusCode: number
   status: string

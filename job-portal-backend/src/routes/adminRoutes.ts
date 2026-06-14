@@ -69,7 +69,7 @@ router.post('/users/bulk-status', isSuperAdmin, bulkUpdateUserStatus);
 router.get('/applications', getApplications);
 router.put('/applications/:applicationId/status', updateApplicationStatus);
 
-console.log('✅ Admin routes registered successfully:');
+console.log(' Admin routes registered successfully:');
 console.log('   GET    /users');
 console.log('   GET    /users/:userId');
 console.log('   PUT    /users/:userId/status');

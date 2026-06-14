@@ -19,7 +19,6 @@ const roleHierarchy: Record<UserRole, number> = {
   [UserRoles.SUPER_ADMIN]: 4
 }
 
-// ========== PERMISSIONS MATRIX ==========
 interface Permission {
   resource: string
   actions: string[]

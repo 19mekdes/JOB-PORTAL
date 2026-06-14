@@ -3,7 +3,6 @@ import { AuthRequest } from '../types'
 
 // ========== SUPER ADMIN AUTHENTICATION ==========
 
-// Check if user is Super Admin
 export const isSuperAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user) {
     res.status(401).json({
