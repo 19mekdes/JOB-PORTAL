@@ -74,7 +74,6 @@ import BackupRestore from '@/pages/superadmin/BackupRestore'
 import SystemHealth from '@/pages/superadmin/SystemHealth'
 import SettingsPage from '@/pages/superadmin/Settings'
 
-// Add route
 
 
 // Route Guards
@@ -146,6 +145,7 @@ function App() {
               <Route path="/applications" element={<ApplicationsPage />} />
               <Route path="/applications/:id" element={<ApplicationStatusPage />} />
               <Route path="/bookmarks" element={<BookmarksPage />} />
+              
               <Route path="/saved-jobs" element={<BookmarksPage />} />
               <Route path="/jobseeker/preferences" element={<JobSeekerPreferences />} />
               <Route path="/profile" element={<SeekerProfile />} />
