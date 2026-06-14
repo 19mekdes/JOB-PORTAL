@@ -6,7 +6,6 @@ const prisma = new PrismaClient()
 
 import { safeJsonParse } from '../utils/safeJson'
 
-// ========== GET PROFILE ==========
 export const getProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const user = await prisma.user.findUnique({

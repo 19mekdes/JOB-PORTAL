@@ -10,7 +10,6 @@ const getUserId = (req: Request): string => {
   return (req as any).user?.id;
 };
 
-// ========== PROFILE MANAGEMENT ==========
 
 export const getProfile = async (req: Request, res: Response) => {
   try {

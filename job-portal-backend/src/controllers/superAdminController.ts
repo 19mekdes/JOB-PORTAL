@@ -4,8 +4,6 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-// ========== SYSTEM SETTINGS ==========
-
 export const getSystemSettings = async (req: Request, res: Response) => {
   try {
     let settings = await prisma.systemSetting.findFirst();

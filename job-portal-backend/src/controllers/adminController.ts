@@ -9,8 +9,6 @@ const getUserId = (req: Request): string => {
   return (req as any).user?.id;
 };
 
-// ========== DASHBOARD STATISTICS ==========
-
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
     const [

@@ -8,8 +8,6 @@ import { AuthRequest, RegisterInput, LoginInput } from '../types'
 
 const prisma = new PrismaClient()
 
-// ========== HELPER FUNCTIONS ==========
-
 // Helper function to generate JWT token
 const generateToken = (userId: string, email: string): string => {
   const payload = { id: userId, email: email }

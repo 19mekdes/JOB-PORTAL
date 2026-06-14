@@ -3,8 +3,6 @@ import { PrismaClient, Prisma } from '@prisma/client'
 import { AuthRequest } from '../types'
 
 const prisma = new PrismaClient()
-
-// ========== TYPES = ==========
 interface JobInput {
   title: string
   description: string
