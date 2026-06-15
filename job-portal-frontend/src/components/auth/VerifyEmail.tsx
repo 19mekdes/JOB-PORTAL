@@ -75,7 +75,6 @@ const VerifyEmail: React.FC = () => {
       await api.post('/auth/resend-verification', { email: resendEmail })
       setResendSuccess(true)
       
-      // Start cooldown timer
       setResendCooldown(60)
       const interval = setInterval(() => {
         setResendCooldown((prev) => {

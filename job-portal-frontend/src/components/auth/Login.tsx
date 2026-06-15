@@ -27,7 +27,6 @@ const Login: React.FC = () => {
     if (user) {
       console.log('✅ User found in Redux, redirecting smoothly...')
       
-      // Fixed: Using client-side routing instead of window.location.href to preserve state
       if (user.user_type === 'Super Admin') {
         navigate('/super-admin/dashboard', { replace: true })
       } else if (user.user_type === 'Admin') {

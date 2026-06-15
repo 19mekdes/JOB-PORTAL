@@ -109,7 +109,7 @@ const Register: React.FC = () => {
       
       setRegistrationSuccess(true);
       
-      // ✅ Redirect to login page after 1 second
+      // Redirect to login page after 1 second
       setTimeout(() => {
         navigate("/login");
       }, 1000);
