@@ -1,7 +1,6 @@
 import React from 'react'
 import { Loader2, Clock, Briefcase, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
 export interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg' | 'xl'
   variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning'

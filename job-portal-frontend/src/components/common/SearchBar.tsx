@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { 
-  Search, 
-  X, 
-  MapPin, 
-  Filter, 
-  Clock} from 'lucide-react'
+import {
+  Search,
+  X,
+  MapPin,
+  Filter,
+  Clock
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -89,14 +90,14 @@ const dateOptions = [
 ]
 
 const popularIndustries = [
-  'Technology', 'Healthcare', 'Finance', 'Education', 
+  'Technology', 'Healthcare', 'Finance', 'Education',
   'Retail', 'Manufacturing', 'Construction', 'Real Estate',
   'Transportation', 'Hospitality', 'Media', 'Consulting'
 ]
 
 
-const SearchBar: React.FC<SearchBarProps> = ({ 
-  onSearch, 
+const SearchBar: React.FC<SearchBarProps> = ({
+  onSearch,
   initialFilters = {},
   className = '',
   variant = 'default'
@@ -126,7 +127,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         onSearch({ ...filters, keyword, location: locationParam })
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const saveRecentSearch = (term: string) => {
@@ -140,7 +141,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     if (filters.keyword.trim()) {
       saveRecentSearch(filters.keyword)
     }
-    
+
     // Update URL params
     const params = new URLSearchParams()
     if (filters.keyword) params.set('q', filters.keyword)
@@ -149,13 +150,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
     if (filters.experienceLevel !== 'all') params.set('exp', filters.experienceLevel)
     if (filters.remoteOnly) params.set('remote', 'true')
     if (filters.datePosted !== 'all') params.set('date', filters.datePosted)
-    
+
     navigate(`/jobs?${params.toString()}`)
-    
+
     if (onSearch) {
       onSearch(filters)
     }
-    
+
     setShowSuggestions(false)
   }
 
@@ -414,7 +415,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       {variant === 'hero' && <HeroSearch />}
       {variant === 'default' && <DefaultSearch />}
       {variant === 'compact' && <CompactSearch />}
-      
+
       {/* Active Filters Display */}
       {(filters.jobType !== 'all' || filters.experienceLevel !== 'all' || filters.remoteOnly || filters.industry.length > 0) && (
         <div className="flex flex-wrap gap-2 mt-3">

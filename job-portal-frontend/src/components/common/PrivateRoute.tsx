@@ -18,7 +18,6 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   const location = useLocation()
   const { user, isLoading } = useSelector((state: RootState) => state.auth)
 
-  // DEBUG LOGS
   console.log('=== PrivateRoute Debug ===')
   console.log('isLoading:', isLoading)
   console.log('user from Redux:', user)
@@ -42,7 +41,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   if (allowedRoles && allowedRoles.length > 0) {
     const hasAccess = allowedRoles.includes(user.user_type)
     console.log(`Role check: user_type=${user.user_type}, allowed=${allowedRoles}, hasAccess=${hasAccess}`)
-    
+
     if (!hasAccess) {
       console.log(`❌ Role ${user.user_type} not allowed, redirecting to unauthorized`)
       return <Navigate to="/unauthorized" replace />
@@ -50,13 +49,13 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   }
 
   console.log('✅ Access granted!')
-  // ✅ Allow access
+  //  Allow access
   return children ? <>{children}</> : <Outlet />
 }
 
 export default PrivateRoute
 
-// ✅ ROLE ROUTES
+//  ROLE ROUTES
 export const JobSeekerRoute: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
   <PrivateRoute allowedRoles={['Job Seeker']}>{children}</PrivateRoute>
 )

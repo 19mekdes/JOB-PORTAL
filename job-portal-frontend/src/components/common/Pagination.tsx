@@ -123,7 +123,6 @@ const Pagination: React.FC<PaginationProps> = ({
     return null
   }
 
-  // Compact variant
   if (variant === 'compact') {
     return (
       <div className={cn("flex items-center justify-between gap-2", className)}>

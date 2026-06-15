@@ -49,8 +49,6 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       this.props.onError(error, errorInfo)
     }
     
-    // You could also send error to logging service here
-    // this.logErrorToService(error, errorInfo)
   }
 
   componentDidUpdate(prevProps: ErrorBoundaryProps) {
