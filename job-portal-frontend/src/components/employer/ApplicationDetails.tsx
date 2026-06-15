@@ -163,7 +163,7 @@ const ApplicationDetails: React.FC = () => {
     }
   }
 
-  // ✅ FIXED: Send both status AND feedback message
+  // Send both status AND feedback message
   const handleStatusUpdate = async () => {
     if (!selectedStatus) return
     
@@ -179,10 +179,10 @@ const ApplicationDetails: React.FC = () => {
         'Rejected': 6
       }
       
-      // ✅ Send both statusId AND feedback message
+      //  Send both statusId AND feedback message
       const response = await api.put(`/applications/${id}/status`, { 
         statusId: statusMap[selectedStatus],
-        message: feedback  // ✅ This is the feedback that will be emailed to candidate
+        message: feedback  //  This is the feedback that will be emailed to candidate
       })
       
       if (response.data.success) {

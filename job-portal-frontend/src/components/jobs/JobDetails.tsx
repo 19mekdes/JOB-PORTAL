@@ -64,7 +64,7 @@ const formatTextToBulletPoints = (text: string | null): string[] => {
     items = [text];
   }
   
-  // Clean up each item
+  
   return items
     .map(item => item.trim())
     .filter(item => item.length > 0)

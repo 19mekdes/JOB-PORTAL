@@ -193,7 +193,6 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({
   )
 }
 
-// Toast Container Component
 interface ToastContainerProps {
   toasts: ToastProps[]
   onRemove: (id: string) => void
@@ -342,7 +341,7 @@ export const LoadingToast: React.FC<LoadingToastProps> = ({ message = 'Loading..
   )
 }
 
-// Promise Toast
+
 interface PromiseToastOptions {
   loading: string
   success: string
@@ -353,7 +352,7 @@ export const promiseToast = async <T,>(
   promise: Promise<T>,
   options: PromiseToastOptions
 ): Promise<T> => {
-  
+
   // Show loading toast
   globalShowToast?.({
     type: 'info',
