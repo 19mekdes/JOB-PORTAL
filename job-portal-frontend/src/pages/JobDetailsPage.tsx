@@ -181,7 +181,7 @@ const JobDetailsPage: React.FC = () => {
         .map(item => item.trim())
         .filter(item => item.length > 0)
     }
-    // Split by commas (fallback)
+    
     if (text.includes(',')) {
       return text.split(',')
         .map(item => item.trim())
@@ -214,7 +214,7 @@ const JobDetailsPage: React.FC = () => {
 
   const isLoggedIn = !!user
   const isJobSeeker = user?.user_type === 'Job Seeker'
-  // ✅ Convert requirements and benefits to arrays
+  //  Convert requirements and benefits to arrays
   const requirementsList = formatTextToBulletPoints(job.requirements)
   const benefitsList = formatTextToBulletPoints(job.benefits)
 
@@ -318,7 +318,7 @@ const JobDetailsPage: React.FC = () => {
                   </div>
                 )}
                 
-                {/* Requirements Tab - ✅ Displays as bullet points */}
+                {/* Requirements Tab -  Displays as bullet points */}
                 {activeTab === 'requirements' && (
                   <div>
                     {requirementsList.length === 0 ? (
@@ -339,7 +339,7 @@ const JobDetailsPage: React.FC = () => {
                   </div>
                 )}
                 
-                {/* Benefits Tab - ✅ Displays as bullet points */}
+                {/* Benefits Tab -  Displays as bullet points */}
                 {activeTab === 'benefits' && (
                   <div>
                     {benefitsList.length === 0 ? (

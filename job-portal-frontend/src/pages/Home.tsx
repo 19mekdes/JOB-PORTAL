@@ -66,7 +66,7 @@ const Home: React.FC = () => {
     fetchAllData()
   }, [])
 
-  // Function to get correct dashboard route based on user role
+
   const getDashboardRoute = () => {
     if (!user) return '/register'
     
