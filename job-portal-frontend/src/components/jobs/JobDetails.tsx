@@ -59,7 +59,7 @@ const formatTextToBulletPoints = (text: string | null): string[] => {
   else if (text.includes(",")) {
     items = text.split(",");
   }
-  // Single item
+  
   else {
     items = [text];
   }

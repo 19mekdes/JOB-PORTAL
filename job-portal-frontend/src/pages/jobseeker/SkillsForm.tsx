@@ -24,7 +24,7 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
     'GraphQL', 'Docker', 'Git', 'AWS', 'Figma', 'UI/UX Design'
   ])
 
-  // Load existing skills
+  
   useEffect(() => {
     // eslint-disable-next-line react-hooks/immutability
     fetchSkills()

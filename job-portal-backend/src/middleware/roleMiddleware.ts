@@ -1,7 +1,6 @@
 import { Response, NextFunction } from 'express'
 import { AuthRequest } from '../types'
 
-// ========== USER TYPE CONSTANTS ==========
 export const UserRoles = {
   JOB_SEEKER: 'Job Seeker',
   EMPLOYER: 'Employer',
