@@ -3,7 +3,6 @@ import { AppError, NotFoundError, ValidationError } from '../middleware/errorMid
 
 const prisma = new PrismaClient()
 
-// ========== TYPES ==========
 export interface NotificationFilters {
   type?: string
   is_read?: boolean

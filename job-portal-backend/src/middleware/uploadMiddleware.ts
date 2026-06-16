@@ -3,7 +3,6 @@ import path from 'path'
 import fs from 'fs'
 import { Request } from 'express'
 
-// Create uploads directories if they don't exist
 const createUploadFolders = () => {
   const folders = [
     'uploads',
