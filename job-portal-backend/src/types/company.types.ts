@@ -7,8 +7,8 @@ export interface Company {
   phone: string;
   industry_id: number;
   cover_image: string;
-  is_active: boolean;        // Account status (active/inactive)
-  is_verified: boolean;      // Verification status
+  is_active: boolean;        
+  is_verified: boolean;      
   created_at: Date;
   updated_at: Date;
 }

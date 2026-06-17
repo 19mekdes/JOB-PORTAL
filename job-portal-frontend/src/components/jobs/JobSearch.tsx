@@ -78,9 +78,6 @@ const dateOptions = [
   { value: "quarter", label: "Last 90 days" },
 ];
 
-
-
-
 const categories = [
   "Technology",
   "Healthcare",

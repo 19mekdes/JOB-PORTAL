@@ -10,7 +10,7 @@ process.on("unhandledRejection", (reason, promise) => {
   process.exit(1);
 });
 
-console.log("🚀 Starting server initialization...");
+console.log(" Starting server initialization...");
 
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
