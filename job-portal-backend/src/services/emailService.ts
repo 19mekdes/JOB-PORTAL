@@ -114,7 +114,7 @@ export const sendWelcomeEmail = async (email: string, name: string): Promise<voi
     <body>
       <div class="container">
         <div class="header">
-          <h2>🎉 Welcome to Job Portal!</h2>
+          <h2> Welcome to Job Portal!</h2>
         </div>
         <div class="content">
           <h3>Hello ${name},</h3>

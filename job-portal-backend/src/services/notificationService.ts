@@ -2,7 +2,6 @@ import { PrismaClient, Prisma } from '@prisma/client'
 import { AppError, NotFoundError, ValidationError } from '../middleware/errorMiddleware.js'
 
 const prisma = new PrismaClient()
-
 export interface NotificationFilters {
   type?: string
   is_read?: boolean
@@ -21,7 +20,6 @@ export interface NotificationPreferences {
   marketing_emails: boolean
   weekly_digest: boolean
 }
-
 export interface NotificationData {
   userId: string
   title: string

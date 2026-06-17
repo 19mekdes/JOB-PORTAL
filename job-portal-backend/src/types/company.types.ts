@@ -1,6 +1,3 @@
-// src/types/company.types.ts
-
-// Company interface
 export interface Company {
   id: number | string;
   user_id: string;
