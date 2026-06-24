@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, Link } from 'react-router-dom'
 import { login } from '../../redux/slices/authSlice'
@@ -7,20 +7,32 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, Eye, EyeOff, LogIn, Briefcase } from 'lucide-react'
+import { Loader2, Eye, EyeOff, LogIn, Briefcase, Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react'
+import { GoogleLoginButton } from './GoogleLoginButton'
+import { Separator } from '@/components/ui/separator'
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   
   const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
   const { isLoading, isError, message, user } = useSelector((state: RootState) => state.auth)
 
+  // Check for success message from registration
+  useEffect(() => {
+    const state = window.history.state?.usr as { message?: string; from?: string }
+    if (state?.message) {
+      setSuccessMessage(state.message)
+      window.history.replaceState({}, document.title)
+    }
+  }, [])
+
   // Redirect when user is in Redux state
-  React.useEffect(() => {
+  useEffect(() => {
     console.log('🔍 Login page - user in Redux:', user)
     console.log('🔍 User type:', user?.user_type)
     
@@ -55,18 +67,23 @@ const Login: React.FC = () => {
       console.log('✅ Login successful:', result)
       console.log('👤 User:', result.user)
       console.log('📋 User type:', result.user?.user_type)
-      
-      // The useEffect will handle redirect smoothly when user state updates
     } catch (error) {
       console.error('❌ Login error:', error)
     }
   }
 
+  // ========== GOOGLE LOGIN HANDLERS ==========
+  const handleGoogleSuccess = (user: any) => {
+    console.log('✅ Google login successful:', user)
+    console.log(`Welcome ${user.full_name || user.email}!`)
+  }
 
-  
+  const handleGoogleError = (error: string) => {
+    console.error('❌ Google login error:', error)
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
         <div className="text-center mb-6">
           <div className="flex justify-center mb-4">
@@ -82,32 +99,44 @@ const Login: React.FC = () => {
           </p>
         </div>
 
+        {/* Success Alert */}
+        {successMessage && (
+          <Alert className="mb-4 bg-green-50 border-green-200 text-green-800">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription>{successMessage}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Error Alert */}
         {isError && (
           <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               {message || 'Invalid email or password'}
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Form */}
+        {/* ========== FORM ========== */}
         <form className="space-y-4" onSubmit={handleSubmit}>
           {/* Email Field */}
           <div>
             <Label htmlFor="email" className="text-sm font-medium">
               Email address
             </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-              className="mt-1.5 h-11 rounded-lg"
-            />
+            <div className="relative mt-1.5">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+                className="pl-10 h-11 rounded-lg"
+              />
+            </div>
           </div>
 
           {/* Password Field */}
@@ -116,6 +145,7 @@ const Login: React.FC = () => {
               Password
             </Label>
             <div className="relative mt-1.5">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -124,7 +154,7 @@ const Login: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
-                className="h-11 rounded-lg pr-10"
+                className="pl-10 h-11 rounded-lg pr-10"
               />
               <button
                 type="button"
@@ -175,7 +205,23 @@ const Login: React.FC = () => {
           </Button>
         </form>
 
-        
+        {/* ========== DIVIDER ========== */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <Separator className="w-full" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-gray-500">Or continue with</span>
+          </div>
+        </div>
+
+        {/* ========== GOOGLE LOGIN BUTTON ========== */}
+        <GoogleLoginButton 
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+          text="Continue with Google"
+          className="w-full"
+        />
 
         {/* Sign up link */}
         <p className="text-center text-sm text-gray-500 mt-6">
