@@ -1,7 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import api from '../../services/api'
-
-// ========== TYPES ==========
 export interface Application {
   id: string
   job_id: string
@@ -101,8 +99,6 @@ const initialState: ApplicationState = {
     sort: 'recent'
   }
 }
-
-// ========== ASYNC THUNKS ==========
 
 // Fetch all applications for job seeker
 export const fetchMyApplications = createAsyncThunk(

@@ -1,6 +1,5 @@
 import api from './api'
 
-// ========== TYPES ==========
 export interface Notification {
   id: number
   title: string

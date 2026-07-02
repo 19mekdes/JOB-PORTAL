@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import api from './api'
-
-// ========== TYPES ==========
 export interface UploadOptions {
   onProgress?: (progress: number) => void
   onSuccess?: (response: any) => void

@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-// ========== TYPES ==========
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type ToastType = 'success' | 'error' | 'info' | 'warning'
 export type ModalType = 'confirm' | 'alert' | 'prompt' | 'custom'
