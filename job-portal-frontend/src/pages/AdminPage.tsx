@@ -40,7 +40,7 @@ const AdminPage: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Navigation items with components - FIXED paths
+  // Navigation items with components 
   const navItems = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, component: Dashboard },
     { path: '/admin/users', label: 'User Management', icon: Users, component: UsersManagement },
