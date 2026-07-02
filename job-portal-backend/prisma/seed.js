@@ -233,7 +233,7 @@ async function main() {
         created_at: new Date(),
         updated_at: new Date()
       }
-    })
+    })+
     console.log('✅ Super admin created')
   }
 
