@@ -296,7 +296,7 @@ export class NotificationService {
 
   // ========== GET NOTIFICATION PREFERENCES ==========
   async getNotificationPreferences(userId: string): Promise<NotificationPreferences> {
-    // Use type assertion for notificationPreference (camelCase)
+    
     const prismaAny = this.prisma as any
     const preferences = await prismaAny.notificationPreference?.findUnique({
       where: { user_id: userId }

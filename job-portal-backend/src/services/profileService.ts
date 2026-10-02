@@ -89,7 +89,7 @@ export class ProfileService {
     const profile = user.seeker_profile || user.employer_profile
     const profileType = user.user_type.type_name
 
-    // Parse JSON fields if they exist for job seeker
+    
     let parsedProfile: any = { ...profile }
     if (profileType === 'Job Seeker' && user.seeker_profile) {
       if (user.seeker_profile.experience) {
@@ -145,7 +145,7 @@ export class ProfileService {
       throw new NotFoundError('Job seeker profile')
     }
 
-    // Update profile
+    
     const updatedProfile = await this.prisma.jobSeekerProfile.update({
       where: { user_id: userId },
       data: {
