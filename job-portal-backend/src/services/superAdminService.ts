@@ -324,7 +324,7 @@ export class SuperAdminService {
   // ========== AUDIT LOGS ==========
   
   async createAuditLog(log: AuditLogEntry) {
-    // Use auditLog (camelCase) - Prisma converts AuditLog to auditLog
+    
     const prismaAny = this.prisma as any
     const auditLog = await prismaAny.auditLog.create({
       data: {

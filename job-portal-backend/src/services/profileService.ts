@@ -183,12 +183,12 @@ export class ProfileService {
       throw new NotFoundError('Employer profile')
     }
 
-    // Validate website URL
+    
     if (website && !this.isValidUrl(website)) {
       throw new ValidationError('Invalid website URL format')
     }
 
-    // Validate industry
+    
     if (industry_id) {
       const industry = await this.prisma.jobIndustry.findUnique({
         where: { id: industry_id }
@@ -272,11 +272,11 @@ export class ProfileService {
       throw new ValidationError('Skills must be an array')
     }
 
-    // Clean and validate skills
+    
     const cleanedSkills = skills
       .map(s => s.trim())
       .filter(s => s.length > 0)
-      .slice(0, 30) // Max 30 skills
+      .slice(0, 30) 
 
     const updatedProfile = await this.prisma.jobSeekerProfile.update({
       where: { user_id: userId },
