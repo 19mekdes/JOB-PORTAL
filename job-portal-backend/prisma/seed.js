@@ -128,7 +128,7 @@ async function main() {
   const hashedPassword = await bcrypt.hash('password123', 10)
   const adminPassword = await bcrypt.hash('Admin@123', 10)
 
-  // 6. Create Employer User and Profile
+  
   console.log('📝 Creating test employer...')
   
   let employerUser = await prisma.user.findUnique({

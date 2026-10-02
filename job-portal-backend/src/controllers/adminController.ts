@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-// Helper to get user from request
+
 const getUserId = (req: Request): string => {
   return (req as any).user?.id;
 };
@@ -107,12 +107,12 @@ export const getAllUsers = async (req: Request, res: Response) => {
       prisma.user.count({ where })
     ]);
     
-    // Add job and application counts to each user
+    
     const usersWithStats = await Promise.all(users.map(async (user) => {
       let jobsCount = 0;
       let appsCount = 0;
       
-      // Count jobs for employers
+      
       if (user.employer_profile) {
         jobsCount = await prisma.jobPost.count({
           where: { employer_id: user.employer_profile.id }
@@ -126,7 +126,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
         });
       }
       
-      // Remove password from response
+      
       const { password, ...userWithoutPassword } = user;
       
       return {
@@ -138,7 +138,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
       };
     }));
     
-    // Calculate summary stats for the frontend cards
+    
     const summaryStats = {
       total: usersWithStats.length,
       active: usersWithStats.filter(u => u.is_active === true).length,
@@ -291,7 +291,7 @@ export const updateUser = async (req: Request, res: Response) => {
     const adminRole = adminUser?.user_type?.type_name;
     const targetRole = existingUser.user_type?.type_name;
     
-    // ❌ Prevent Admin from editing Super Admin
+    
     if (adminRole === 'Admin' && targetRole === 'Super Admin') {
       return res.status(403).json({ 
         success: false, 
@@ -365,7 +365,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     const adminRole = adminUser?.user_type?.type_name;
     const targetRole = existingUser.user_type?.type_name;
     
-    // ❌ Prevent Admin from resetting Super Admin password
+    
     if (adminRole === 'Admin' && targetRole === 'Super Admin') {
       return res.status(403).json({ 
         success: false, 
