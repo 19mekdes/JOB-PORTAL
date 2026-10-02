@@ -194,7 +194,7 @@ const AdminLayout: React.FC = () => {
     return 'Admin'
   }
 
-  //  Complete logout function that works immediately
+  
   const handleLogout = () => {
     // Clear all localStorage items
     localStorage.removeItem('token')
