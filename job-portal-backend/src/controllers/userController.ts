@@ -5,7 +5,7 @@ import fs from 'fs';
 
 const prisma = new PrismaClient();
 
-// Helper to get user from request
+
 const getUserId = (req: Request): string => {
   return (req as any).user?.id;
 };
@@ -420,7 +420,7 @@ export const updateEmployerProfile = async (req: Request, res: Response) => {
   }
 };
 
-// Upload company logo - fix for file upload
+
 export const uploadCompanyLogo = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);

@@ -3,13 +3,13 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-// Get system settings
+
 export const getSettings = async (req: Request, res: Response) => {
   try {
     let settings = await prisma.systemSetting.findFirst()
     
     if (!settings) {
-      // Create default settings if none exist
+      
       settings = await prisma.systemSetting.create({
         data: {
           site_name: 'JobPortal Ethiopia',
@@ -67,7 +67,7 @@ export const getSettings = async (req: Request, res: Response) => {
   }
 }
 
-// Update system settings
+
 export const updateSettings = async (req: Request, res: Response) => {
   try {
     const settings = await prisma.systemSetting.findFirst()
