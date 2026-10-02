@@ -28,7 +28,7 @@ export class AuthService {
     this.prisma = prisma
   }
 
-  // Helper function to generate JWT token
+  
   private generateToken(userId: string, email: string): string {
     const payload = { id: userId, email: email }
     const secret = process.env.JWT_SECRET || 'default_secret'
@@ -52,7 +52,7 @@ export class AuthService {
   async register(userData: RegisterData) {
     const { email, password, full_name, user_type, phone, location } = userData
 
-    // Check if user exists
+    
     const existingUser = await this.prisma.user.findUnique({
       where: { email }
     })
@@ -73,7 +73,7 @@ export class AuthService {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create user
+    
     const user = await this.prisma.user.create({
       data: {
         email,

@@ -64,7 +64,7 @@ export class ApplicationService {
       throw new ValidationError('Job seeker profile not found. Please complete your profile first.')
     }
 
-    // Check if job exists and is open
+    
     const job = await this.prisma.jobPost.findFirst({
       where: {
         id: jobId,

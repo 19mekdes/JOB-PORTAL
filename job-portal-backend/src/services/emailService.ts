@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Email transporter configuration
+
 let transporter: nodemailer.Transporter;
 
 const configureTransporter = () => {
@@ -54,7 +54,7 @@ const configureTransporter = () => {
 // Initialize transporter
 configureTransporter();
 
-// Test email configuration
+
 export const testEmailConfig = async (): Promise<boolean> => {
   try {
     await transporter.verify();
@@ -145,7 +145,7 @@ export const sendWelcomeEmail = async (email: string, name: string): Promise<voi
   await sendEmail(email, 'Welcome to Job Portal! 🎉', html);
 };
 
-// Application Status Update Email
+
 export const sendApplicationStatusEmail = async (
   email: string,
   userName: string,

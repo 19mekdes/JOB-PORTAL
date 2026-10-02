@@ -56,7 +56,7 @@ export interface DashboardStats {
 
 // ========== USER MANAGEMENT ==========
 export class AdminService {
-  // Get all users with filters
+  
   async getAllUsers(filters: UserFilters) {
     const { search, user_type, is_active, page = 1, limit = 20 } = filters
 
