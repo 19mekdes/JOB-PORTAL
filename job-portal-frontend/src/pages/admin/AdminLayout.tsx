@@ -85,10 +85,10 @@ const AdminLayout: React.FC = () => {
   useEffect(() => {
     fetchNotifications()
     fetchAdminProfile()
-    
+
     // Auto-refresh notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000)
-    
+
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
         setSidebarOpen(true)
@@ -97,10 +97,10 @@ const AdminLayout: React.FC = () => {
         setSidebarOpen(false)
       }
     }
-    
+
     window.addEventListener('resize', handleResize)
     handleResize()
-    
+
     return () => {
       window.removeEventListener('resize', handleResize)
       clearInterval(interval)
@@ -133,7 +133,7 @@ const AdminLayout: React.FC = () => {
   const markNotificationAsRead = async (notificationId: number) => {
     try {
       await api.put(`/notifications/${notificationId}/read`)
-      setNotifications(prev => prev.map(n => 
+      setNotifications(prev => prev.map(n =>
         n.id === notificationId ? { ...n, is_read: true } : n
       ))
       setUnreadCount(prev => Math.max(0, prev - 1))
@@ -147,9 +147,9 @@ const AdminLayout: React.FC = () => {
       await api.put('/notifications/read-all')
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
       setUnreadCount(0)
-      toast({ 
-        title: "Success", 
-        description: "All notifications marked as read" 
+      toast({
+        title: "Success",
+        description: "All notifications marked as read"
       })
     } catch (error) {
       console.error('Error marking all as read:', error)
@@ -158,7 +158,7 @@ const AdminLayout: React.FC = () => {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'user': 
+      case 'user':
       case 'User':
         return <Users className="h-4 w-4 text-blue-500" />
       case 'job':
@@ -194,7 +194,7 @@ const AdminLayout: React.FC = () => {
     return 'Admin'
   }
 
-  // FIXED: Complete logout function that works immediately
+  //  Complete logout function that works immediately
   const handleLogout = () => {
     // Clear all localStorage items
     localStorage.removeItem('token')
@@ -202,20 +202,20 @@ const AdminLayout: React.FC = () => {
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('admin_token')
     localStorage.removeItem('accessToken')
-    
-    // Clear sessionStorage
+
+
     sessionStorage.clear()
-    
-    // Dispatch Redux logout action to clear state
+
+
     dispatch(logout())
-    
-    // Clear axios default headers
+
+
     delete api.defaults.headers.common['Authorization']
-    
-    // Navigate to login page
+
+
     navigate('/login', { replace: true })
-    
-    // Force reload to clear any cached state
+
+
     setTimeout(() => {
       window.location.href = '/login'
     }, 50)
@@ -234,7 +234,7 @@ const AdminLayout: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setMobileSidebarOpen(false)}
         />
@@ -327,11 +327,10 @@ const AdminLayout: React.FC = () => {
                   key={item.path}
                   to={item.path}
                   onClick={() => setMobileSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                    isActive 
-                      ? 'bg-blue-50 text-blue-700' 
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${isActive
+                      ? 'bg-blue-50 text-blue-700'
                       : 'text-gray-700 hover:bg-gray-100'
-                  } ${!sidebarOpen && 'justify-center'}`}
+                    } ${!sidebarOpen && 'justify-center'}`}
                   title={!sidebarOpen ? item.label : ''}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
@@ -403,11 +402,10 @@ const AdminLayout: React.FC = () => {
                   key={item.path}
                   to={item.path}
                   onClick={() => setMobileSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                    isActive 
-                      ? 'bg-blue-50 text-blue-700' 
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${isActive
+                      ? 'bg-blue-50 text-blue-700'
                       : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
                   <Icon className="h-5 w-5" />
                   <span>{item.label}</span>
@@ -427,7 +425,7 @@ const AdminLayout: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Main Content Area */}
       <div className={`transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'}`}>
         {/* Header */}
@@ -441,7 +439,7 @@ const AdminLayout: React.FC = () => {
               >
                 <Menu className="h-5 w-5 text-gray-600" />
               </button>
-              
+
               {/* Desktop search */}
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
                 <Search className="h-4 w-4 text-gray-400" />
@@ -471,8 +469,8 @@ const AdminLayout: React.FC = () => {
                       Notifications
                     </DropdownMenuLabel>
                     {unreadCount > 0 && (
-                      <button 
-                        onClick={markAllAsRead} 
+                      <button
+                        onClick={markAllAsRead}
                         className="text-xs text-blue-600 hover:text-blue-700 font-medium"
                       >
                         Mark all as read
@@ -490,9 +488,8 @@ const AdminLayout: React.FC = () => {
                     notifications.map((notification) => (
                       <DropdownMenuItem
                         key={notification.id}
-                        className={`p-3 cursor-pointer flex items-start gap-3 ${
-                          !notification.is_read ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'
-                        }`}
+                        className={`p-3 cursor-pointer flex items-start gap-3 ${!notification.is_read ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'
+                          }`}
                         onClick={() => markNotificationAsRead(notification.id)}
                       >
                         <div className="shrink-0 mt-0.5">
