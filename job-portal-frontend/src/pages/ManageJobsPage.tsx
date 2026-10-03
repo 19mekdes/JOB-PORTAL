@@ -18,7 +18,8 @@ import {
   MapPin,
   DollarSign,
   CheckCircle,
-  XCircle} from 'lucide-react'
+  XCircle
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -112,7 +113,7 @@ const ManageJobsPage: React.FC = () => {
       // eslint-disable-next-line react-hooks/immutability
       fetchJobs()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   const fetchJobs = async () => {
@@ -120,7 +121,7 @@ const ManageJobsPage: React.FC = () => {
     try {
       const jobsData = await getEmployerJobs()
       setJobs(jobsData)
-      
+
       // Calculate stats
       const open = jobsData.filter((j: Job) => j.status.status_name === 'Open').length
       const closed = jobsData.filter((j: Job) => j.status.status_name === 'Closed').length
@@ -128,7 +129,7 @@ const ManageJobsPage: React.FC = () => {
       const archived = jobsData.filter((j: Job) => j.status.status_name === 'Archived').length
       const totalViews = jobsData.reduce((sum: number, j: Job) => sum + j.views_count, 0)
       const totalApplications = jobsData.reduce((sum: number, j: Job) => sum + j.applications_count, 0)
-      
+
       setStats({
         total: jobsData.length,
         open,
@@ -152,7 +153,7 @@ const ManageJobsPage: React.FC = () => {
 
   const handleDeleteJob = async () => {
     if (!deleteJobId) return
-    
+
     const success = await deleteJob(deleteJobId)
     if (success) {
       await fetchJobs()
@@ -215,7 +216,7 @@ const ManageJobsPage: React.FC = () => {
   const filteredJobs = jobs
     .filter(job => {
       const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           job.location.toLowerCase().includes(searchTerm.toLowerCase())
+        job.location.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesStatus = statusFilter === 'all' || job.status.status_name === statusFilter
       return matchesSearch && matchesStatus
     })
@@ -378,7 +379,7 @@ const ManageJobsPage: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-start gap-3">
                         <div className="flex-1">
-                          <h3 
+                          <h3
                             className="text-lg font-semibold text-gray-900 hover:text-blue-600 cursor-pointer"
                             onClick={() => navigate(`/jobs/${job.id}`)}
                           >
@@ -424,7 +425,7 @@ const ManageJobsPage: React.FC = () => {
                       <Badge className={statusColors[job.status.status_name]}>
                         {job.status.status_name}
                       </Badge>
-                      
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
@@ -470,7 +471,7 @@ const ManageJobsPage: React.FC = () => {
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => {
                               setDeleteJobId(job.id)
                               setIsDeleteDialogOpen(true)
@@ -492,8 +493,8 @@ const ManageJobsPage: React.FC = () => {
                         <span>Application Rate</span>
                         <span>{job.views_count > 0 ? Math.round((job.applications_count / job.views_count) * 100) : 0}%</span>
                       </div>
-                      <Progress 
-                        value={job.views_count > 0 ? (job.applications_count / job.views_count) * 100 : 0} 
+                      <Progress
+                        value={job.views_count > 0 ? (job.applications_count / job.views_count) * 100 : 0}
                         className="h-1.5"
                       />
                     </div>

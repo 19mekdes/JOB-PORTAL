@@ -4,9 +4,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { 
-  MapPin, DollarSign, Briefcase, Clock, Eye, Building2, Search, X, 
-  Bookmark, BookmarkCheck, Filter, ChevronDown, Users, 
+import {
+  MapPin, DollarSign, Briefcase, Clock, Eye, Building2, Search, X,
+  Bookmark, BookmarkCheck, Filter, ChevronDown, Users,
   GraduationCap, Loader2, SlidersHorizontal
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -19,7 +19,7 @@ import { Job, BookmarkedJob } from '@/types'
 
 // Filter options
 const jobTypesList = [
-  'Full-time', 'Part-time', 'Freelance', 'Contractual', 
+  'Full-time', 'Part-time', 'Freelance', 'Contractual',
   'Volunteer', 'Intern (Paid)', 'Intern (Unpaid)'
 ]
 
@@ -30,12 +30,12 @@ const experienceLevels = [
 ]
 
 const educationLevels = [
-  'Tvet', 'Secondary School', 'Certificate', 'Diploma', 
+  'Tvet', 'Secondary School', 'Certificate', 'Diploma',
   'Bachelors Degree', 'Masters Degree', 'Phd', 'Not Required'
 ]
 
 const sectors = [
-  'Technology', 'Healthcare', 'Finance', 'Education', 
+  'Technology', 'Healthcare', 'Finance', 'Education',
   'Retail', 'Manufacturing', 'Construction', 'Marketing',
   'Design', 'Sales', 'Customer Service', 'Administrative'
 ]
@@ -53,10 +53,10 @@ const JOBS_PER_PAGE = 4
 const JobsPage: React.FC = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [searchParams, setSearchParams] = useSearchParams()
-  
+
   const initialSearch = searchParams.get('search') || ''
   const initialLocation = searchParams.get('location') || ''
-  
+
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -67,7 +67,7 @@ const JobsPage: React.FC = () => {
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set())
   const [savingId, setSavingId] = useState<string | null>(null)
   const [showMobileFilters, setShowMobileFilters] = useState(false)
-  
+
   const [filters, setFilters] = useState<FilterState>({
     sector: '',
     jobTypes: [],
@@ -96,7 +96,7 @@ const JobsPage: React.FC = () => {
       if (!Array.isArray(jobsData)) {
         jobsData = []
       }
-      
+
       const openJobs = jobsData.filter((job: Job) => job.status?.status_name === 'Open')
       setJobs(openJobs)
     } catch (error) {
@@ -117,13 +117,13 @@ const JobsPage: React.FC = () => {
       const response = await api.get('/bookmarks')
       let savedIds: string[] = []
       const data = response.data
-      
+
       if (data?.data && Array.isArray(data.data)) {
         savedIds = data.data.map((item: BookmarkedJob) => String(item.job?.id))
       } else if (Array.isArray(data)) {
         savedIds = data.map((item: BookmarkedJob) => String(item.job?.id))
       }
-      
+
       setSavedJobIds(new Set(savedIds))
     } catch (error) {
       console.error('Error loading saved jobs:', error)
@@ -134,7 +134,7 @@ const JobsPage: React.FC = () => {
   const handleSaveJob = async (e: React.MouseEvent, jobId: string) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     const token = localStorage.getItem('token')
     if (!token) {
       toast({
@@ -147,22 +147,22 @@ const JobsPage: React.FC = () => {
 
     const isSaved = savedJobIds.has(jobId)
     setSavingId(jobId)
-    
+
     try {
       if (isSaved) {
         const bookmarksResponse = await api.get('/bookmarks')
         let bookmarkId = null
         const bookmarksData = bookmarksResponse.data?.data || bookmarksResponse.data || []
-        
+
         if (Array.isArray(bookmarksData)) {
           const bookmark = bookmarksData.find((b: BookmarkedJob) => String(b.job?.id) === String(jobId))
           if (bookmark) bookmarkId = bookmark.id
         }
-        
+
         if (bookmarkId) {
           await api.delete(`/bookmarks/${bookmarkId}`)
         }
-        
+
         const newSaved = new Set(savedJobIds)
         newSaved.delete(jobId)
         setSavedJobIds(newSaved)
@@ -174,7 +174,7 @@ const JobsPage: React.FC = () => {
         setSavedJobIds(newSaved)
         toast({ title: "Saved", description: "Job saved successfully" })
       }
-      
+
       await loadSavedJobs()
     } catch (error: any) {
       console.error('Error saving job:', error)
@@ -268,183 +268,183 @@ const JobsPage: React.FC = () => {
 
   // Apply all filters
   const filteredJobs = jobs.filter(job => {
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.employer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesLocation = locationFilter === '' || 
+
+    const matchesLocation = locationFilter === '' ||
       job.location?.toLowerCase().includes(locationFilter.toLowerCase())
-    
-    const matchesType = typeFilter === '' || 
+
+    const matchesType = typeFilter === '' ||
       job.employment_type?.type_name?.toLowerCase().includes(typeFilter.toLowerCase())
-    
-    const matchesSector = filters.sector === '' || 
+
+    const matchesSector = filters.sector === '' ||
       job.industry?.industry_name === filters.sector
-    
-    const matchesJobTypes = filters.jobTypes.length === 0 || 
+
+    const matchesJobTypes = filters.jobTypes.length === 0 ||
       (job.employment_type?.type_name && filters.jobTypes.includes(job.employment_type.type_name))
-    
-    const matchesJobSites = filters.jobSites.length === 0 || 
+
+    const matchesJobSites = filters.jobSites.length === 0 ||
       (filters.jobSites.includes('Remote') && job.is_remote) ||
       (filters.jobSites.includes('On-site') && !job.is_remote) ||
       (filters.jobSites.includes('Hybrid') && job.is_hybrid)
-    
+
     const matchesExperience = filters.experienceLevels.length === 0 || true
     const matchesEducation = filters.educationLevels.length === 0 || true
-    
-    return matchesSearch && matchesLocation && matchesType && matchesSector && 
-           matchesJobTypes && matchesJobSites && matchesExperience && matchesEducation
+
+    return matchesSearch && matchesLocation && matchesType && matchesSector &&
+      matchesJobTypes && matchesJobSites && matchesExperience && matchesEducation
   })
 
   const visibleJobs = filteredJobs.slice(0, visibleCount)
   const hasMoreJobs = visibleCount < filteredJobs.length
   const remainingJobs = filteredJobs.length - visibleCount
 
-  const activeFilterCount = 
+  const activeFilterCount =
     (filters.sector ? 1 : 0) +
     filters.jobTypes.length +
     filters.jobSites.length +
     filters.experienceLevels.length +
     filters.educationLevels.length
 
-  // ✅ COMPLETE FILTER SIDEBAR - Sticky Header + Scrollable Content
-const FilterSidebar = () => (
-  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-    
-    {/* ========== STICKY HEADER (Does NOT scroll) ========== */}
-    <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal className="h-5 w-5 text-blue-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Filter Jobs</h2>
+  
+  const FilterSidebar = () => (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+
+      {/* ========== STICKY HEADER (Does NOT scroll) ========== */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-5 w-5 text-blue-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Filter Jobs</h2>
+          </div>
+          {activeFilterCount > 0 && (
+            <button
+              onClick={clearAllFilters}
+              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
+              <X className="h-3 w-3" />
+              Clear all
+            </button>
+          )}
         </div>
         {activeFilterCount > 0 && (
-          <button
-            onClick={clearAllFilters}
-            className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-          >
-            <X className="h-3 w-3" />
-            Clear all
-          </button>
+          <p className="text-xs text-gray-500 mt-1">
+            {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
+          </p>
         )}
       </div>
-      {activeFilterCount > 0 && (
-        <p className="text-xs text-gray-500 mt-1">
-          {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
-        </p>
-      )}
-    </div>
 
-    {/* ========== SCROLLABLE CONTENT (Scrolls) ========== */}
-    <div className="h-[calc(100vh-280px)] overflow-y-auto p-4 space-y-5">
-      
-      {/* Sector Filter */}
-      <div>
-        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-          <Briefcase className="h-4 w-4 text-blue-500" />
-          Sector
-        </h3>
-        <select
-          value={filters.sector}
-          onChange={(e) => handleSectorChange(e.target.value)}
-          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      {/* ========== SCROLLABLE CONTENT (Scrolls) ========== */}
+      <div className="h-[calc(100vh-280px)] overflow-y-auto p-4 space-y-5">
+
+        {/* Sector Filter */}
+        <div>
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <Briefcase className="h-4 w-4 text-blue-500" />
+            Sector
+          </h3>
+          <select
+            value={filters.sector}
+            onChange={(e) => handleSectorChange(e.target.value)}
+            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">All Sectors</option>
+            {sectors.map(sector => (
+              <option key={sector} value={sector}>{sector}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Job Types */}
+        <div>
+          <h3 className="font-semibold text-gray-900 mb-3">Job Types</h3>
+          <div className="space-y-2">
+            {jobTypesList.map(type => (
+              <label key={type} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.jobTypes.includes(type)}
+                  onChange={() => handleJobTypeChange(type)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">{type}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Job Sites */}
+        <div>
+          <h3 className="font-semibold text-gray-900 mb-3">Job Sites</h3>
+          <div className="space-y-2">
+            {jobSitesList.map(site => (
+              <label key={site} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.jobSites.includes(site)}
+                  onChange={() => handleJobSiteChange(site)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">{site}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Experience Level */}
+        <div>
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <Users className="h-4 w-4 text-blue-500" />
+            Experience Level
+          </h3>
+          <div className="space-y-2">
+            {experienceLevels.map(level => (
+              <label key={level} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.experienceLevels.includes(level)}
+                  onChange={() => handleExperienceChange(level)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">{level}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Education Level */}
+        <div>
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <GraduationCap className="h-4 w-4 text-blue-500" />
+            Education Level
+          </h3>
+          <div className="space-y-2">
+            {educationLevels.map(level => (
+              <label key={level} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filters.educationLevels.includes(level)}
+                  onChange={() => handleEducationChange(level)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">{level}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Clear Filters Button */}
+        <Button
+          variant="outline"
+          onClick={clearAllFilters}
+          className="w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
         >
-          <option value="">All Sectors</option>
-          {sectors.map(sector => (
-            <option key={sector} value={sector}>{sector}</option>
-          ))}
-        </select>
+          Clear All Filters
+        </Button>
       </div>
-
-      {/* Job Types */}
-      <div>
-        <h3 className="font-semibold text-gray-900 mb-3">Job Types</h3>
-        <div className="space-y-2">
-          {jobTypesList.map(type => (
-            <label key={type} className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.jobTypes.includes(type)}
-                onChange={() => handleJobTypeChange(type)}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700">{type}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Job Sites */}
-      <div>
-        <h3 className="font-semibold text-gray-900 mb-3">Job Sites</h3>
-        <div className="space-y-2">
-          {jobSitesList.map(site => (
-            <label key={site} className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.jobSites.includes(site)}
-                onChange={() => handleJobSiteChange(site)}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700">{site}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Experience Level */}
-      <div>
-        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-          <Users className="h-4 w-4 text-blue-500" />
-          Experience Level
-        </h3>
-        <div className="space-y-2">
-          {experienceLevels.map(level => (
-            <label key={level} className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.experienceLevels.includes(level)}
-                onChange={() => handleExperienceChange(level)}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700">{level}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Education Level */}
-      <div>
-        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-          <GraduationCap className="h-4 w-4 text-blue-500" />
-          Education Level
-        </h3>
-        <div className="space-y-2">
-          {educationLevels.map(level => (
-            <label key={level} className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.educationLevels.includes(level)}
-                onChange={() => handleEducationChange(level)}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700">{level}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Clear Filters Button */}
-      <Button 
-        variant="outline" 
-        onClick={clearAllFilters}
-        className="w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-      >
-        Clear All Filters
-      </Button>
     </div>
-  </div>
-)
+  )
 
   if (loading) {
     return (
@@ -460,17 +460,17 @@ const FilterSidebar = () => (
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Find Your Dream Job</h1>
           <p className="text-gray-500 mt-2">
-            {filteredJobs.length > 0 
+            {filteredJobs.length > 0
               ? `Found ${filteredJobs.length} opportunities matching your criteria`
               : 'Explore opportunities from top employers'}
           </p>
         </div>
-        
+
         {/* Search Bar */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -511,7 +511,7 @@ const FilterSidebar = () => (
 
         {/* Mobile Filter Button */}
         <div className="lg:hidden mb-4">
-          <Button 
+          <Button
             onClick={() => setShowMobileFilters(!showMobileFilters)}
             className="w-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
           >
@@ -522,7 +522,7 @@ const FilterSidebar = () => (
 
         {/* Main Content */}
         <div className="flex flex-col lg:flex-row gap-6">
-          
+
           {/* Sidebar Filters - Desktop */}
           <div className="hidden lg:block w-80 shrink-0">
             <FilterSidebar />
@@ -596,7 +596,7 @@ const FilterSidebar = () => (
                   {visibleJobs.map((job) => {
                     const isSaved = savedJobIds.has(job.id)
                     const salaryRange = formatSalary(job.salary_min, job.salary_max)
-                    
+
                     return (
                       <Link key={job.id} to={`/jobs/${job.id}`}>
                         <Card className="h-full border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 cursor-pointer rounded-xl overflow-hidden bg-white">
@@ -613,7 +613,7 @@ const FilterSidebar = () => (
                                   </p>
                                 </div>
                               </div>
-                              
+
                               <button
                                 onClick={(e) => handleSaveJob(e, job.id)}
                                 disabled={savingId === job.id}
@@ -639,7 +639,7 @@ const FilterSidebar = () => (
                                   </Badge>
                                 )}
                               </div>
-                              
+
                               <div className="flex items-center gap-2 text-sm text-gray-500">
                                 <Briefcase className="h-3.5 w-3.5 shrink-0 text-gray-400" />
                                 <span>{job.employment_type?.type_name || 'Full-time'}</span>
@@ -647,14 +647,14 @@ const FilterSidebar = () => (
                                   Open
                                 </Badge>
                               </div>
-                              
+
                               {salaryRange && (
                                 <div className="flex items-center gap-2 text-sm">
                                   <DollarSign className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
                                   <span className="font-medium text-emerald-600">{salaryRange}</span>
                                 </div>
                               )}
-                              
+
                               <div className="flex items-center gap-3 text-xs text-gray-400 pt-2">
                                 <span className="flex items-center gap-1">
                                   <Clock className="h-3 w-3" />
@@ -667,8 +667,8 @@ const FilterSidebar = () => (
                               </div>
                             </div>
 
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               className="w-full mt-3 border-gray-200 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all rounded-lg text-sm"
                             >
                               View Details
@@ -706,7 +706,7 @@ const FilterSidebar = () => (
                   </div>
                 )}
 
-                {/* All jobs loaded message */}
+                
                 {!hasMoreJobs && visibleJobs.length > 0 && (
                   <div className="text-center mt-8 text-gray-400 text-sm">
                     ✓ All {filteredJobs.length} jobs loaded

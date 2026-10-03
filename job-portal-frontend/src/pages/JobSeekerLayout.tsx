@@ -71,7 +71,7 @@ const JobSeekerLayout: React.FC = () => {
     if (user) {
       fetchLiveProfileAvatar()
     }
-    
+
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
         setSidebarOpen(true)
@@ -80,7 +80,7 @@ const JobSeekerLayout: React.FC = () => {
         setSidebarOpen(false)
       }
     }
-    
+
     window.addEventListener('resize', handleResize)
     handleResize()
     return () => window.removeEventListener('resize', handleResize)
@@ -115,7 +115,7 @@ const JobSeekerLayout: React.FC = () => {
   const markNotificationAsRead = async (notificationId: string) => {
     try {
       await api.put(`/notifications/${notificationId}/read`)
-      setNotifications(prev => prev.map(n => 
+      setNotifications(prev => prev.map(n =>
         n.id === notificationId ? { ...n, is_read: true } : n
       ))
       setUnreadCount(prev => Math.max(0, prev - 1))
@@ -168,31 +168,31 @@ const JobSeekerLayout: React.FC = () => {
   //  Complete logout function
   const handleLogout = () => {
     console.log('🔓 Logging out...')
-    
+
     // Clear all localStorage items
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('admin_token')
     localStorage.removeItem('accessToken')
-    
+
     // Clear sessionStorage
     sessionStorage.clear()
-    
+
     // Dispatch Redux logout action to clear state
     dispatch(logout())
-    
+
     // Clear axios default headers (if you have axios instance)
     delete api.defaults.headers.common['Authorization']
-    
+
     // Navigate to login page
     navigate('/login', { replace: true })
-    
+
     // Force reload to clear any cached state
     setTimeout(() => {
       window.location.href = '/login'
     }, 50)
-    
+
     toast({
       title: "Signed Out",
       description: "You have been successfully logged out.",
@@ -214,7 +214,7 @@ const JobSeekerLayout: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setMobileSidebarOpen(false)}
         />
@@ -299,11 +299,10 @@ const JobSeekerLayout: React.FC = () => {
                   key={item.path}
                   to={item.path}
                   onClick={() => setMobileSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                    isActive 
-                      ? 'bg-blue-50 text-blue-700' 
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${isActive
+                      ? 'bg-blue-50 text-blue-700'
                       : 'text-gray-700 hover:bg-gray-100'
-                  } ${!sidebarOpen && 'justify-center'}`}
+                    } ${!sidebarOpen && 'justify-center'}`}
                   title={!sidebarOpen ? item.label : ''}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
@@ -373,11 +372,10 @@ const JobSeekerLayout: React.FC = () => {
                   key={item.path}
                   to={item.path}
                   onClick={() => setMobileSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-                    isActive 
-                      ? 'bg-blue-50 text-blue-700' 
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${isActive
+                      ? 'bg-blue-50 text-blue-700'
                       : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
                   <Icon className="h-5 w-5" />
                   <span>{item.label}</span>
@@ -413,7 +411,7 @@ const JobSeekerLayout: React.FC = () => {
               >
                 <Menu className="h-5 w-5 text-gray-600" />
               </button>
-              
+
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
                 <Search className="h-4 w-4 text-gray-500" />
                 <Input
@@ -462,9 +460,8 @@ const JobSeekerLayout: React.FC = () => {
                     notifications.map((notification) => (
                       <DropdownMenuItem
                         key={notification.id}
-                        className={`p-3 cursor-pointer flex items-start gap-3 ${
-                          !notification.is_read ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'
-                        }`}
+                        className={`p-3 cursor-pointer flex items-start gap-3 ${!notification.is_read ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'
+                          }`}
                         onClick={() => markNotificationAsRead(notification.id)}
                       >
                         <div className="shrink-0 mt-0.5">
