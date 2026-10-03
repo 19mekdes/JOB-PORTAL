@@ -1,10 +1,10 @@
 /* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect } from 'react'
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Search, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Search,
   Building2,
   Briefcase,
   TrendingUp,
@@ -16,13 +16,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
 } from '@/components/ui/dialog'
 import {
   AlertDialog,
@@ -143,7 +143,7 @@ const IndustryManagement: React.FC = () => {
       }
       await fetchIndustries()
       handleCloseDialog()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Error saving industry:', error)
       toast({
@@ -167,7 +167,7 @@ const IndustryManagement: React.FC = () => {
       await fetchIndustries()
       setIsDeleteDialogOpen(false)
       setEditingIndustry(null)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Error deleting industry:', error)
       toast({
@@ -212,7 +212,7 @@ const IndustryManagement: React.FC = () => {
     total: industries.length,
     totalJobs: industries.reduce((sum, ind) => sum + (ind._count?.jobs || 0), 0),
     totalEmployers: industries.reduce((sum, ind) => sum + (ind._count?.employers || 0), 0),
-    topIndustry: industries.length > 0 
+    topIndustry: industries.length > 0
       ? [...industries].sort((a, b) => (b._count?.jobs || 0) - (a._count?.jobs || 0))[0]
       : null
   }
@@ -368,7 +368,7 @@ const IndustryManagement: React.FC = () => {
                             <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => handleOpenDeleteDialog(industry)}
                             className="text-red-600"
                             disabled={(industry._count?.jobs || 0) > 0 || (industry._count?.employers || 0) > 0}
@@ -396,8 +396,8 @@ const IndustryManagement: React.FC = () => {
                 {editingIndustry ? 'Edit Industry' : 'Add New Industry'}
               </DialogTitle>
               <DialogDescription>
-                {editingIndustry 
-                  ? 'Update the industry name below.' 
+                {editingIndustry
+                  ? 'Update the industry name below.'
                   : 'Enter the name of the new industry below.'}
               </DialogDescription>
             </DialogHeader>

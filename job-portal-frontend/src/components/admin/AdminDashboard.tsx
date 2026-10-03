@@ -188,7 +188,7 @@ const AdminDashboard: React.FC = () => {
     }
   ]
 
-  // Chart data
+  
   const jobStatusData = [
     { name: 'Open', value: stats?.jobs.open || 0, color: '#00C49F' },
     { name: 'Closed', value: stats?.jobs.closed || 0, color: '#FF8042' },

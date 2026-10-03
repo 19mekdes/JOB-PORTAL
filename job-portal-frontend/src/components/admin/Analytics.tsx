@@ -1,11 +1,11 @@
 /* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect } from 'react'
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Users, 
-  Briefcase, 
-  FileText, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Briefcase,
+  FileText,
   Eye,
   Download,
   RefreshCw,
@@ -85,7 +85,7 @@ const Analytics: React.FC = () => {
 
   useEffect(() => {
     fetchAnalyticsData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRange])
 
   const fetchAnalyticsData = async () => {
