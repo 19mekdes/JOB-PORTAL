@@ -38,7 +38,7 @@ export class AuthService {
     return jwt.sign(payload, secret, options)
   }
 
-  // Helper function to generate refresh token
+  
   private generateRefreshToken(userId: string): string {
     const payload = { id: userId }
     const secret = process.env.JWT_REFRESH_SECRET || 'default_refresh_secret'
@@ -61,7 +61,7 @@ export class AuthService {
       throw new Error('User already exists')
     }
 
-    // Get user type
+    
     const userType = await this.prisma.userType.findFirst({
       where: { type_name: user_type }
     })
@@ -70,7 +70,7 @@ export class AuthService {
       throw new Error('Invalid user type')
     }
 
-    // Hash password
+   
     const hashedPassword = await bcrypt.hash(password, 10)
 
     
@@ -83,7 +83,7 @@ export class AuthService {
       }
     })
 
-    // Create profile based on user type
+    
     if (user_type === 'Job Seeker') {
       await this.prisma.jobSeekerProfile.create({
         data: {
@@ -105,7 +105,7 @@ export class AuthService {
       })
     }
 
-    // Generate token
+    
     const token = this.generateToken(user.id, user.email)
     const refreshToken = this.generateRefreshToken(user.id)
 
@@ -246,7 +246,7 @@ export class AuthService {
     })
 
     if (!user) {
-      // For security, don't reveal if email exists
+      
       return { message: 'If an account exists, a password reset link will be sent' }
     }
 
@@ -261,8 +261,7 @@ export class AuthService {
 
   // ========== RESET PASSWORD ==========
   async resetPassword(token: string, newPassword: string) {
-    // For now, just return success
-    // In production, verify token and update password
+    
     return { message: 'Password reset successfully' }
   }
 
@@ -339,5 +338,5 @@ export class AuthService {
   }
 }
 
-// ========== DEFAULT EXPORT ==========
+
 export default new AuthService()
