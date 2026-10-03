@@ -57,7 +57,6 @@ export const NotificationTypes = {
 
 export type NotificationType = typeof NotificationTypes[keyof typeof NotificationTypes]
 
-// ========== NOTIFICATION SERVICE ==========
 export class NotificationService {
   private prisma: PrismaClient
 
@@ -121,7 +120,6 @@ export class NotificationService {
     }
   }
 
-  // ========== GET USER NOTIFICATIONS ==========
   async getUserNotifications(userId: string, filters: NotificationFilters = {}) {
     const { type, is_read, start_date, end_date, page = 1, limit = 20 } = filters
 

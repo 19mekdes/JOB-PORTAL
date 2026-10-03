@@ -198,7 +198,6 @@ export class ProfileService {
       }
     }
 
-    // Update profile
     const updatedProfile = await this.prisma.employerProfile.update({
       where: { user_id: userId },
       data: {
