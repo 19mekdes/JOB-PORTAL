@@ -82,7 +82,7 @@ const FALLBACK_EMPLOYMENT_TYPES: EmploymentType[] = [
   { id: 6, type_name: 'Internship' },
 ]
 
-// Job Status Options
+
 const JOB_STATUSES: JobStatus[] = [
   { id: 1, status_name: 'Open' },
   { id: 2, status_name: 'Closed' },
@@ -100,8 +100,8 @@ const PostJobPage: React.FC = () => {
   const [requirementInput, setRequirementInput] = useState('')
   const [benefitInput, setBenefitInput] = useState('')
   const [activeTab, setActiveTab] = useState('basic')
-  
-  // Company selection states
+
+
   const [managedCompanies, setManagedCompanies] = useState<ManagedCompany[]>([])
   const [selectedCompanyId, setSelectedCompanyId] = useState('')
   const [useCustomCompany, setUseCustomCompany] = useState(false)
@@ -114,7 +114,7 @@ const PostJobPage: React.FC = () => {
     location: '',
     employment_type_id: '',
     industry_id: '',
-    status_id: '1', 
+    status_id: '1',
     salary_min: '',
     salary_max: '',
     is_remote: false,
@@ -135,7 +135,7 @@ const PostJobPage: React.FC = () => {
       if (employmentTypesRes.data.data?.length) setEmploymentTypes(employmentTypesRes.data.data)
     } catch (error) {
       console.error('Error fetching form data:', error)
-      // Using fallback data already set
+
     }
   }
 
@@ -149,7 +149,7 @@ const PostJobPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching managed companies:', error)
-      // If error, user can still post for their own company
+
     } finally {
       setIsLoadingCompanies(false)
     }
@@ -223,9 +223,9 @@ const PostJobPage: React.FC = () => {
     if (!validateForm()) return
 
     setIsLoading(true)
-    
+
     const finalStatusId = publishStatus === 'draft' ? '3' : formData.status_id
-    
+
     // Build submit data
     const submitData: any = {
       title: formData.title,
@@ -240,7 +240,7 @@ const PostJobPage: React.FC = () => {
       salary_max: formData.salary_max ? parseFloat(formData.salary_max) : null,
       is_remote: formData.is_remote
     }
-    
+
     // Add company selection
     if (useCustomCompany && customCompanyName.trim()) {
       submitData.custom_company_name = customCompanyName.trim()
@@ -251,34 +251,34 @@ const PostJobPage: React.FC = () => {
     console.log('Submitting job data:', submitData)
 
     try {
-      // Use the correct endpoint '/employer/jobs'
+
       const response = await api.post('/employer/jobs', submitData)
-      
+
       console.log('Response:', response.data)
-      
+
       toast({
         title: "Success!",
-        description: publishStatus === 'published' 
-          ? `Job posted successfully for ${response.data.data?.company_name || 'your company'}!` 
+        description: publishStatus === 'published'
+          ? `Job posted successfully for ${response.data.data?.company_name || 'your company'}!`
           : "Job saved as draft",
       })
-      
-      // Navigate back to jobs list after short delay
+
+
       setTimeout(() => {
         navigate('/employer/jobs')
       }, 1500)
-      
+
     } catch (error: any) {
       console.error('Error posting job:', error)
-      
-      // Better error handling
+
+
       let errorMessage = "Failed to post job"
-      
+
       if (error.response) {
         console.error('Error response:', error.response.data)
         errorMessage = error.response.data?.message || error.response.data?.error || errorMessage
-        
-        // Specific error messages
+
+
         if (error.response.status === 401) {
           errorMessage = "Please login again to post a job"
         } else if (error.response.status === 403) {
@@ -291,7 +291,7 @@ const PostJobPage: React.FC = () => {
       } else if (error.request) {
         errorMessage = "Cannot connect to server. Please check if backend is running."
       }
-      
+
       toast({
         variant: "destructive",
         title: "Error",
@@ -302,7 +302,7 @@ const PostJobPage: React.FC = () => {
     }
   }
 
-  // Check if user is employer
+
   if (user?.user_type !== 'Employer') {
     return (
       <div className="max-w-4xl mx-auto py-8 px-4 text-center">
@@ -351,7 +351,7 @@ const PostJobPage: React.FC = () => {
                     className="mt-1.5 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
-                
+
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Job Description *</Label>
                   <Textarea
@@ -365,7 +365,7 @@ const PostJobPage: React.FC = () => {
                     {formData.description.length} / 50+ characters
                   </p>
                 </div>
-                
+
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Location *</Label>
                   <Input
@@ -391,76 +391,76 @@ const PostJobPage: React.FC = () => {
                 </div>
 
                 {/* Company Selection Section */}
-<div className="pt-4 border-t border-gray-100">
-  <Label className="text-sm font-medium text-gray-700 mb-2 block">Post Job For</Label>
-  
-  {!useCustomCompany ? (
-    <div className="space-y-2">
-      <Select
-        value={selectedCompanyId}
-        onValueChange={setSelectedCompanyId}
-      >
-        <SelectTrigger className="rounded-lg border-gray-300 bg-white">
-          <SelectValue placeholder="Select company" />
-        </SelectTrigger>
-        <SelectContent className="bg-white border border-gray-200 shadow-lg rounded-lg">
-          <SelectItem value="primary" className="cursor-pointer hover:bg-gray-50">
-            <div className="flex items-center gap-2 py-1">
-              <Building2 className="h-4 w-4 text-blue-500" />
-              <span className="text-gray-700 font-medium">My Company (Primary)</span>
-            </div>
-          </SelectItem>
-          
-          {managedCompanies.filter(c => !c.is_primary).map((company) => (
-            <SelectItem 
-              key={company.id} 
-              value={company.id}
-              className="cursor-pointer hover:bg-gray-50"
-            >
-              <div className="flex items-center gap-2 py-1">
-                <Building2 className="h-4 w-4 text-gray-500" />
-                <span className="text-gray-700">{company.company_name}</span>
-                {company.is_verified && (
-                  <CheckCircle className="h-3 w-3 text-green-500" />
-                )}
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      
-      <button
-        type="button"
-        onClick={() => setUseCustomCompany(true)}
-        className="text-blue-600 text-sm hover:underline flex items-center gap-1 mt-2"
-      >
-        <Plus className="h-3 w-3" />
-        Post for a different company (e.g., Afriwork)
-      </button>
-    </div>
-  ) : (
-    <div className="space-y-2">
-      <Input
-        value={customCompanyName}
-        onChange={(e) => setCustomCompanyName(e.target.value)}
-        placeholder="Enter company name (e.g., Afriwork, Ethio Jobs)"
-        className="rounded-lg border-gray-300"
-      />
-      <button
-        type="button"
-        onClick={() => {
-          setUseCustomCompany(false)
-          setCustomCompanyName('')
-          setSelectedCompanyId('primary')
-        }}
-        className="text-gray-600 text-sm hover:underline flex items-center gap-1 mt-2"
-      >
-        <ArrowLeft className="h-3 w-3" />
-        Post for my company instead
-      </button>
-    </div>
-  )}
-</div>
+                <div className="pt-4 border-t border-gray-100">
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Post Job For</Label>
+
+                  {!useCustomCompany ? (
+                    <div className="space-y-2">
+                      <Select
+                        value={selectedCompanyId}
+                        onValueChange={setSelectedCompanyId}
+                      >
+                        <SelectTrigger className="rounded-lg border-gray-300 bg-white">
+                          <SelectValue placeholder="Select company" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border border-gray-200 shadow-lg rounded-lg">
+                          <SelectItem value="primary" className="cursor-pointer hover:bg-gray-50">
+                            <div className="flex items-center gap-2 py-1">
+                              <Building2 className="h-4 w-4 text-blue-500" />
+                              <span className="text-gray-700 font-medium">My Company (Primary)</span>
+                            </div>
+                          </SelectItem>
+
+                          {managedCompanies.filter(c => !c.is_primary).map((company) => (
+                            <SelectItem
+                              key={company.id}
+                              value={company.id}
+                              className="cursor-pointer hover:bg-gray-50"
+                            >
+                              <div className="flex items-center gap-2 py-1">
+                                <Building2 className="h-4 w-4 text-gray-500" />
+                                <span className="text-gray-700">{company.company_name}</span>
+                                {company.is_verified && (
+                                  <CheckCircle className="h-3 w-3 text-green-500" />
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <button
+                        type="button"
+                        onClick={() => setUseCustomCompany(true)}
+                        className="text-blue-600 text-sm hover:underline flex items-center gap-1 mt-2"
+                      >
+                        <Plus className="h-3 w-3" />
+                        Post for a different company (e.g., Afriwork)
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Input
+                        value={customCompanyName}
+                        onChange={(e) => setCustomCompanyName(e.target.value)}
+                        placeholder="Enter company name (e.g., Afriwork, Ethio Jobs)"
+                        className="rounded-lg border-gray-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseCustomCompany(false)
+                          setCustomCompanyName('')
+                          setSelectedCompanyId('primary')
+                        }}
+                        className="text-gray-600 text-sm hover:underline flex items-center gap-1 mt-2"
+                      >
+                        <ArrowLeft className="h-3 w-3" />
+                        Post for my company instead
+                      </button>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -484,8 +484,8 @@ const PostJobPage: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent className="bg-white border border-gray-200 shadow-lg rounded-lg">
                       {JOB_STATUSES.map((status) => (
-                        <SelectItem 
-                          key={status.id} 
+                        <SelectItem
+                          key={status.id}
                           value={status.id.toString()}
                           className="cursor-pointer hover:bg-gray-50"
                         >
@@ -516,8 +516,8 @@ const PostJobPage: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent className="bg-white border border-gray-200 shadow-lg rounded-lg">
                       {employmentTypes.map((type) => (
-                        <SelectItem 
-                          key={type.id} 
+                        <SelectItem
+                          key={type.id}
                           value={type.id.toString()}
                           className="cursor-pointer hover:bg-gray-50"
                         >
@@ -543,8 +543,8 @@ const PostJobPage: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent className="bg-white border border-gray-200 shadow-lg rounded-lg">
                       {industries.map((industry) => (
-                        <SelectItem 
-                          key={industry.id} 
+                        <SelectItem
+                          key={industry.id}
                           value={industry.id.toString()}
                           className="cursor-pointer hover:bg-gray-50"
                         >
@@ -616,17 +616,17 @@ const PostJobPage: React.FC = () => {
                     {requirementsList.map((req, i) => (
                       <Badge key={i} variant="secondary" className="gap-1 py-1.5 px-3 bg-gray-100 text-gray-700">
                         {req}
-                        <X 
-                          className="h-3 w-3 ml-1 cursor-pointer hover:text-red-500" 
+                        <X
+                          className="h-3 w-3 ml-1 cursor-pointer hover:text-red-500"
                           onClick={() => removeRequirement(i)}
                         />
                       </Badge>
                     ))}
                   </div>
                 </div>
-                
+
                 <Separator className="bg-gray-100" />
-                
+
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Benefits</Label>
                   <div className="flex gap-2 mt-1.5">
@@ -645,8 +645,8 @@ const PostJobPage: React.FC = () => {
                     {benefitsList.map((ben, i) => (
                       <Badge key={i} variant="secondary" className="gap-1 py-1.5 px-3 bg-gray-100 text-gray-700">
                         {ben}
-                        <X 
-                          className="h-3 w-3 ml-1 cursor-pointer hover:text-red-500" 
+                        <X
+                          className="h-3 w-3 ml-1 cursor-pointer hover:text-red-500"
                           onClick={() => removeBenefit(i)}
                         />
                       </Badge>
@@ -676,18 +676,18 @@ const PostJobPage: React.FC = () => {
           <Button variant="outline" onClick={() => navigate('/employer/jobs')} className="border-gray-300">
             Cancel
           </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => handleSubmit('draft')} 
-            disabled={isLoading} 
+          <Button
+            variant="outline"
+            onClick={() => handleSubmit('draft')}
+            disabled={isLoading}
             className="border-gray-300"
           >
             {isLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             Save as Draft
           </Button>
-          <Button 
-            onClick={() => handleSubmit('published')} 
-            disabled={isLoading} 
+          <Button
+            onClick={() => handleSubmit('published')}
+            disabled={isLoading}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             {isLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
