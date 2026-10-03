@@ -38,7 +38,7 @@ const configureTransporter = () => {
       },
     });
   } else {
-    // Default configuration
+
     transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 587,
@@ -51,7 +51,6 @@ const configureTransporter = () => {
   }
 };
 
-// Initialize transporter
 configureTransporter();
 
 
@@ -66,7 +65,6 @@ export const testEmailConfig = async (): Promise<boolean> => {
   }
 };
 
-// Send email function
 export const sendEmail = async (
   to: string,
   subject: string,
@@ -89,7 +87,6 @@ export const sendEmail = async (
 
 // ========== EMAIL TEMPLATES ==========
 
-// Welcome Email Template
 export const sendWelcomeEmail = async (email: string, name: string): Promise<void> => {
   const html = `
     <!DOCTYPE html>
@@ -236,7 +233,7 @@ export const sendApplicationStatusEmail = async (
   await sendEmail(email, `Application Status: ${status} - ${jobTitle}`, html);
 };
 
-// New Job Alert Email
+
 export const sendNewJobAlertEmail = async (
   email: string,
   userName: string,
@@ -311,14 +308,13 @@ export const sendNewJobAlertEmail = async (
   await sendEmail(email, `🔔 ${jobs.length} New Job${jobs.length > 1 ? 's' : ''} Alert`, html);
 };
 
-// Password Reset Email
 export const sendPasswordResetEmail = async (
   email: string,
   userName: string,
   resetToken: string
 ): Promise<void> => {
   const resetLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
-  
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -370,7 +366,6 @@ export const sendPasswordResetEmail = async (
   await sendEmail(email, 'Password Reset Request - Job Portal', html);
 };
 
-// Contact Form Email (for users contacting admin)
 export const sendContactFormEmail = async (
   name: string,
   email: string,
@@ -413,7 +408,6 @@ export const sendContactFormEmail = async (
   await sendEmail(process.env.EMAIL_USER || 'admin@jobportal.com', `Contact Form: ${subject}`, html);
 };
 
-// New Application Notification for Employer
 export const sendNewApplicationNotification = async (
   employerEmail: string,
   employerName: string,
@@ -456,7 +450,6 @@ export const sendNewApplicationNotification = async (
   await sendEmail(employerEmail, `New Application for ${jobTitle}`, html);
 };
 
-// Export all email functions
 export default {
   testEmailConfig,
   sendEmail,
