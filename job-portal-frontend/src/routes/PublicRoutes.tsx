@@ -42,22 +42,16 @@ export const OpenRoutes: React.FC = () => {
   return <Outlet />
 }
 
-/**
- * AuthRoutes - Specifically for authentication pages with redirect
- * Use this for login, register, forgot-password
- */
 export const AuthRoutes: React.FC = () => {
   return <PublicRoutes restricted={true} redirectTo="/dashboard" />
 }
 
-/**
- * HomeRoutes - For landing page and public content
- */
+
 export const HomeRoutes: React.FC = () => {
   return <OpenRoutes />
 }
 
-// Component to conditionally show content based on auth status
+
 interface AuthGateProps {
   children: React.ReactNode
   fallback?: React.ReactNode
@@ -76,8 +70,6 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children, fallback = null })
 
   return <>{children}</>
 }
-
-// Component to show content only for unauthenticated users
 interface UnauthGateProps {
   children: React.ReactNode
   fallback?: React.ReactNode
@@ -96,8 +88,6 @@ export const UnauthGate: React.FC<UnauthGateProps> = ({ children, fallback = nul
 
   return <>{children}</>
 }
-
-// Component to conditionally show content based on user type
 interface RoleGateProps {
   children: React.ReactNode
   allowedRoles: string[]
@@ -125,8 +115,6 @@ export const RoleGate: React.FC<RoleGateProps> = ({
 
   return <>{children}</>
 }
-
-// Component to show content only for job seekers
 interface JobSeekerGateProps {
   children: React.ReactNode
   fallback?: React.ReactNode
@@ -139,8 +127,6 @@ export const JobSeekerGate: React.FC<JobSeekerGateProps> = ({ children, fallback
     </RoleGate>
   )
 }
-
-// Component to show content only for employers
 interface EmployerGateProps {
   children: React.ReactNode
   fallback?: React.ReactNode
@@ -154,7 +140,6 @@ export const EmployerGate: React.FC<EmployerGateProps> = ({ children, fallback =
   )
 }
 
-// Component to show content only for admins
 interface AdminGateProps {
   children: React.ReactNode
   fallback?: React.ReactNode
@@ -168,7 +153,7 @@ export const AdminGate: React.FC<AdminGateProps> = ({ children, fallback = null 
   )
 }
 
-// Component to show content only for super admins
+
 interface SuperAdminGateProps {
   children: React.ReactNode
   fallback?: React.ReactNode
