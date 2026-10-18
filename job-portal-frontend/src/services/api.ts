@@ -106,10 +106,10 @@ api.interceptors.request.use(
 )
 
 // ========== RESPONSE INTERCEPTOR ==========
-// Handle responses and errors globally
+
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    // Log response in development
+    
     if (import.meta.env.DEV) {
       console.log(`[API Response] ${response.config.url}`, response.data)
     }
@@ -119,17 +119,17 @@ api.interceptors.response.use(
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean }
     const isPublic = isPublicEndpoint(originalRequest.url)
     
-    // Log error in development
+   
     if (import.meta.env.DEV) {
       console.error('[API Error]', error.response?.status, error.response?.data, 'Public endpoint:', isPublic)
     }
     
     // ========== HANDLE 401 UNAUTHORIZED ==========
     if (error.response?.status === 401) {
-      // For public endpoints, DON'T redirect - just return empty data
+      
       if (isPublic) {
         console.log('[API] Public endpoint 401, returning empty response')
-        // Return a mock successful response with empty data
+       
         return Promise.resolve({
           data: {
             success: true,
@@ -143,11 +143,11 @@ api.interceptors.response.use(
         } as AxiosResponse)
       }
       
-      // For protected endpoints, try to refresh token
+      
       if (!originalRequest._retry) {
         originalRequest._retry = true
         
-        // Attempt to refresh token
+        
         try {
           const refreshToken = localStorage.getItem('refreshToken')
           if (refreshToken) {
@@ -157,15 +157,14 @@ api.interceptors.response.use(
             
             const { token } = response.data
             
-            // Update user in localStorage
+            
             const userStr = localStorage.getItem('user')
             if (userStr) {
               const user = JSON.parse(userStr)
               user.token = token
               localStorage.setItem('user', JSON.stringify(user))
             }
-            
-            // Retry original request
+          
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`
             }
@@ -175,13 +174,11 @@ api.interceptors.response.use(
           console.error('Token refresh failed:', refreshError)
         }
         
-        // Clear local storage and redirect to login
         localStorage.removeItem('user')
         localStorage.removeItem('refreshToken')
         localStorage.removeItem('token')
         localStorage.removeItem('admin_token')
-        
-        // Redirect to login page if not already there
+      
         if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
           window.location.href = '/login'
         }
@@ -191,13 +188,12 @@ api.interceptors.response.use(
     // ========== HANDLE 403 FORBIDDEN ==========
     if (error.response?.status === 403) {
       console.error('Access forbidden:', error.response?.data)
-      // Don't redirect for public endpoints
       if (!isPublic && window.location.pathname !== '/unauthorized') {
         window.location.href = '/unauthorized'
       }
     }
     
-    // Format error message
+    
     const apiError: ApiError = {
       message: (error.response?.data as any)?.message || error.message || 'An unexpected error occurred',
       status: error.response?.status || 500,
@@ -210,31 +206,30 @@ api.interceptors.response.use(
 
 // ========== HELPER FUNCTIONS ==========
 
-// Generic GET request
+
 export const get = async <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {
   const response = await api.get<T>(url, config)
   return response.data
 }
 
-// Generic POST request
+
 export const post = async <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
   const response = await api.post<T>(url, data, config)
   return response.data
 }
 
-// Generic PUT request
+
 export const put = async <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
   const response = await api.put<T>(url, data, config)
   return response.data
 }
 
-// Generic PATCH request
+
 export const patch = async <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
   const response = await api.patch<T>(url, data, config)
   return response.data
 }
 
-// Generic DELETE request
 export const del = async <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {
   const response = await api.delete<T>(url, config)
   return response.data

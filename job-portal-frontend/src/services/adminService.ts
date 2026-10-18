@@ -1,6 +1,4 @@
 import api from './api'
-
-// ========== TYPES ==========
 export interface UserFilters {
   search?: string
   user_type?: string
