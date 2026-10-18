@@ -83,7 +83,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    // Validate password length
+    
     if (password.length < 6) {
       res.status(400).json({
         success: false,
@@ -92,7 +92,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    // Check if user already exists
+    
     const existingUser = await prisma.user.findUnique({
       where: { email }
     })
@@ -118,21 +118,21 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    // Hash password
+    
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create user
+   
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         user_type_id: userType.id,
         is_active: true,
-        email_verified: true // Auto-verified, no OTP needed
+        email_verified: true 
       }
     })
 
-    // Create profile based on user type
+    
     if (user_type === 'Job Seeker') {
       await prisma.jobSeekerProfile.create({
         data: {
@@ -209,7 +209,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    // Check if email is verified (should be true from registration)
     if (!user.email_verified) {
       res.status(401).json({
         success: false,

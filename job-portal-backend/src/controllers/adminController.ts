@@ -119,7 +119,6 @@ export const getAllUsers = async (req: Request, res: Response) => {
         });
       }
       
-      // Count applications for job seekers
       if (user.seeker_profile) {
         appsCount = await prisma.jobApplication.count({
           where: { seeker_id: user.seeker_profile.id }
@@ -199,7 +198,7 @@ export const updateUserStatus = async (req: Request, res: Response) => {
     const { is_active } = req.body;
     const adminId = getUserId(req);
     
-    // Get the target user with their role
+    
     const targetUser = await prisma.user.findUnique({
       where: { id: userId },
       include: { user_type: true }
@@ -282,7 +281,7 @@ export const updateUser = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     
-    // Get admin role
+   
     const adminUser = await prisma.user.findUnique({
       where: { id: adminId },
       include: { user_type: true }
@@ -356,7 +355,7 @@ export const resetPassword = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     
-    // Get admin role
+  
     const adminUser = await prisma.user.findUnique({
       where: { id: adminId },
       include: { user_type: true }
@@ -432,7 +431,7 @@ export const deleteUser = async (req: Request, res: Response) => {
       });
     }
     
-    // Get admin role
+    
     const adminUser = await prisma.user.findUnique({
       where: { id: adminId },
       include: { user_type: true }
@@ -528,7 +527,7 @@ export const getAllJobs = async (req: Request, res: Response) => {
       prisma.jobPost.count({ where })
     ]);
     
-    // Calculate job stats
+   
     const allJobs = await prisma.jobPost.findMany({
       include: { status: true }
     });
