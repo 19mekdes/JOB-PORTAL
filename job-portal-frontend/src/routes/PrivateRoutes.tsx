@@ -41,11 +41,10 @@ const PrivateRoutes: React.FC<PrivateRoutesProps> = ({
     }
   }
 
-  // Authenticated and authorized
+  
   return <Outlet />
 }
 
-// Role-specific private route components
 export const JobSeekerRoutes: React.FC = () => (
   <PrivateRoutes allowedRoles={['Job Seeker']} />
 )
@@ -66,8 +65,6 @@ export const SuperAdminRoutes: React.FC = () => (
 export const AuthenticatedRoutes: React.FC = () => (
   <PrivateRoutes />
 )
-
-// Route guard for non-authenticated users (redirects to dashboard if logged in)
 export const PublicRoutes: React.FC = () => {
   const { user, isLoading } = useSelector((state: RootState) => state.auth)
   const location = useLocation()
@@ -77,7 +74,7 @@ export const PublicRoutes: React.FC = () => {
   }
 
   if (user) {
-    // Redirect to dashboard or intended destination
+  
     const from = (location.state as any)?.from?.pathname || '/dashboard'
     return <Navigate to={from} replace />
   }
@@ -85,7 +82,6 @@ export const PublicRoutes: React.FC = () => {
   return <Outlet />
 }
 
-// Conditional route based on user type
 interface ConditionalRouteProps {
   children: React.ReactNode
   allowedRoles: string[]
@@ -113,8 +109,6 @@ export const ConditionalRoute: React.FC<ConditionalRouteProps> = ({
 
   return <>{children}</>
 }
-
-// Feature flag route guard
 interface FeatureGuardProps {
   children: React.ReactNode
   feature: string
@@ -135,8 +129,6 @@ export const FeatureGuard: React.FC<FeatureGuardProps> = ({
   if (!user) {
     return <Navigate to="/login" replace />
   }
-
-  // Define feature access by role
   const featureAccess: Record<string, string[]> = {
     'post-job': ['Employer', 'Admin', 'Super Admin'],
     'manage-applications': ['Employer', 'Admin', 'Super Admin'],
@@ -163,8 +155,6 @@ export const FeatureGuard: React.FC<FeatureGuardProps> = ({
 
   return <>{children}</>
 }
-
-// Route wrapper for lazy loading
 interface LazyRouteProps {
   children: React.ReactNode
   fallback?: React.ReactNode

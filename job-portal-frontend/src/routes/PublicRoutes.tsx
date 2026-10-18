@@ -10,10 +10,6 @@ interface PublicRoutesProps {
   restricted?: boolean
 }
 
-/**
- * PublicRoutes - Redirects authenticated users away from public pages
- * Use this for pages like login, register, forgot-password
- */
 const PublicRoutes: React.FC<PublicRoutesProps> = ({ 
   redirectTo = '/dashboard',
   restricted = true 
@@ -35,10 +31,7 @@ const PublicRoutes: React.FC<PublicRoutesProps> = ({
   return <Outlet />
 }
 
-/**
- * OpenRoutes - Accessible by both authenticated and unauthenticated users
- * Use this for pages like home, jobs, job details, about, contact
- */
+
 export const OpenRoutes: React.FC = () => {
   const { isLoading } = useSelector((state: RootState) => state.auth)
 
