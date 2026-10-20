@@ -63,12 +63,10 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
       return
     }
 
-    // Get open status
     const openStatus = await prisma.jobPostStatus.findFirst({
       where: { status_name: 'Open' }
     })
 
-    // Check for duplicate job posting by this employer
     const duplicateJob = await prisma.jobPost.findFirst({
       where: {
         employer_id: employerProfile.id,
@@ -88,8 +86,6 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
       })
       return
     }
-
-    // Generate salary range string
     let salaryRange = null
     if (salary_min && salary_max) {
       salaryRange = `$${salary_min.toLocaleString()} - $${salary_max.toLocaleString()}`
@@ -99,7 +95,7 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
       salaryRange = `Up to $${salary_max.toLocaleString()}`
     }
 
-    // Create job
+  
     const job = await prisma.jobPost.create({
       data: {
         title: normalizedTitle,
@@ -170,8 +166,6 @@ export const getAllJobs = async (req: AuthRequest, res: Response): Promise<void>
     const where: any = {
       status: { status_name: 'Open' }
     }
-
-    // Search filter
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' as const } },
@@ -180,28 +174,22 @@ export const getAllJobs = async (req: AuthRequest, res: Response): Promise<void>
         { benefits: { contains: search, mode: 'insensitive' as const } }
       ]
     }
-
-    // Location filter
     if (location) {
       where.location = { contains: location, mode: 'insensitive' as const }
     }
 
-    // Industry filter
     if (industry) {
       where.industry_id = parseInt(industry)
     }
 
-    // Employment type filter
     if (employment_type) {
       where.employment_type_id = parseInt(employment_type)
     }
 
-    // Remote filter
+  
     if (is_remote === 'true') {
       where.is_remote = true
     }
-
-    // Salary filters
     if (min_salary || max_salary) {
       where.AND = []
       if (min_salary) {
@@ -222,7 +210,6 @@ export const getAllJobs = async (req: AuthRequest, res: Response): Promise<void>
       }
     }
 
-    // Sorting
     let orderBy: any = {}
     switch (sort) {
       case 'recent':
@@ -266,7 +253,6 @@ export const getAllJobs = async (req: AuthRequest, res: Response): Promise<void>
       prisma.jobPost.count({ where })
     ])
 
-    // Add applied status if user is logged in and is job seeker
     let jobsWithStatus = jobs
     if (req.user && req.user.user_type.type_name === 'Job Seeker') {
       const seekerProfile = await prisma.jobSeekerProfile.findUnique({
@@ -346,13 +332,12 @@ export const getJobById = async (req: AuthRequest, res: Response): Promise<void>
       return
     }
 
-    // Increment view count
     await prisma.jobPost.update({
       where: { id: req.params.id },
       data: { views_count: { increment: 1 } }
     })
 
-    // Check if user has applied (if logged in as job seeker)
+    
     let hasApplied = false
     if (req.user && req.user.user_type.type_name === 'Job Seeker') {
       const seekerProfile = await prisma.jobSeekerProfile.findUnique({
@@ -400,8 +385,6 @@ export const updateJob = async (req: AuthRequest, res: Response): Promise<void> 
       salary_max,
       is_remote
     } = req.body
-
-    // Get employer profile
     const employerProfile = await prisma.employerProfile.findUnique({
       where: { user_id: req.user!.id }
     })
@@ -414,7 +397,6 @@ export const updateJob = async (req: AuthRequest, res: Response): Promise<void> 
       return
     }
 
-    // Check if job exists and belongs to employer
     const existingJob = await prisma.jobPost.findFirst({
       where: {
         id: req.params.id,
@@ -435,7 +417,6 @@ export const updateJob = async (req: AuthRequest, res: Response): Promise<void> 
     const normalizedEmploymentTypeId = employment_type_id !== undefined ? employment_type_id : existingJob.employment_type_id
     const normalizedIndustryId = industry_id !== undefined ? industry_id : existingJob.industry_id
 
-    // Prevent updating to a duplicate job title/location/industry/employment combination
     const duplicateJob = await prisma.jobPost.findFirst({
       where: {
         employer_id: employerProfile.id,
@@ -459,7 +440,6 @@ export const updateJob = async (req: AuthRequest, res: Response): Promise<void> 
       return
     }
 
-    // Generate salary range string
     let salaryRange = existingJob.salary_range
     if (salary_min !== undefined || salary_max !== undefined) {
       const min = salary_min !== undefined ? salary_min : existingJob.salary_min
@@ -473,7 +453,6 @@ export const updateJob = async (req: AuthRequest, res: Response): Promise<void> 
       }
     }
 
-    // Update job
     const updatedJob = await prisma.jobPost.update({
       where: { id: req.params.id },
       data: {
@@ -512,7 +491,7 @@ export const updateJob = async (req: AuthRequest, res: Response): Promise<void> 
 // ========== DELETE JOB ==========
 export const deleteJob = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // Get employer profile
+  
     const employerProfile = await prisma.employerProfile.findUnique({
       where: { user_id: req.user!.id }
     })
@@ -525,7 +504,6 @@ export const deleteJob = async (req: AuthRequest, res: Response): Promise<void> 
       return
     }
 
-    // Check if job exists and belongs to employer
     const job = await prisma.jobPost.findFirst({
       where: {
         id: req.params.id,
@@ -543,8 +521,6 @@ export const deleteJob = async (req: AuthRequest, res: Response): Promise<void> 
       })
       return
     }
-
-    // Delete job (cascade will delete applications, bookmarks, notes)
     await prisma.jobPost.delete({
       where: { id: req.params.id }
     })
@@ -567,7 +543,6 @@ export const getEmployerJobs = async (req: AuthRequest, res: Response): Promise<
     const query = req.query as JobQueryParams
     const { status, page = '1', limit = '10' } = query
 
-    // Get employer profile
     const employerProfile = await prisma.employerProfile.findUnique({
       where: { user_id: req.user!.id }
     })
@@ -629,7 +604,6 @@ export const getEmployerJobs = async (req: AuthRequest, res: Response): Promise<
 // ========== GET JOB STATS ==========
 export const getJobStats = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // Get employer profile
     const employerProfile = await prisma.employerProfile.findUnique({
       where: { user_id: req.user!.id }
     })
@@ -692,7 +666,7 @@ export const getJobApplications = async (req: AuthRequest, res: Response): Promi
     const query = req.query as JobQueryParams
     const { status, page = '1', limit = '10' } = query
 
-    // Get employer profile
+    
     const employerProfile = await prisma.employerProfile.findUnique({
       where: { user_id: req.user!.id }
     })

@@ -1,7 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Get all notifications for current user
 const getNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -27,7 +26,6 @@ const getNotifications = async (req, res) => {
   }
 };
 
-// Get unread notification count
 const getUnreadCount = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -43,7 +41,6 @@ const getUnreadCount = async (req, res) => {
   }
 };
 
-// Mark notification as read
 const markAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
@@ -69,7 +66,6 @@ const markAsRead = async (req, res) => {
   }
 };
 
-// Mark all notifications as read
 const markAllAsRead = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -85,8 +81,6 @@ const markAllAsRead = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-// Delete notification
 const deleteNotification = async (req, res) => {
   try {
     const { notificationId } = req.params;
@@ -107,7 +101,6 @@ const deleteNotification = async (req, res) => {
   }
 };
 
-// Create notification (utility function for other services)
 const createNotification = async (userId, title, message, type) => {
   try {
     return await prisma.notification.create({

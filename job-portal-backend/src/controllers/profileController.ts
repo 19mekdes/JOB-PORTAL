@@ -32,7 +32,6 @@ export const getProfile = async (req: AuthRequest, res: Response): Promise<void>
     const profile = user.seeker_profile || user.employer_profile
     const profileType = user.user_type.type_name
 
-    // Parse JSON fields if they exist for job seeker
     let parsedProfile: any = { ...profile }
     if (profileType === 'Job Seeker' && user.seeker_profile) {
       if (user.seeker_profile.experience) {
@@ -86,7 +85,6 @@ export const updateSeekerProfile = async (req: AuthRequest, res: Response): Prom
       resume_url
     } = req.body
 
-    // Check if profile exists
     const existingProfile = await prisma.jobSeekerProfile.findUnique({
       where: { user_id: req.user!.id }
     })
@@ -99,7 +97,6 @@ export const updateSeekerProfile = async (req: AuthRequest, res: Response): Prom
       return
     }
 
-    // Update profile
     const updatedProfile = await prisma.jobSeekerProfile.update({
       where: { user_id: req.user!.id },
       data: {
@@ -138,8 +135,6 @@ export const updateEmployerProfile = async (req: AuthRequest, res: Response): Pr
       location,
       logo_url
     } = req.body
-
-    // Check if profile exists
     const existingProfile = await prisma.employerProfile.findUnique({
       where: { user_id: req.user!.id }
     })
@@ -151,8 +146,6 @@ export const updateEmployerProfile = async (req: AuthRequest, res: Response): Pr
       })
       return
     }
-
-    // Update profile
     const updatedProfile = await prisma.employerProfile.update({
       where: { user_id: req.user!.id },
       data: {
@@ -716,7 +709,7 @@ export const getPublicProfile = async (req: AuthRequest, res: Response): Promise
           profileData.education = []
         }
       }
-      // Remove sensitive info
+  
       delete profileData.phone
       delete profileData.resume_url
     } else if (profileType === 'Employer' && user.employer_profile) {
@@ -763,8 +756,6 @@ export const getSeekerProfileById = async (req: AuthRequest, res: Response): Pro
       })
       return
     }
-
-    // Parse JSON fields safely
     let parsedExperience = []
     let parsedEducation = []
     
