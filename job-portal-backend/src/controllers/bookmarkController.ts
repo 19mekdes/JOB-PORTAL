@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Get all bookmarks for current user
+
 const getBookmarks = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -38,7 +38,7 @@ const getBookmarks = async (req, res) => {
   }
 };
 
-// Get bookmark count
+
 const getBookmarkCount = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -62,7 +62,7 @@ const getBookmarkCount = async (req, res) => {
   }
 };
 
-// Check if job is bookmarked
+
 const checkBookmarkStatus = async (req, res) => {
   try {
     const { jobId } = req.params;
@@ -90,13 +90,13 @@ const checkBookmarkStatus = async (req, res) => {
   }
 };
 
-// Bookmark a job
+
 const bookmarkJob = async (req, res) => {
   try {
     const { jobId } = req.params;
     const userId = req.user.id;
     
-    // Check if job exists
+    
     const job = await prisma.jobPost.findUnique({
       where: { id: jobId }
     });
@@ -105,7 +105,7 @@ const bookmarkJob = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Job not found' });
     }
     
-    // Get or create seeker profile
+    
     let seeker = await prisma.jobSeekerProfile.findFirst({
       where: { user_id: userId }
     });
@@ -120,7 +120,7 @@ const bookmarkJob = async (req, res) => {
       });
     }
     
-    // Check if already bookmarked
+    
     const existingBookmark = await prisma.jobBookmark.findFirst({
       where: {
         job_id: jobId,
@@ -132,7 +132,7 @@ const bookmarkJob = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Job already bookmarked' });
     }
     
-    // Create bookmark
+   
     const bookmark = await prisma.jobBookmark.create({
       data: {
         job_id: jobId,
@@ -151,7 +151,7 @@ const bookmarkJob = async (req, res) => {
   }
 };
 
-// Remove bookmark
+
 const removeBookmark = async (req, res) => {
   try {
     const { jobId } = req.params;

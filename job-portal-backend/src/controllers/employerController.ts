@@ -5,7 +5,7 @@ import { safeJsonParse } from '../utils/safeJson';
 
 const prisma = new PrismaClient();
 
-// Get employer's managed companies
+
 export const getManagedCompanies = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
@@ -106,7 +106,7 @@ export const addManagedCompany = async (req: AuthRequest, res: Response): Promis
   }
 };
 
-// Post a job
+
 export const postJob = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const {
@@ -181,7 +181,6 @@ export const postJob = async (req: AuthRequest, res: Response): Promise<void> =>
     const normalizedTitle = title?.trim() ?? ''
     const normalizedLocation = location?.trim() ?? ''
 
-    // Prevent duplicate jobs (same employer, title, location, employment_type, industry)
     const duplicateJob = await prisma.jobPost.findFirst({
       where: {
         employer_id: employerProfile.id,
@@ -241,7 +240,7 @@ export const postJob = async (req: AuthRequest, res: Response): Promise<void> =>
   }
 };
 
-// Get all jobs
+
 export const getMyJobs = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
@@ -309,7 +308,7 @@ export const updateJob = async (req: AuthRequest, res: Response): Promise<void> 
   }
 };
 
-// Delete job
+
 export const deleteJob = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { jobId } = req.params;
@@ -331,7 +330,7 @@ export const deleteJob = async (req: AuthRequest, res: Response): Promise<void> 
   }
 };
 
-// Get company profile
+
 export const getCompanyProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
@@ -382,7 +381,7 @@ export const updateCompanyProfile = async (req: AuthRequest, res: Response): Pro
       socialLinks = safeJsonParse(socialLinks, null)
     }
 
-    // Prepare data for update
+   
     const dataToUpdate: any = {};
     
     if (updateData.company_name !== undefined) dataToUpdate.company_name = updateData.company_name;
