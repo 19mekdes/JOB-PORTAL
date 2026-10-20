@@ -9,7 +9,7 @@ export const getSystemSettings = async (req: Request, res: Response) => {
     let settings = await prisma.systemSetting.findFirst();
     
     if (!settings) {
-      // Create default settings if none exist
+      
       settings = await prisma.systemSetting.create({
         data: {
           site_name: 'Job Portal',
@@ -46,7 +46,7 @@ export const updateSystemSettings = async (req: Request, res: Response) => {
       }
     });
     
-    // Log the action
+    
     await prisma.auditLog.create({
       data: {
         admin_id: req.user.id,
@@ -143,7 +143,7 @@ export const createAdmin = async (req: Request, res: Response) => {
   try {
     const { email, password, full_name, role = 'Admin' } = req.body;
     
-    // Check if user already exists
+
     const existingUser = await prisma.user.findUnique({
       where: { email }
     });
@@ -152,7 +152,7 @@ export const createAdmin = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
     
-    // Get role type
+    
     const userType = await prisma.userType.findFirst({
       where: { type_name: role }
     });
@@ -161,7 +161,7 @@ export const createAdmin = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Invalid role' });
     }
     
-    // Create admin user
+ 
     const hashedPassword = await bcrypt.hash(password, 10);
     const admin = await prisma.user.create({
       data: {
@@ -177,7 +177,6 @@ export const createAdmin = async (req: Request, res: Response) => {
       }
     });
     
-    // Log the action
     await prisma.auditLog.create({
       data: {
         admin_id: req.user.id,
@@ -206,7 +205,6 @@ export const updateAdmin = async (req: Request, res: Response) => {
     const { adminId } = req.params;
     const { full_name, is_active } = req.body;
     
-    // Don't allow deleting own admin account
     if (adminId === req.user.id) {
       return res.status(400).json({ success: false, message: 'Cannot modify your own admin account through this endpoint' });
     }
@@ -222,7 +220,6 @@ export const updateAdmin = async (req: Request, res: Response) => {
       }
     });
     
-    // Log the action
     await prisma.auditLog.create({
       data: {
         admin_id: req.user.id,
@@ -265,13 +262,11 @@ export const deleteAdmin = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'User is not an admin' });
     }
     
-    // Soft delete - just deactivate
     await prisma.user.update({
       where: { id: adminId },
       data: { is_active: false, updated_at: new Date() }
     });
     
-    // Log the action
     await prisma.auditLog.create({
       data: {
         admin_id: req.user.id,
@@ -295,8 +290,7 @@ export const updateAdminRole = async (req: Request, res: Response) => {
   try {
     const { adminId } = req.params;
     const { role } = req.body;
-    
-    // Don't allow changing own role
+  
     if (adminId === req.user.id) {
       return res.status(400).json({ success: false, message: 'Cannot change your own role' });
     }
@@ -344,11 +338,10 @@ export const updateAdminRole = async (req: Request, res: Response) => {
 
 export const getSystemHealth = async (req: Request, res: Response) => {
   try {
-    // Check database connection
+  
     await prisma.$queryRaw`SELECT 1`;
     const dbStatus = 'connected';
     
-    // Get system metrics
     const [
       totalUsers,
       activeUsers,
@@ -440,7 +433,7 @@ export const getSystemLogs = async (req: Request, res: Response) => {
 
 export const clearCache = async (req: Request, res: Response) => {
   try {
-    // Log the action
+
     await prisma.auditLog.create({
       data: {
         admin_id: req.user.id,
@@ -468,28 +461,24 @@ export const getAdvancedAnalytics = async (req: Request, res: Response) => {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
     
-    // Daily job postings
     const dailyJobs = await prisma.jobPost.groupBy({
       by: ['created_at'],
       where: { created_at: { gte: startDate } },
       _count: true
     });
     
-    // Daily registrations by role
     const dailyRegistrations = await prisma.user.groupBy({
       by: ['created_at', 'user_type_id'],
       where: { created_at: { gte: startDate } },
       _count: true
     });
     
-    // Application trends
     const applicationTrends = await prisma.jobApplication.groupBy({
       by: ['applied_at', 'status_id'],
       where: { applied_at: { gte: startDate } },
       _count: true
     });
-    
-    // Popular job categories
+  
     const popularCategories = await prisma.jobIndustry.findMany({
       include: {
         jobs: {

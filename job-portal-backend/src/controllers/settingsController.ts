@@ -36,7 +36,7 @@ export const getSettings = async (req: Request, res: Response) => {
       })
     }
     
-    // Map fields to match frontend interface
+    
     const mappedSettings = {
       site_name: settings.site_name,
       site_description: settings.site_description,
@@ -126,7 +126,7 @@ export const updateSettings = async (req: Request, res: Response) => {
       }
     })
     
-    // Map response to match frontend
+    
     const mappedResponse = {
       site_name: updated.site_name,
       site_description: updated.site_description,
