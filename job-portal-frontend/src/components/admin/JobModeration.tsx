@@ -2,10 +2,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect } from 'react'
-import { 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Eye,
+  CheckCircle,
+  XCircle,
   Search,
   RefreshCw,
   Trash2,
@@ -13,7 +13,8 @@ import {
   MapPin,
   DollarSign,
   Briefcase,
-  Clock} from 'lucide-react'
+  Clock
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -141,32 +142,32 @@ const JobModeration: React.FC = () => {
       params.append('limit', filters.limit.toString())
 
       const response = await api.get(`/admin/jobs?${params.toString()}`)
-      
+
       let jobsData = []
       if (response.data?.data && Array.isArray(response.data.data)) {
         jobsData = response.data.data
       } else if (response.data && Array.isArray(response.data)) {
         jobsData = response.data
       }
-      
+
       // Filter out invalid/corrupt jobs
       const validJobs = jobsData.filter((job: { id: any; title: string }) => {
-        return job && 
-               job.id && 
-               job.title && 
-               typeof job.title === 'string' &&
-               job.title.trim().length > 0 &&
-               job.title.trim() !== 'M' &&
-               job.title.trim() !== 'A' &&
-               job.title.trim() !== 'C' &&
-               !job.title.toLowerCase().includes('activate') &&
-               !job.title.toLowerCase().includes('settings') &&
-               !job.title.toLowerCase().includes('windows')
+        return job &&
+          job.id &&
+          job.title &&
+          typeof job.title === 'string' &&
+          job.title.trim().length > 0 &&
+          job.title.trim() !== 'M' &&
+          job.title.trim() !== 'A' &&
+          job.title.trim() !== 'C' &&
+          !job.title.toLowerCase().includes('activate') &&
+          !job.title.toLowerCase().includes('settings') &&
+          !job.title.toLowerCase().includes('windows')
       })
-      
+
       setJobs(validJobs)
       setTotalPages(response.data?.pagination?.pages || 1)
-      
+
       if (response.data?.stats) {
         setStats({
           total: response.data.stats.total || validJobs.length,
@@ -198,7 +199,7 @@ const JobModeration: React.FC = () => {
       console.log('Approving job:', selectedJob.id)
       const response = await api.put(`/admin/jobs/${selectedJob.id}/approve`, {})
       console.log('Approve response:', response.data)
-      
+
       toast({
         title: "Success",
         description: "Job approved successfully",
@@ -224,7 +225,7 @@ const JobModeration: React.FC = () => {
       console.log('Rejecting job:', selectedJob.id, 'Reason:', rejectReason)
       const response = await api.put(`/admin/jobs/${selectedJob.id}/reject`, { reason: rejectReason })
       console.log('Reject response:', response.data)
-      
+
       toast({
         title: "Success",
         description: "Job rejected successfully",
@@ -602,20 +603,20 @@ const JobModeration: React.FC = () => {
                 </Button>
                 {selectedJob.status?.status_name === 'Pending' && (
                   <div className="flex gap-2">
-                    <Button 
+                    <Button
                       onClick={() => {
                         setIsViewDialogOpen(false)
                         setIsApproveDialogOpen(true)
-                      }} 
+                      }}
                       className="bg-green-600 hover:bg-green-700"
                     >
                       Approve Job
                     </Button>
-                    <Button 
+                    <Button
                       onClick={() => {
                         setIsViewDialogOpen(false)
                         setIsRejectDialogOpen(true)
-                      }} 
+                      }}
                       variant="destructive"
                     >
                       Reject Job

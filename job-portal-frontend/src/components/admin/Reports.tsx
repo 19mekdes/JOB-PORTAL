@@ -1,16 +1,17 @@
 /* eslint-disable react-hooks/purity */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react'
-import { 
-  Download, 
-  Calendar, 
-  FileText, 
-  Users, 
-  Briefcase, 
+import {
+  Download,
+  Calendar,
+  FileText,
+  Users,
+  Briefcase,
   TrendingUp,
   Printer,
   Mail,
-  Eye} from 'lucide-react'
+  Eye
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -64,7 +65,7 @@ const Reports: React.FC = () => {
   const handleGenerateReport = async () => {
     setIsGenerating(true)
     setGenerationProgress(0)
-    
+
     // Simulate progress
     const interval = setInterval(() => {
       setGenerationProgress(prev => {
@@ -80,7 +81,7 @@ const Reports: React.FC = () => {
       const response = await api.post('/admin/reports/generate', filters, {
         responseType: 'blob'
       })
-      
+
       setGenerationProgress(100)
       setTimeout(() => {
         const url = window.URL.createObjectURL(new Blob([response.data]))
@@ -90,7 +91,7 @@ const Reports: React.FC = () => {
         document.body.appendChild(link)
         link.click()
         link.remove()
-        
+
         toast({
           variant: "success",
           title: "Success",
@@ -179,7 +180,7 @@ const Reports: React.FC = () => {
           const Icon = type.icon
           const isSelected = filters.type === type.id
           return (
-            <Card 
+            <Card
               key={type.id}
               className={`cursor-pointer transition-all hover:shadow-md ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
               onClick={() => setFilters({ ...filters, type: type.id as any })}
@@ -270,8 +271,8 @@ const Reports: React.FC = () => {
             {/* Format */}
             <div className="space-y-2">
               <Label>Export Format</Label>
-              
-              
+
+
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               <Select value={filters.format} onValueChange={(value: any) => setFilters({ ...filters, format: value })}>
                 <SelectTrigger>
@@ -366,7 +367,7 @@ const Reports: React.FC = () => {
               Preview of the report based on current settings
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             {/* Header */}
             <div className="text-center border-b pb-4">

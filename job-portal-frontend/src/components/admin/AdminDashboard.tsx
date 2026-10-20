@@ -1,11 +1,11 @@
 /* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
-import { 
-  Users, 
-  Briefcase, 
-  FileText, 
-  Eye, 
+import {
+  Users,
+  Briefcase,
+  FileText,
+  Eye,
   MoreHorizontal,
   Search,
   Filter,
@@ -188,7 +188,7 @@ const AdminDashboard: React.FC = () => {
     }
   ]
 
-  
+
   const jobStatusData = [
     { name: 'Open', value: stats?.jobs.open || 0, color: '#00C49F' },
     { name: 'Closed', value: stats?.jobs.closed || 0, color: '#FF8042' },
