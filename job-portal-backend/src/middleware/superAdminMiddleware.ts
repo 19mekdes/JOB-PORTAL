@@ -24,8 +24,6 @@ export const isSuperAdmin = (req: AuthRequest, res: Response, next: NextFunction
 
   next()
 }
-
-// Check if user is Super Admin or Admin (with restrictions)
 export const isSuperAdminOrAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user) {
     res.status(401).json({
@@ -48,8 +46,6 @@ export const isSuperAdminOrAdmin = (req: AuthRequest, res: Response, next: NextF
 
   next()
 }
-
-// Check if Super Admin is trying to modify their own account
 export const preventSelfModification = (req: AuthRequest, res: Response, next: NextFunction): void => {
   const targetId = req.params.id
   const currentUserId = req.user?.id
@@ -64,8 +60,6 @@ export const preventSelfModification = (req: AuthRequest, res: Response, next: N
 
   next()
 }
-
-// Check if there's at least one Super Admin remaining
 export const ensureLastSuperAdmin = async (
   req: AuthRequest, 
   res: Response, 
@@ -76,8 +70,7 @@ export const ensureLastSuperAdmin = async (
     const prisma = new PrismaClient()
     
     const targetId = req.params.id
-    
-    // Get target user's role
+  
     const targetUser = await prisma.user.findUnique({
       where: { id: targetId },
       include: { user_type: true }
@@ -91,13 +84,12 @@ export const ensureLastSuperAdmin = async (
       return
     }
     
-    // If not deleting a Super Admin, allow
+    
     if (targetUser.user_type.type_name !== 'Super Admin') {
       next()
       return
     }
     
-    // Count remaining Super Admins
     const superAdminCount = await prisma.user.count({
       where: {
         user_type: { type_name: 'Super Admin' },
@@ -122,7 +114,7 @@ export const ensureLastSuperAdmin = async (
   }
 }
 
-// Rate limiting for sensitive operations
+
 const operationCounts = new Map<string, { count: number; resetTime: number }>()
 
 export const sensitiveOperationRateLimit = (maxRequests: number = 5, windowMs: number = 60 * 1000) => {
@@ -153,7 +145,7 @@ export const sensitiveOperationRateLimit = (maxRequests: number = 5, windowMs: n
   }
 }
 
-// Log super admin actions
+
 export const logSuperAdminAction = (action: string) => {
   return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     const startTime = Date.now()
@@ -187,7 +179,6 @@ export const logSuperAdminAction = (action: string) => {
   }
 }
 
-// Validate system settings update
 export const validateSystemSettings = (req: AuthRequest, res: Response, next: NextFunction): void => {
   const settings = req.body
   
@@ -208,7 +199,6 @@ export const validateSystemSettings = (req: AuthRequest, res: Response, next: Ne
     return
   }
   
-  // Validate numeric values
   if (settings.max_job_posts_per_employer && settings.max_job_posts_per_employer < 1) {
     res.status(400).json({
       success: false,
@@ -243,15 +233,12 @@ export const validateSystemSettings = (req: AuthRequest, res: Response, next: Ne
   
   next()
 }
-
-// Check maintenance mode (for all routes)
 export const checkMaintenanceMode = async (
   req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ): Promise<void> => {
   try {
-    // Skip for Super Admin
     if (req.user?.user_type.type_name === 'Super Admin') {
       next()
       return
@@ -259,8 +246,7 @@ export const checkMaintenanceMode = async (
     
     const { PrismaClient } = await import('@prisma/client')
     const prisma = new PrismaClient()
-    
-    // Use type assertion to bypass TypeScript check
+  
     const prismaAny = prisma as any
     const settings = await prismaAny.systemSetting?.findFirst()
     
@@ -275,7 +261,6 @@ export const checkMaintenanceMode = async (
     
     next()
   } catch (error) {
-    // If no settings table, continue
     next()
   }
 }
