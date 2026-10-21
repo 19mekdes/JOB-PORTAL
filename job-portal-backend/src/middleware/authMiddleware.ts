@@ -10,7 +10,7 @@ declare global {
       user?: {
         id: string;
         email: string;
-        full_name?: string;  
+        full_name?: string;
       };
       fullUser?: any;
     }
@@ -24,24 +24,24 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     if (!authHeader) {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
-    
+
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; email: string; full_name?: string };
-    
-    
+
+
     req.user = {
       id: decoded.id,
       email: decoded.email,
       full_name: decoded.full_name || ''
     };
-    
+
     // Get full user data including role
     const fullUser = await prisma.user.findUnique({
       where: { id: decoded.id },
       include: { user_type: true, seeker_profile: true, employer_profile: true }
     });
     req.fullUser = fullUser;
-    
+
     next();
   } catch (error) {
     return res.status(401).json({ success: false, message: 'Invalid token' });
@@ -55,7 +55,7 @@ export const isEmployer = async (req: Request, res: Response, next: NextFunction
       where: { id: req.user!.id },
       include: { user_type: true }
     });
-    
+
     if (!user || user.user_type?.type_name !== 'Employer') {
       return res.status(403).json({
         success: false,
@@ -64,7 +64,7 @@ export const isEmployer = async (req: Request, res: Response, next: NextFunction
         your_role: user?.user_type?.type_name || 'Unknown'
       });
     }
-    
+
     next();
   } catch (error) {
     return res.status(403).json({ success: false, message: 'Access denied' });
@@ -77,7 +77,7 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
       where: { id: req.user!.id },
       include: { user_type: true }
     });
-    
+
     const role = user?.user_type?.type_name;
     if (!user || (role !== 'Admin' && role !== 'Super Admin')) {
       return res.status(403).json({
@@ -87,7 +87,7 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
         your_role: role || 'Unknown'
       });
     }
-    
+
     next();
   } catch (error) {
     return res.status(403).json({ success: false, message: 'Access denied' });
@@ -100,7 +100,7 @@ export const isSuperAdmin = async (req: Request, res: Response, next: NextFuncti
       where: { id: req.user!.id },
       include: { user_type: true }
     });
-    
+
     if (!user || user.user_type?.type_name !== 'Super Admin') {
       return res.status(403).json({
         success: false,
@@ -109,7 +109,7 @@ export const isSuperAdmin = async (req: Request, res: Response, next: NextFuncti
         your_role: user?.user_type?.type_name || 'Unknown'
       });
     }
-    
+
     next();
   } catch (error) {
     return res.status(403).json({ success: false, message: 'Access denied' });
@@ -122,7 +122,7 @@ export const isJobSeeker = async (req: Request, res: Response, next: NextFunctio
       where: { id: req.user!.id },
       include: { user_type: true }
     });
-    
+
     if (!user || user.user_type?.type_name !== 'Job Seeker') {
       return res.status(403).json({
         success: false,
@@ -131,7 +131,7 @@ export const isJobSeeker = async (req: Request, res: Response, next: NextFunctio
         your_role: user?.user_type?.type_name || 'Unknown'
       });
     }
-    
+
     next();
   } catch (error) {
     return res.status(403).json({ success: false, message: 'Access denied' });
@@ -146,9 +146,9 @@ export const authorizeAny = (...roles: string[]) => {
         where: { id: req.user!.id },
         include: { user_type: true }
       });
-      
+
       const userRole = user?.user_type?.type_name;
-      
+
       if (!user || !roles.includes(userRole)) {
         return res.status(403).json({
           success: false,
@@ -157,7 +157,7 @@ export const authorizeAny = (...roles: string[]) => {
           your_role: userRole || 'Unknown'
         });
       }
-      
+
       next();
     } catch (error) {
       return res.status(403).json({ success: false, message: 'Access denied' });

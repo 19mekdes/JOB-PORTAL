@@ -63,7 +63,7 @@ const hasPermission = (userRole: UserRole, resource: string, action: string): bo
 }
 
 // ========== BASIC ROLE AUTHORIZATION ==========
-// Authorize specific roles
+
 export const authorize = (...roles: UserRole[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
@@ -91,7 +91,7 @@ export const authorize = (...roles: UserRole[]) => {
 }
 
 // ========== PERMISSION-BASED AUTHORIZATION ==========
-// Check specific permission
+
 export const checkPermission = (resource: string, action: string) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
@@ -119,7 +119,6 @@ export const checkPermission = (resource: string, action: string) => {
 }
 
 // ========== ROLE HIERARCHY CHECK ==========
-// Check if user role is at least minimum role
 export const requireRoleLevel = (minimumRole: UserRole) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
@@ -149,7 +148,6 @@ export const requireRoleLevel = (minimumRole: UserRole) => {
 }
 
 // ========== SPECIFIC ROLE MIDDLEWARES ==========
-// Check if user is Job Seeker
 export const isJobSeeker = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user) {
     res.status(401).json({
@@ -171,8 +169,6 @@ export const isJobSeeker = (req: AuthRequest, res: Response, next: NextFunction)
 
   next()
 }
-
-// Check if user is Employer
 export const isEmployer = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user) {
     res.status(401).json({
@@ -195,7 +191,6 @@ export const isEmployer = (req: AuthRequest, res: Response, next: NextFunction):
   next()
 }
 
-// Check if user is Admin
 export const isAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user) {
     res.status(401).json({
@@ -218,8 +213,6 @@ export const isAdmin = (req: AuthRequest, res: Response, next: NextFunction): vo
 
   next()
 }
-
-// Check if user is Super Admin
 export const isSuperAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user) {
     res.status(401).json({
@@ -243,7 +236,6 @@ export const isSuperAdmin = (req: AuthRequest, res: Response, next: NextFunction
 }
 
 // ========== RESOURCE OWNERSHIP CHECK ==========
-// Check if user owns the resource (for job seekers)
 export const isOwnSeekerProfile = (getSeekerIdFromRequest: (req: AuthRequest) => Promise<string | null>) => {
   return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -255,7 +247,6 @@ export const isOwnSeekerProfile = (getSeekerIdFromRequest: (req: AuthRequest) =>
         return
       }
 
-      // Super Admin bypass
       if (req.user.user_type.type_name === UserRoles.SUPER_ADMIN) {
         next()
         return
@@ -281,8 +272,6 @@ export const isOwnSeekerProfile = (getSeekerIdFromRequest: (req: AuthRequest) =>
     }
   }
 }
-
-// Check if user owns the resource (for employers)
 export const isOwnEmployerProfile = (getEmployerIdFromRequest: (req: AuthRequest) => Promise<string | null>) => {
   return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -294,7 +283,6 @@ export const isOwnEmployerProfile = (getEmployerIdFromRequest: (req: AuthRequest
         return
       }
 
-      // Super Admin bypass
       if (req.user.user_type.type_name === UserRoles.SUPER_ADMIN) {
         next()
         return
@@ -320,8 +308,6 @@ export const isOwnEmployerProfile = (getEmployerIdFromRequest: (req: AuthRequest
     }
   }
 }
-
-// Check if user owns a specific job
 export const isOwnJob = (getJobIdFromRequest: (req: AuthRequest) => Promise<string | null>) => {
   return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -333,7 +319,6 @@ export const isOwnJob = (getJobIdFromRequest: (req: AuthRequest) => Promise<stri
         return
       }
 
-      // Super Admin bypass
       if (req.user.user_type.type_name === UserRoles.SUPER_ADMIN) {
         next()
         return
@@ -378,8 +363,7 @@ export const isOwnJob = (getJobIdFromRequest: (req: AuthRequest) => Promise<stri
   }
 }
 
-// ========== COMBINED AUTHORIZATION ==========
-// Authorize multiple conditions
+// ========== COMBINED AUTHORIZATION =========
 export const authorizeAny = (...middlewares: Array<(req: AuthRequest, res: Response, next: NextFunction) => void>) => {
   return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     let passed = false

@@ -65,28 +65,28 @@ const handlePrismaError = (error: Prisma.PrismaClientKnownRequestError): AppErro
         409,
         'DUPLICATE_FIELD'
       )
-    
+
     case 'P2014':
       return new AppError('Invalid ID: This record references another record that does not exist.', 400, 'INVALID_ID')
-    
+
     case 'P2003':
       return new AppError('Foreign key constraint failed. The referenced record does not exist.', 400, 'FOREIGN_KEY_FAILED')
-    
+
     case 'P2000':
       return new AppError('Input value is too long for the field.', 400, 'INPUT_TOO_LONG')
-    
+
     case 'P2001':
       return new AppError('Record does not exist.', 404, 'RECORD_NOT_FOUND')
-    
+
     case 'P2025':
       return new AppError('Record not found.', 404, 'RECORD_NOT_FOUND')
-    
+
     case 'P2016':
       return new AppError('Query error. Invalid data provided.', 400, 'QUERY_ERROR')
-    
+
     case 'P2017':
       return new AppError('Relation record not found.', 404, 'RELATION_NOT_FOUND')
-    
+
     default:
       return new AppError(`Database error: ${error.message}`, 500, 'DATABASE_ERROR')
   }
@@ -259,7 +259,7 @@ export const catchAsync = (fn: Function) => {
 // ========== UNHANDLED REJECTION HANDLER ==========
 export const handleUnhandledRejection = (error: Error) => {
   console.error('UNHANDLED REJECTION:', error)
-  
+
   // Graceful shutdown
   if (process.env.NODE_ENV === 'production') {
     console.log('💥 Shutting down due to unhandled rejection...')
@@ -270,7 +270,7 @@ export const handleUnhandledRejection = (error: Error) => {
 // ========== UNCAUGHT EXCEPTION HANDLER ==========
 export const handleUncaughtException = (error: Error) => {
   console.error('UNCAUGHT EXCEPTION:', error)
-  
+
   // Graceful shutdown
   console.log('💥 Shutting down due to uncaught exception...')
   process.exit(1)
@@ -290,7 +290,7 @@ export const rateLimitHandler = (req: Request, res: Response): void => {
 // ========== DATABASE CONNECTION ERROR ==========
 export const handleDatabaseError = (error: Error): void => {
   console.error('Database connection error:', error)
-  
+
   if (process.env.NODE_ENV === 'production') {
     console.log('💥 Shutting down due to database connection error...')
     process.exit(1)
@@ -306,7 +306,7 @@ export const logErrors = (err: Error, req: Request, res: Response, next: NextFun
     error: err.message,
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   })
-  
+
   next(err)
 }
 
