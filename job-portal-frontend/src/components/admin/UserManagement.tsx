@@ -117,8 +117,6 @@ interface UserFilters {
   page: number
   limit: number
 }
-
-// Role definitions for better readability
 const ROLES = {
   JOB_SEEKER: 'Job Seeker',
   EMPLOYER: 'Employer',
@@ -150,7 +148,6 @@ const UserManagement: React.FC = () => {
   })
   const [suspendReason, setSuspendReason] = useState('')
 
-  // Get current logged-in user from Redux
   const { user: currentUser } = useSelector((state: RootState) => state.auth)
 
   useEffect(() => {
@@ -185,30 +182,21 @@ const UserManagement: React.FC = () => {
 
   // ========== ROLE-BASED PERMISSION CHECKS ==========
   
-  /**
-   * Check if current user can view a user's details
-   * Both Admin and Super Admin can view all users
-   */
   const canViewUser = (): boolean => {
     const currentRole = currentUser?.user_type
     return currentRole === ROLES.ADMIN || currentRole === ROLES.SUPER_ADMIN
   }
 
-  /**
-   * Check if current user can edit a target user
-   * - Super Admin: Can edit anyone except themselves
-   * - Admin: Can only edit Job Seekers and Employers
-   */
+
   const canEditUser = (targetUser: User): boolean => {
     const currentRole = currentUser?.user_type
     const targetRole = targetUser.user_type.type_name
 
-    // Super Admin can edit anyone except themselves
+    
     if (currentRole === ROLES.SUPER_ADMIN) {
       return targetUser.id !== currentUser?.id
     }
 
-    // Admin can edit Job Seekers and Employers only
     if (currentRole === ROLES.ADMIN) {
       return targetRole === ROLES.JOB_SEEKER || targetRole === ROLES.EMPLOYER
     }
@@ -216,33 +204,22 @@ const UserManagement: React.FC = () => {
     return false
   }
 
-  /**
-   * Check if current user can delete a target user
-   * - Super Admin: Can delete anyone except themselves
-   * - Admin: CANNOT delete any user (security restriction)
-   */
+
   const canDeleteUser = (targetUser: User): boolean => {
     const currentRole = currentUser?.user_type
 
-    // ONLY Super Admin can delete users
     if (currentRole === ROLES.SUPER_ADMIN) {
       return targetUser.id !== currentUser?.id
     }
 
-    // Admin cannot delete any user
     return false
   }
 
-  /**
-   * Check if current user can suspend a target user
-   * - Super Admin: Can suspend anyone except themselves
-   * - Admin: Can only suspend Job Seekers and Employers
-   */
+
   const canSuspendUser = (targetUser: User): boolean => {
     const currentRole = currentUser?.user_type
     const targetRole = targetUser.user_type.type_name
 
-    // Super Admin can suspend anyone except themselves
     if (currentRole === ROLES.SUPER_ADMIN) {
       return targetUser.id !== currentUser?.id
     }

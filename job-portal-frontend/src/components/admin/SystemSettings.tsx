@@ -1,9 +1,9 @@
 /* eslint-disable react-hooks/immutability */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react'
-import { 
-  Save, 
-  RefreshCw, 
+import {
+  Save,
+  RefreshCw,
   AlertCircle,
   Eye,
   EyeOff
@@ -102,7 +102,7 @@ const SystemSettings: React.FC = () => {
       toast({
         variant: settings.maintenance_mode ? "default" : "warning",
         title: settings.maintenance_mode ? "Maintenance Mode Disabled" : "Maintenance Mode Enabled",
-        description: settings.maintenance_mode 
+        description: settings.maintenance_mode
           ? "The site is now accessible to all users"
           : "The site is now in maintenance mode. Only admins can access it.",
       })
@@ -266,8 +266,8 @@ const SystemSettings: React.FC = () => {
               <div className="space-y-2">
                 <Label>JWT Secret Key</Label>
                 <div className="flex gap-2">
-                  <Input 
-                    type={showApiKey ? "text" : "password"} 
+                  <Input
+                    type={showApiKey ? "text" : "password"}
                     value="••••••••••••••••••••••••••••••••"
                     readOnly
                   />
@@ -430,12 +430,12 @@ const SystemSettings: React.FC = () => {
                 <div>
                   <p className="font-medium">Maintenance Mode</p>
                   <p className="text-sm text-gray-500">
-                    {settings.maintenance_mode 
-                      ? "Site is currently in maintenance mode" 
+                    {settings.maintenance_mode
+                      ? "Site is currently in maintenance mode"
                       : "Site is accessible to all users"}
                   </p>
                 </div>
-                <Button 
+                <Button
                   variant={settings.maintenance_mode ? "outline" : "default"}
                   onClick={handleToggleMaintenance}
                 >
