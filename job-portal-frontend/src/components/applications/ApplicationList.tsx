@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { 
-  Briefcase, 
-  Building2, 
-  MapPin, 
-  Clock, 
-  Eye, 
+import {
+  Briefcase,
+  Building2,
+  MapPin,
+  Clock,
+  Eye,
   Search,
   RefreshCw,
   CheckCircle,
@@ -14,7 +14,8 @@ import {
   Users,
   FileText,
   Calendar,
-  TrendingUp} from 'lucide-react'
+  TrendingUp
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -188,7 +189,7 @@ const ApplicationList: React.FC = () => {
 
   const filteredApplications = applications.filter(app => {
     const matchesSearch = app.job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          app.job.employer.company_name.toLowerCase().includes(searchTerm.toLowerCase())
+      app.job.employer.company_name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || app.status.status_name === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -331,8 +332,8 @@ const ApplicationList: React.FC = () => {
               <Briefcase className="h-12 w-12 mx-auto text-gray-400 mb-4" />
               <h3 className="text-lg font-semibold mb-2">No applications found</h3>
               <p className="text-gray-500 mb-4">
-                {searchTerm || statusFilter !== 'all' 
-                  ? "Try adjusting your filters" 
+                {searchTerm || statusFilter !== 'all'
+                  ? "Try adjusting your filters"
                   : "You haven't applied to any jobs yet"}
               </p>
               {!searchTerm && statusFilter === 'all' && (
@@ -354,7 +355,7 @@ const ApplicationList: React.FC = () => {
                         {getStatusIcon(application.status.status_name)}
                       </div>
                       <div className="flex-1">
-                        <h3 
+                        <h3
                           className="text-xl font-semibold text-gray-900 hover:text-blue-600 cursor-pointer"
                           onClick={() => navigate(`/jobs/${application.job.id}`)}
                         >

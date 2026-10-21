@@ -157,25 +157,25 @@ const ApplicationTracker: React.FC = () => {
           <YAxis />
           <Tooltip />
           <Legend />
-          <DataComponent 
-            type="monotone" 
-            dataKey="applications" 
-            stroke="#8884d8" 
-            fill="#8884d8" 
+          <DataComponent
+            type="monotone"
+            dataKey="applications"
+            stroke="#8884d8"
+            fill="#8884d8"
             name="Applications"
           />
-          <DataComponent 
-            type="monotone" 
-            dataKey="interviews" 
-            stroke="#82ca9d" 
-            fill="#82ca9d" 
+          <DataComponent
+            type="monotone"
+            dataKey="interviews"
+            stroke="#82ca9d"
+            fill="#82ca9d"
             name="Interviews"
           />
-          <DataComponent 
-            type="monotone" 
-            dataKey="offers" 
-            stroke="#ffc658" 
-            fill="#ffc658" 
+          <DataComponent
+            type="monotone"
+            dataKey="offers"
+            stroke="#ffc658"
+            fill="#ffc658"
             name="Offers"
           />
         </ChartComponent>
@@ -425,8 +425,8 @@ const ApplicationTracker: React.FC = () => {
                 <span className="font-semibold text-green-700">Success Rate</span>
               </div>
               <p className="text-sm text-green-700">
-                Your application-to-interview rate is {stats.interviewRate}%. 
-                {stats.interviewRate > 20 
+                Your application-to-interview rate is {stats.interviewRate}%.
+                {stats.interviewRate > 20
                   ? " Great job! Keep up the momentum."
                   : " Consider tailoring your applications more to increase response rates."}
               </p>
@@ -485,8 +485,8 @@ const ApplicationTracker: React.FC = () => {
                 <div className="text-right">
                   <Badge variant={
                     activity.status === 'Accepted' ? 'success' :
-                    activity.status === 'Rejected' ? 'destructive' :
-                    activity.status === 'Interview' ? 'default' : 'secondary'
+                      activity.status === 'Rejected' ? 'destructive' :
+                        activity.status === 'Interview' ? 'default' : 'secondary'
                   }>
                     {activity.status}
                   </Badge>

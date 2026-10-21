@@ -2,12 +2,12 @@
 /* eslint-disable react-hooks/immutability */
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  Eye, 
-  Users, 
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  Eye,
+  Users,
   Calendar,
   FileText,
   Mail,
@@ -15,7 +15,8 @@ import {
   RefreshCw,
   MessageSquare,
   Globe,
-  Award} from 'lucide-react'
+  Award
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -104,57 +105,57 @@ const ApplicationStatus: React.FC = () => {
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'Pending':
-        return { 
-          icon: Clock, 
-          color: 'text-amber-600', 
+        return {
+          icon: Clock,
+          color: 'text-amber-600',
           bg: 'bg-amber-50',
           border: 'border-amber-200',
           label: 'Pending Review'
         }
       case 'Reviewed':
-        return { 
-          icon: Eye, 
-          color: 'text-blue-600', 
+        return {
+          icon: Eye,
+          color: 'text-blue-600',
           bg: 'bg-blue-50',
           border: 'border-blue-200',
           label: 'Under Review'
         }
       case 'Shortlisted':
-        return { 
-          icon: Users, 
-          color: 'text-purple-600', 
+        return {
+          icon: Users,
+          color: 'text-purple-600',
           bg: 'bg-purple-50',
           border: 'border-purple-200',
           label: 'Shortlisted'
         }
       case 'Interview':
-        return { 
-          icon: Calendar, 
-          color: 'text-indigo-600', 
+        return {
+          icon: Calendar,
+          color: 'text-indigo-600',
           bg: 'bg-indigo-50',
           border: 'border-indigo-200',
           label: 'Interview Stage'
         }
       case 'Accepted':
-        return { 
-          icon: CheckCircle, 
-          color: 'text-emerald-600', 
+        return {
+          icon: CheckCircle,
+          color: 'text-emerald-600',
           bg: 'bg-emerald-50',
           border: 'border-emerald-200',
           label: 'Accepted'
         }
       case 'Rejected':
-        return { 
-          icon: XCircle, 
-          color: 'text-rose-600', 
+        return {
+          icon: XCircle,
+          color: 'text-rose-600',
           bg: 'bg-rose-50',
           border: 'border-rose-200',
           label: 'Not Selected'
         }
       default:
-        return { 
-          icon: FileText, 
-          color: 'text-gray-600', 
+        return {
+          icon: FileText,
+          color: 'text-gray-600',
           bg: 'bg-gray-50',
           border: 'border-gray-200',
           label: status
@@ -234,7 +235,7 @@ const ApplicationStatus: React.FC = () => {
                 <div className="relative">
                   {/* Timeline Line */}
                   <div className="absolute left-5 top-8 bottom-8 w-0.5 bg-gray-200"></div>
-                  
+
                   {/* Applied Step */}
                   <div className="relative flex gap-4 mb-8">
                     <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center z-10">
@@ -276,11 +277,10 @@ const ApplicationStatus: React.FC = () => {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-5 py-3 text-sm font-medium transition-all ${
-                      activeTab === tab 
-                        ? 'text-blue-600 border-b-2 border-blue-600 bg-white' 
+                    className={`px-5 py-3 text-sm font-medium transition-all ${activeTab === tab
+                        ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
                         : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                      }`}
                   >
                     {tab === 'overview' && 'Job Overview'}
                     {tab === 'cover-letter' && 'Cover Letter'}

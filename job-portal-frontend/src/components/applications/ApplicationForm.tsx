@@ -7,11 +7,11 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { 
-  Send, 
-  Upload, 
-  FileText, 
-  AlertCircle, 
+import {
+  Send,
+  Upload,
+  FileText,
+  AlertCircle,
   CheckCircle,
   ArrowLeft,
   Briefcase,
@@ -123,7 +123,7 @@ const ApplicationForm: React.FC = () => {
         const user = JSON.parse(userStr)
         setValue('full_name', user.full_name || '')
         setValue('email', user.email || '')
-        
+
         const profileResponse = await api.get('/profile/me')
         const profile = profileResponse.data.data.profile
         if (profile) {
@@ -160,7 +160,7 @@ const ApplicationForm: React.FC = () => {
     }
 
     setResumeFile(file)
-  
+
     const interval = setInterval(() => {
       setUploadProgress(prev => {
         if (prev >= 95) {
@@ -173,7 +173,7 @@ const ApplicationForm: React.FC = () => {
 
     const formData = new FormData()
     formData.append('resume', file)
-    
+
     try {
       const response = await api.post('/upload/resume', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -221,7 +221,7 @@ const ApplicationForm: React.FC = () => {
           expected_salary: data.expected_salary
         }
       }
-      
+
       await api.post('/applications', applicationData)
       setIsSuccess(true)
       toast({
@@ -406,7 +406,7 @@ const ApplicationForm: React.FC = () => {
                         </p>
                         {uploadProgress > 0 && uploadProgress < 100 && (
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
+                            <div
                               className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                               style={{ width: `${uploadProgress}%` }}
                             />
