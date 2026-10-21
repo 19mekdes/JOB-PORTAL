@@ -224,7 +224,7 @@ const UserManagement: React.FC = () => {
       return targetUser.id !== currentUser?.id
     }
 
-    // Admin can suspend Job Seekers and Employers only
+    
     if (currentRole === ROLES.ADMIN) {
       return targetRole === ROLES.JOB_SEEKER || targetRole === ROLES.EMPLOYER
     }
@@ -232,15 +232,10 @@ const UserManagement: React.FC = () => {
     return false
   }
 
-  /**
-   * Check if current user can change user roles
-   * - Super Admin: Can change roles (except themselves)
-   * - Admin: CANNOT change roles
-   */
   const canChangeRole = (targetUser: User): boolean => {
     const currentRole = currentUser?.user_type
 
-    // Only Super Admin can change user roles
+    
     if (currentRole === ROLES.SUPER_ADMIN) {
       return targetUser.id !== currentUser?.id
     }
@@ -248,9 +243,7 @@ const UserManagement: React.FC = () => {
     return false
   }
 
-  /**
-   * Get role-based action message for tooltips
-   */
+
   const getPermissionMessage = (action: string, targetUser: User): string => {
     const currentRole = currentUser?.user_type
     const targetRole = targetUser.user_type.type_name
@@ -457,7 +450,6 @@ const UserManagement: React.FC = () => {
     )
   }
 
-  // Check if current user has access to this page
   if (!canViewUser()) {
     return (
       <div className="flex items-center justify-center h-96">

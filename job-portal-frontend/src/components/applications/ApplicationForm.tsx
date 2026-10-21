@@ -124,7 +124,6 @@ const ApplicationForm: React.FC = () => {
         setValue('full_name', user.full_name || '')
         setValue('email', user.email || '')
         
-        // Load profile data
         const profileResponse = await api.get('/profile/me')
         const profile = profileResponse.data.data.profile
         if (profile) {
@@ -141,7 +140,6 @@ const ApplicationForm: React.FC = () => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({
         variant: "destructive",
@@ -151,7 +149,6 @@ const ApplicationForm: React.FC = () => {
       return
     }
 
-    // Check file type
     const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']
     if (!allowedTypes.includes(file.type)) {
       toast({
@@ -163,8 +160,7 @@ const ApplicationForm: React.FC = () => {
     }
 
     setResumeFile(file)
-    
-    // Simulate upload progress
+  
     const interval = setInterval(() => {
       setUploadProgress(prev => {
         if (prev >= 95) {
@@ -175,7 +171,6 @@ const ApplicationForm: React.FC = () => {
       })
     }, 100)
 
-    // Upload to server (implement actual upload logic)
     const formData = new FormData()
     formData.append('resume', file)
     
