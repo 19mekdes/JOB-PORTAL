@@ -83,7 +83,7 @@ cloudinary.config({
 // Helper to extract Cloudinary Public ID from an image URL for deletion
 const getPublicIdFromUrl = (url: string): string | null => {
   try {
-    
+
     const parts = url.split("/upload/");
     if (parts.length < 2) return null;
 
@@ -146,7 +146,7 @@ app.use("/api/auth", authRoutes);
 
 // Configure email transporter (use your email service)
 const emailTransporter = nodemailer.createTransport({
-  service: "gmail", 
+  service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -194,9 +194,8 @@ async function sendApplicationStatusEmail(
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
         .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-        .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; background: ${
-          statusColors[status] || "#6b7280"
-        }; color: white; }
+        .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; background: ${statusColors[status] || "#6b7280"
+    }; color: white; }
         .button { background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; }
         .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
       </style>
@@ -214,9 +213,8 @@ async function sendApplicationStatusEmail(
           </p>
           <p>Log in to your account to view more details and next steps.</p>
           <p style="text-align: center;">
-            <a href="${
-              process.env.FRONTEND_URL
-            }/applications" class="button">View Applications</a>
+            <a href="${process.env.FRONTEND_URL
+    }/applications" class="button">View Applications</a>
           </p>
         </div>
         <div class="footer">
@@ -241,15 +239,12 @@ async function sendApplicationStatusEmail(
         (job) => `
     <div style="border: 1px solid #e5e7eb; padding: 15px; margin-bottom: 15px; border-radius: 8px;">
       <h3 style="margin: 0 0 5px 0;">${job.title}</h3>
-      <p style="color: #6b7280; margin: 0;">${
-        job.employer?.company_name || "Unknown Company"
-      } • ${job.location}</p>
-      <p style="color: #6b7280; font-size: 14px;">Salary: ${
-        job.salary_range || "Competitive"
-      }</p>
-      <a href="${process.env.FRONTEND_URL}/jobs/${
-          job.id
-        }" style="color: #2563eb; text-decoration: none;">View Details →</a>
+      <p style="color: #6b7280; margin: 0;">${job.employer?.company_name || "Unknown Company"
+          } • ${job.location}</p>
+      <p style="color: #6b7280; font-size: 14px;">Salary: ${job.salary_range || "Competitive"
+          }</p>
+      <a href="${process.env.FRONTEND_URL}/jobs/${job.id
+          }" style="color: #2563eb; text-decoration: none;">View Details →</a>
     </div>
   `
       )
@@ -275,21 +270,18 @@ async function sendApplicationStatusEmail(
         </div>
         <div class="content">
           <h3>Hello ${userName},</h3>
-          <p>We found ${jobs.length} new job${
-      jobs.length > 1 ? "s" : ""
-    } that match your profile:</p>
+          <p>We found ${jobs.length} new job${jobs.length > 1 ? "s" : ""
+      } that match your profile:</p>
           ${jobsList}
           <p style="text-align: center; margin-top: 30px;">
-            <a href="${
-              process.env.FRONTEND_URL
-            }/jobs" class="button">Browse All Jobs</a>
+            <a href="${process.env.FRONTEND_URL
+      }/jobs" class="button">Browse All Jobs</a>
           </p>
         </div>
         <div class="footer">
           <p>You received this email because you subscribed to job alerts.</p>
-          <p><a href="${
-            process.env.FRONTEND_URL
-          }/jobseeker/preferences">Manage Preferences</a></p>
+          <p><a href="${process.env.FRONTEND_URL
+      }/jobseeker/preferences">Manage Preferences</a></p>
         </div>
       </div>
     </body>
@@ -834,7 +826,7 @@ app.put(
         education,
       } = req.body;
 
-      
+
 
       // Check if user is a job seeker
       const user = await prisma.user.findUnique({
@@ -873,8 +865,8 @@ app.put(
         updateData.skills = Array.isArray(skills)
           ? skills
           : typeof skills === "string"
-          ? skills.split(",").map((s) => s.trim())
-          : [];
+            ? skills.split(",").map((s) => s.trim())
+            : [];
       }
 
       // Experience
@@ -916,7 +908,7 @@ app.put(
 
 
 // PROFILE UPDATE ENDPOINT
-app.put( "/api/profile/update-info",
+app.put("/api/profile/update-info",
   authMiddleware,
   async (req: Request, res: Response) => {
     try {
@@ -1507,9 +1499,8 @@ app.put(
 
       res.json({
         success: true,
-        message: `Company ${
-          status === "active" ? "activated" : "suspended"
-        } successfully`,
+        message: `Company ${status === "active" ? "activated" : "suspended"
+          } successfully`,
         data: { is_active: updatedCompany.is_active },
       });
     } catch (error: any) {
@@ -1600,8 +1591,8 @@ app.get(
       // If no backups in database, return mock data for demo
       if (backups.length === 0) {
         backups = [
-          
-          
+
+
         ];
       }
 
@@ -1641,7 +1632,7 @@ app.get(
           total: totalGB,
           percentage: Math.min(percentage, 100),
           available: totalGB - totalSize,
-          backup_count: backups.length || 3, 
+          backup_count: backups.length || 3,
         },
       });
     } catch (error: any) {
@@ -1649,8 +1640,8 @@ app.get(
       res.json({
         success: true,
         data: {
-          used: 3.4 * 1024 * 1024 * 1024, 
-          total: 50 * 1024 * 1024 * 1024, 
+          used: 3.4 * 1024 * 1024 * 1024,
+          total: 50 * 1024 * 1024 * 1024,
           percentage: 6.8,
           available: 46.6 * 1024 * 1024 * 1024,
           backup_count: 3,
@@ -1924,8 +1915,7 @@ app.get(
       res.setHeader("Content-Type", "text/csv");
       res.setHeader(
         "Content-Disposition",
-        `attachment; filename=audit_logs_${
-          new Date().toISOString().split("T")[0]
+        `attachment; filename=audit_logs_${new Date().toISOString().split("T")[0]
         }.csv`
       );
       res.send(csvContent);
@@ -2303,7 +2293,7 @@ app.get("/api/jobs/:id", async (req: Request, res: Response) => {
           });
           if (employer && employer.id === job.employer_id)
             return res.json({ success: true, data: job });
-        } catch (e) {}
+        } catch (e) { }
       }
       return res.status(404).json({ success: false, message: "Job not found" });
     }
@@ -2551,9 +2541,8 @@ app.put(
         data: {
           user_id: job.employer.user_id,
           title: "Job Rejected",
-          message: `Your job "${job.title}" was rejected.${
-            reason ? ` Reason: ${reason}` : ""
-          }`,
+          message: `Your job "${job.title}" was rejected.${reason ? ` Reason: ${reason}` : ""
+            }`,
           type: "job_update",
           created_at: new Date(),
         },
@@ -2851,11 +2840,11 @@ app.get(
           app.seeker?.full_name ||
           app.seeker?.user?.full_name ||
           "Anonymous Applicant",
-        status: app.status?.status_name || "Pending", 
+        status: app.status?.status_name || "Pending",
         applied_at: app.applied_at,
         applied_days_ago: Math.floor(
           (Date.now() - new Date(app.applied_at).getTime()) /
-            (1000 * 60 * 60 * 24)
+          (1000 * 60 * 60 * 24)
         ),
       }));
 
@@ -2900,7 +2889,7 @@ app.put(
 
       console.log(`🔍 Moderating job ${id} to status: ${status}`);
 
-      // Check if job exists
+
       const job = await prisma.jobPost.findUnique({
         where: { id },
         include: {
@@ -2919,7 +2908,7 @@ app.put(
         });
       }
 
-      // Get the status ID
+
       let statusId;
       let statusName;
 
@@ -2950,7 +2939,7 @@ app.put(
 
       statusId = statusRecord.id;
 
-      
+
       const updatedJob = await prisma.jobPost.update({
         where: { id },
         data: {
@@ -2959,7 +2948,7 @@ app.put(
         },
       });
 
-      
+
       if (job.employer?.user?.email) {
         try {
           const nodemailer = require("nodemailer");
@@ -2989,20 +2978,17 @@ app.put(
           <body>
             <div class="container">
               <div class="header">
-                <h2>Job ${
-                  statusText === "approved" ? "Approved" : "Update"
-                }</h2>
+                <h2>Job ${statusText === "approved" ? "Approved" : "Update"
+            }</h2>
               </div>
               <div class="content">
                 <h3>Hello ${job.employer.company_name},</h3>
-                <p>Your job posting <strong>"${
-                  job.title
-                }"</strong> has been ${statusText} by an administrator.</p>
+                <p>Your job posting <strong>"${job.title
+            }"</strong> has been ${statusText} by an administrator.</p>
                 ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}
                 <p>You can view your job posting in your employer dashboard.</p>
-                <a href="${
-                  process.env.FRONTEND_URL || "http://localhost:5173"
-                }/employer/jobs" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px;">View Jobs</a>
+                <a href="${process.env.FRONTEND_URL || "http://localhost:5173"
+            }/employer/jobs" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px;">View Jobs</a>
                 <p>Best regards,<br><strong>JobPortal Team</strong></p>
               </div>
               <div class="footer">
@@ -3016,9 +3002,8 @@ app.put(
           await transporter.sendMail({
             from: `"JobPortal" <${process.env.EMAIL_USER}>`,
             to: job.employer.user.email,
-            subject: `Job ${
-              statusText === "approved" ? "Approved" : "Status Update"
-            }: ${job.title}`,
+            subject: `Job ${statusText === "approved" ? "Approved" : "Status Update"
+              }: ${job.title}`,
             html: emailHtml,
           });
 
@@ -3028,14 +3013,13 @@ app.put(
         }
       }
 
-    
+
       await prisma.notification.create({
         data: {
           user_id: job.employer.user_id,
           title: `Job ${status === "approved" ? "Approved" : "Rejected"}`,
-          message: `Your job "${job.title}" has been ${
-            status === "approved" ? "approved and is now live" : "rejected"
-          }.${reason ? ` Reason: ${reason}` : ""}`,
+          message: `Your job "${job.title}" has been ${status === "approved" ? "approved and is now live" : "rejected"
+            }.${reason ? ` Reason: ${reason}` : ""}`,
           type: "job_moderation",
           created_at: new Date(),
         },
@@ -3045,9 +3029,8 @@ app.put(
 
       res.json({
         success: true,
-        message: `Job ${
-          status === "approved" ? "approved" : "rejected"
-        } successfully`,
+        message: `Job ${status === "approved" ? "approved" : "rejected"
+          } successfully`,
         data: updatedJob,
       });
     } catch (error: any) {
@@ -3063,25 +3046,25 @@ app.put(
 // ========== GET ALL USERS (Admin & Super Admin) ==========
 app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) => {
   try {
-    
+
     const currentUser = await prisma.user.findUnique({
       where: { id: req.user!.id },
       include: { user_type: true }
     });
-    
+
     const currentRole = currentUser?.user_type?.type_name;
-    
+
     if (currentRole !== 'Admin' && currentRole !== 'Super Admin') {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Access denied. Admin or Super Admin role required.' 
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin or Super Admin role required.'
       });
     }
-    
+
     const { search, role, status, page = 1, limit = 20 } = req.query;
-    
+
     let where: any = {};
-    
+
     // Search filter
     if (search) {
       where.OR = [
@@ -3091,17 +3074,17 @@ app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) 
         { employer_profile: { company_name: { contains: search as string, mode: 'insensitive' } } }
       ];
     }
-    
-   
+
+
     if (role && role !== 'all') {
       where.user_type = { type_name: role as string };
     }
-    
-   
+
+
     if (status && status !== 'all') {
       where.is_active = status === 'active';
     }
-    
+
     // Get users
     const users = await prisma.user.findMany({
       where,
@@ -3114,7 +3097,7 @@ app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) 
       skip: (Number(page) - 1) * Number(limit),
       take: Number(limit)
     });
-    
+
     // Get stats
     const stats = {
       total: await prisma.user.count(),
@@ -3125,24 +3108,24 @@ app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) 
       admins: await prisma.user.count({ where: { user_type: { type_name: 'Admin' } } }),
       superAdmins: await prisma.user.count({ where: { user_type: { type_name: 'Super Admin' } } })
     };
-    
+
     // Add stats to each user
     const usersWithStats = await Promise.all(users.map(async (user) => {
       let jobsCount = 0;
       let applicationsCount = 0;
-      
+
       if (user.employer_profile) {
         jobsCount = await prisma.jobPost.count({
           where: { employer_id: user.employer_profile.id }
         });
       }
-      
+
       if (user.seeker_profile) {
         applicationsCount = await prisma.jobApplication.count({
           where: { seeker_id: user.seeker_profile.id }
         });
       }
-      
+
       return {
         ...user,
         stats: {
@@ -3151,7 +3134,7 @@ app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) 
         }
       };
     }));
-    
+
     res.json({
       success: true,
       data: usersWithStats,
@@ -3163,7 +3146,7 @@ app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) 
         pages: Math.ceil(await prisma.user.count({ where }) / Number(limit))
       }
     });
-    
+
   } catch (error: any) {
     console.error('Error fetching users:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -3175,50 +3158,50 @@ app.put('/api/admin/users/:userId/status', authMiddleware, async (req: Request, 
   try {
     const { userId } = req.params;
     const { is_active } = req.body;
-    
+
     // Check current user role
     const currentUser = await prisma.user.findUnique({
       where: { id: req.user!.id },
       include: { user_type: true }
     });
-    
+
     if (!currentUser) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
-    
+
     const currentRole = currentUser.user_type?.type_name;
-    
+
     if (currentRole !== 'Admin' && currentRole !== 'Super Admin') {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Access denied. Only Admin or Super Admin can update user status.' 
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only Admin or Super Admin can update user status.'
       });
     }
-    
+
     // Don't allow modifying own status
     if (userId === req.user!.id) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Cannot modify your own account status' 
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot modify your own account status'
       });
     }
-    
+
     const targetUser = await prisma.user.findUnique({
       where: { id: userId },
       include: { user_type: true }
     });
-    
+
     if (!targetUser) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    
+
     const targetRole = targetUser.user_type?.type_name;
-    
+
     // Admin can only modify Job Seekers and Employers
     if (currentRole === 'Admin') {
       if (targetRole !== 'Job Seeker' && targetRole !== 'Employer') {
-        return res.status(403).json({ 
-          success: false, 
+        return res.status(403).json({
+          success: false,
           message: `Admin cannot ${is_active ? 'activate' : 'suspend'} ${targetRole} accounts. Only Job Seekers and Employers can be managed.`,
           allowed_roles: ['Job Seeker', 'Employer'],
           your_role: currentRole,
@@ -3226,30 +3209,30 @@ app.put('/api/admin/users/:userId/status', authMiddleware, async (req: Request, 
         });
       }
     }
-    
+
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { is_active: is_active, updated_at: new Date() }
     });
-    
+
     // Create notification for the user
     await prisma.notification.create({
       data: {
         user_id: userId,
         title: is_active ? 'Account Activated' : 'Account Suspended',
-        message: is_active 
+        message: is_active
           ? 'Your account has been reactivated. You can now log in.'
           : 'Your account has been suspended. Please contact support.',
         type: 'account_status',
         created_at: new Date()
       }
     });
-    
-    res.json({ 
-      success: true, 
-      message: `User ${is_active ? 'activated' : 'suspended'} successfully` 
+
+    res.json({
+      success: true,
+      message: `User ${is_active ? 'activated' : 'suspended'} successfully`
     });
-    
+
   } catch (error: any) {
     console.error('Error updating user status:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -3260,65 +3243,65 @@ app.put('/api/admin/users/:userId/status', authMiddleware, async (req: Request, 
 app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
-    
+
     console.log(`🗑️ Delete user request for ID: ${userId}`);
-    
+
     // Get current user with their role
     const currentUser = await prisma.user.findUnique({
       where: { id: req.user!.id },
       include: { user_type: true }
     });
-    
+
     if (!currentUser) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
-    
+
     const currentRole = currentUser.user_type?.type_name;
-    
+
     // Check if user has permission to delete
     if (currentRole !== 'Admin' && currentRole !== 'Super Admin') {
-      return res.status(403).json({ 
-        success: false, 
+      return res.status(403).json({
+        success: false,
         message: 'Access denied. Only Admin or Super Admin can delete users.',
         your_role: currentRole,
         required_roles: ['Admin', 'Super Admin']
       });
     }
-    
+
     // Don't allow deleting yourself
     if (userId === req.user!.id) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Cannot delete your own account' 
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete your own account'
       });
     }
-    
+
     // Get target user with full details
     const targetUser = await prisma.user.findUnique({
       where: { id: userId },
-      include: { 
+      include: {
         user_type: true,
         seeker_profile: true,
         employer_profile: true
       }
     });
-    
+
     if (!targetUser) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
       });
     }
-    
+
     const targetRole = targetUser.user_type?.type_name;
     const targetEmail = targetUser.email;
-    
+
     // Role-based permission check
     if (currentRole === 'Admin') {
       // Admin can ONLY delete Job Seekers and Employers
       if (targetRole !== 'Job Seeker' && targetRole !== 'Employer') {
-        return res.status(403).json({ 
-          success: false, 
+        return res.status(403).json({
+          success: false,
           message: `Admin cannot delete ${targetRole} accounts. Only Job Seekers and Employers can be deleted.`,
           allowed_roles: ['Job Seeker', 'Employer'],
           your_role: currentRole,
@@ -3326,88 +3309,88 @@ app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res:
         });
       }
     }
-    
+
     console.log(`📝 Deleting user: ${targetEmail} (${targetRole})`);
-    
+
     // ========== DELETE RELATED DATA ==========
-    
+
     // 1. Delete job application notes (if job seeker)
     if (targetUser.seeker_profile) {
       const applications = await prisma.jobApplication.findMany({
         where: { seeker_id: targetUser.seeker_profile.id }
       });
-      
+
       for (const app of applications) {
         await prisma.jobApplicationNote.deleteMany({
           where: { application_id: app.id }
         });
       }
-      
+
       // 2. Delete job applications
       await prisma.jobApplication.deleteMany({
         where: { seeker_id: targetUser.seeker_profile.id }
       });
-      
+
       // 3. Delete bookmarks
       await prisma.jobBookmark.deleteMany({
         where: { seeker_id: targetUser.seeker_profile.id }
       });
-      
+
       // 4. Delete seeker profile
       await prisma.jobSeekerProfile.delete({
         where: { id: targetUser.seeker_profile.id }
       });
     }
-    
+
     // 5. Delete employer related data (if employer)
     if (targetUser.employer_profile) {
       // Get all jobs by this employer
       const jobs = await prisma.jobPost.findMany({
         where: { employer_id: targetUser.employer_profile.id }
       });
-      
+
       for (const job of jobs) {
         // Delete applications for each job
         await prisma.jobApplication.deleteMany({
           where: { job_id: job.id }
         });
-        
+
         // Delete bookmarks for each job
         await prisma.jobBookmark.deleteMany({
           where: { job_id: job.id }
         });
       }
-      
+
       // Delete all jobs
       await prisma.jobPost.deleteMany({
         where: { employer_id: targetUser.employer_profile.id }
       });
-      
+
       // Delete employer profile
       await prisma.employerProfile.delete({
         where: { id: targetUser.employer_profile.id }
       });
     }
-    
+
     // 6. Delete notifications
     await prisma.notification.deleteMany({
       where: { user_id: userId }
     });
-    
+
     // 7. Delete notification preferences
     await prisma.notificationPreference.deleteMany({
       where: { user_id: userId }
     });
-    
+
     // 8. Finally delete the user
     await prisma.user.delete({
       where: { id: userId }
     });
-    
+
     console.log(`✅ User deleted successfully: ${targetEmail}`);
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: `User ${targetEmail} (${targetRole}) has been permanently deleted`,
       deleted_user: {
         email: targetEmail,
@@ -3417,12 +3400,12 @@ app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res:
         deleted_by_role: currentRole
       }
     });
-    
+
   } catch (error: any) {
     console.error('Error deleting user:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || 'An error occurred while deleting the user' 
+    res.status(500).json({
+      success: false,
+      message: error.message || 'An error occurred while deleting the user'
     });
   }
 });
@@ -3432,52 +3415,52 @@ app.post('/api/admin/users/:userId/reset-password', authMiddleware, async (req: 
   try {
     const { userId } = req.params;
     const { newPassword } = req.body;
-    
+
     // Check current user role
     const currentUser = await prisma.user.findUnique({
       where: { id: req.user!.id },
       include: { user_type: true }
     });
-    
+
     if (!currentUser) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
-    
+
     const currentRole = currentUser.user_type?.type_name;
-    
+
     if (currentRole !== 'Admin' && currentRole !== 'Super Admin') {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Access denied. Only Admin or Super Admin can reset passwords.' 
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only Admin or Super Admin can reset passwords.'
       });
     }
-    
+
     // Get target user
     const targetUser = await prisma.user.findUnique({
       where: { id: userId }
     });
-    
+
     if (!targetUser) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    
+
     // Validate password
     if (!newPassword || newPassword.length < 6) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Password must be at least 6 characters' 
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters'
       });
     }
-    
+
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    
+
     // Update password
     await prisma.user.update({
       where: { id: userId },
       data: { password: hashedPassword, updated_at: new Date() }
     });
-    
+
     // Create notification
     await prisma.notification.create({
       data: {
@@ -3488,12 +3471,12 @@ app.post('/api/admin/users/:userId/reset-password', authMiddleware, async (req: 
         created_at: new Date()
       }
     });
-    
-    res.json({ 
-      success: true, 
-      message: 'Password reset successfully' 
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully'
     });
-    
+
   } catch (error: any) {
     console.error('Error resetting password:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -3503,17 +3486,17 @@ app.post('/api/admin/users/:userId/reset-password', authMiddleware, async (req: 
 app.get('/api/notifications/unread/count', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    
+
     const unreadCount = await prisma.notification.count({
-      where: { 
-        user_id: userId, 
-        is_read: false 
+      where: {
+        user_id: userId,
+        is_read: false
       }
     });
-    
-    res.json({ 
-      success: true, 
-      data: { unreadCount } 
+
+    res.json({
+      success: true,
+      data: { unreadCount }
     });
   } catch (error: any) {
     console.error('Error fetching unread count:', error);
@@ -3601,9 +3584,9 @@ app.post("/api/contact", async (req: Request, res: Response) => {
             <div class="field">
               <div class="label">💬 Message:</div>
               <div style="white-space: pre-wrap;">${message.replace(
-                /\n/g,
-                "<br>"
-              )}</div>
+      /\n/g,
+      "<br>"
+    )}</div>
             </div>
             <hr style="margin: 20px 0;">
             <p style="font-size: 12px; color: #6b7280;">Sent from JobPortal Contact Form</p>
@@ -3641,9 +3624,8 @@ app.post("/api/contact", async (req: Request, res: Response) => {
             <div style="background: #e0e7ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
               <p style="margin: 0;"><strong>📋 Your Message Summary:</strong></p>
               <p style="margin: 5px 0;"><strong>Subject:</strong> ${subject}</p>
-              <p style="margin: 5px 0;"><strong>Category:</strong> ${
-                category || "General Inquiry"
-              }</p>
+              <p style="margin: 5px 0;"><strong>Category:</strong> ${category || "General Inquiry"
+      }</p>
             </div>
             
             <p>We appreciate your patience and will respond as soon as possible.</p>
@@ -3664,7 +3646,7 @@ app.post("/api/contact", async (req: Request, res: Response) => {
     // Send to support email (mekdesw60@gmail.com)
     await transporter.sendMail({
       from: `"JobPortal Contact" <${process.env.EMAIL_USER}>`,
-      to: "mekdesw60@gmail.com", 
+      to: "mekdesw60@gmail.com",
       subject: `📬 New Contact: ${subject} from ${name}`,
       html: supportEmailHtml,
     });
@@ -4160,7 +4142,7 @@ app.put(
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { status } = req.body; 
+      const { status } = req.body;
 
       console.log(`Updating job ${id} status to:`, status);
 
@@ -4681,7 +4663,7 @@ app.put(
   "/api/jobs/:id/status",
   authMiddleware,
   async (req: Request, res: Response) => {
-    
+
   }
 );
 
@@ -4690,7 +4672,7 @@ app.put(
   "/api/jobs/:id",
   authMiddleware,
   async (req: Request, res: Response) => {
-    
+
   }
 );
 
@@ -5567,9 +5549,8 @@ app.put(
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
             .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-            .status { display: inline-block; padding: 8px 20px; border-radius: 25px; font-weight: bold; background: ${
-              statusColors[status] || "#6b7280"
-            }; color: white; }
+            .status { display: inline-block; padding: 8px 20px; border-radius: 25px; font-weight: bold; background: ${statusColors[status] || "#6b7280"
+          }; color: white; }
             .button { background: #2563eb; color: white; padding: 12px 28px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 20px 0; }
             .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; margin-top: 20px; }
           </style>
@@ -5581,18 +5562,15 @@ app.put(
             </div>
             <div class="content">
               <h3>Hello ${application.seeker.full_name},</h3>
-              <p>Your application status for <strong>${
-                application.job.title
-              }</strong> at <strong>${
-          application.job.employer.company_name
-        }</strong> has been updated.</p>
+              <p>Your application status for <strong>${application.job.title
+          }</strong> at <strong>${application.job.employer.company_name
+          }</strong> has been updated.</p>
               <p style="text-align: center; margin: 30px 0;">
                 <span class="status">${status}</span>
               </p>
               <div style="text-align: center;">
-                <a href="${
-                  process.env.FRONTEND_URL || "http://localhost:5173"
-                }/applications/${id}" class="button">View Application Details</a>
+                <a href="${process.env.FRONTEND_URL || "http://localhost:5173"
+          }/applications/${id}" class="button">View Application Details</a>
               </div>
               <p>Best regards,<br><strong>Job Portal Team</strong></p>
             </div>
@@ -5624,9 +5602,8 @@ app.put(
         data: {
           user_id: application.seeker.user_id,
           title: "Application Status Updated",
-          message: `Your application for "${
-            application.job.title
-          }" has been ${status.toLowerCase()}`,
+          message: `Your application for "${application.job.title
+            }" has been ${status.toLowerCase()}`,
           type: "application_update",
           metadata: { application_id: id, status },
           created_at: new Date(),
@@ -5720,14 +5697,12 @@ app.put(
             </div>
             <div class="content">
               <h3>Hello ${job.employer.company_name} Team,</h3>
-              <p>Your job posting <strong>"${
-                job.title
-              }"</strong> has been <strong>${status.toLowerCase()}</strong> by an administrator.</p>
+              <p>Your job posting <strong>"${job.title
+          }"</strong> has been <strong>${status.toLowerCase()}</strong> by an administrator.</p>
               ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}
               <div style="text-align: center;">
-                <a href="${
-                  process.env.FRONTEND_URL || "http://localhost:5173"
-                }/employer/jobs/${jobId}" class="button">View Job Details</a>
+                <a href="${process.env.FRONTEND_URL || "http://localhost:5173"
+          }/employer/jobs/${jobId}" class="button">View Job Details</a>
               </div>
               <p>Best regards,<br><strong>Job Portal Team</strong></p>
             </div>
@@ -5756,9 +5731,8 @@ app.put(
         data: {
           user_id: job.employer.user_id,
           title: `Job ${status}`,
-          message: `Your job "${job.title}" has been ${status.toLowerCase()}.${
-            reason ? ` Reason: ${reason}` : ""
-          }`,
+          message: `Your job "${job.title}" has been ${status.toLowerCase()}.${reason ? ` Reason: ${reason}` : ""
+            }`,
           type: "job_update",
           metadata: { job_id: jobId, status, reason },
           created_at: new Date(),
@@ -6312,16 +6286,15 @@ app.put(
 
       // Super Admin can suspend/activate anyone except themselves (already checked)
       if (currentRole === "Super Admin") {
-      
+
       }
       // Admin can ONLY suspend/activate Job Seekers and Employers
       else if (currentRole === "Admin") {
         if (targetRole !== "Job Seeker" && targetRole !== "Employer") {
           return res.status(403).json({
             success: false,
-            message: `Admin cannot ${
-              is_active ? "activate" : "suspend"
-            } ${targetRole} accounts. Only Job Seekers and Employers can be managed.`,
+            message: `Admin cannot ${is_active ? "activate" : "suspend"
+              } ${targetRole} accounts. Only Job Seekers and Employers can be managed.`,
             allowed_roles: ["Job Seeker", "Employer"],
             your_role: currentRole,
             target_role: targetRole,
@@ -6400,9 +6373,8 @@ app.put(
         <body>
           <div class="container">
             <div class="header">
-              <h1 style="margin: 0; font-size: 28px;">Account ${
-                is_active ? "Activated" : "Suspended"
-              }</h1>
+              <h1 style="margin: 0; font-size: 28px;">Account ${is_active ? "Activated" : "Suspended"
+          }</h1>
             </div>
             <div class="content">
               <div style="text-align: center; margin-bottom: 20px;">
@@ -6410,37 +6382,33 @@ app.put(
               </div>
               <h3 style="color: #1f2937; margin-top: 0;">Hello ${userName},</h3>
               <p>Your Job Portal account has been <strong>${statusText}</strong> by an administrator.</p>
-              ${
-                reason
-                  ? `
+              ${reason
+            ? `
                 <div class="reason-box">
                   <strong style="color: #92400e;">📝 Reason Provided:</strong>
                   <p style="margin: 8px 0 0 0; color: #78350f;">${reason}</p>
                 </div>
               `
-                  : ""
-              }
-              <p>${
-                is_active
-                  ? "You can now log in and continue using the platform. Click the button below to access your account."
-                  : "If you believe this is an error or would like to appeal this decision, please contact our support team."
-              }
+            : ""
+          }
+              <p>${is_active
+            ? "You can now log in and continue using the platform. Click the button below to access your account."
+            : "If you believe this is an error or would like to appeal this decision, please contact our support team."
+          }
               </p>
-              ${
-                is_active
-                  ? `
+              ${is_active
+            ? `
                 <div style="text-align: center;">
-                  <a href="${
-                    process.env.CLIENT_URL || "http://localhost:5173"
-                  }/login" class="button">Login to Your Account</a>
+                  <a href="${process.env.CLIENT_URL || "http://localhost:5173"
+            }/login" class="button">Login to Your Account</a>
                 </div>
               `
-                  : `
+            : `
                 <div style="text-align: center; margin-top: 20px;">
                   <p style="color: #6b7280; font-size: 14px;">Contact us at: <a href="mailto:${process.env.EMAIL_USER}" style="color: ${statusColor};">${process.env.EMAIL_USER}</a></p>
                 </div>
               `
-              }
+          }
               <p style="margin-top: 30px;">Best regards,<br><strong>Job Portal Support Team</strong></p>
             </div>
             <div class="footer">
@@ -6465,20 +6433,18 @@ app.put(
         await emailTransporter.sendMail({
           from: `"Job Portal Support" <${process.env.EMAIL_USER}>`,
           to: targetUser.email,
-          subject: `🔔 Account ${
-            is_active ? "Activated" : "Suspended"
-          } - Job Portal`,
+          subject: `🔔 Account ${is_active ? "Activated" : "Suspended"
+            } - Job Portal`,
           html: emailHtml,
         });
 
         console.log(
-          `✅ ${is_active ? "Activation" : "Suspension"} email sent to ${
-            targetUser.email
+          `✅ ${is_active ? "Activation" : "Suspension"} email sent to ${targetUser.email
           }`
         );
       } catch (emailError) {
         console.error("Failed to send status email:", emailError);
-        
+
       }
 
       // ========== CREATE IN-APP NOTIFICATION FOR TARGET USER ==========
@@ -6488,9 +6454,8 @@ app.put(
           title: is_active ? "✅ Account Activated" : "⚠️ Account Suspended",
           message: is_active
             ? "Your account has been reactivated. You can now log in and access all features."
-            : `Your account has been suspended.${
-                reason ? ` Reason: ${reason}` : ""
-              } Please contact support for assistance.`,
+            : `Your account has been suspended.${reason ? ` Reason: ${reason}` : ""
+            } Please contact support for assistance.`,
           type: "account_status",
           metadata: {
             reason,
@@ -6517,11 +6482,9 @@ app.put(
           data: {
             user_id: admin.id,
             title: `User ${is_active ? "Activated" : "Suspended"}`,
-            message: `${currentUser.email} (${currentRole}) ${
-              is_active ? "activated" : "suspended"
-            } user ${targetUser.email} (${targetRole})${
-              reason ? `. Reason: ${reason}` : ""
-            }`,
+            message: `${currentUser.email} (${currentRole}) ${is_active ? "activated" : "suspended"
+              } user ${targetUser.email} (${targetRole})${reason ? `. Reason: ${reason}` : ""
+              }`,
             type: "admin_activity",
             metadata: {
               action: is_active ? "activate" : "suspend",
@@ -6545,8 +6508,7 @@ app.put(
 
       // ========== LOG ACTION FOR AUDIT ==========
       console.log(
-        `📝 AUDIT: ${currentRole} (${currentUser.email}) ${
-          is_active ? "activated" : "suspended"
+        `📝 AUDIT: ${currentRole} (${currentUser.email}) ${is_active ? "activated" : "suspended"
         } user ${targetUser.email} (${targetRole})`
       );
       if (reason) {
@@ -6637,7 +6599,7 @@ app.delete(
 
       // Super Admin can delete anyone except themselves
       if (currentRole === "Super Admin") {
-        
+
       }
       // Admin can ONLY delete Job Seekers and Employers
       else if (currentRole === "Admin") {
@@ -6905,7 +6867,7 @@ app.post(
               'Use the "Change Password" feature in your profile to update your own password.',
           });
         }
-        
+
       }
       // Admin can ONLY reset passwords for Job Seekers and Employers
       else if (currentRole === "Admin") {
@@ -7017,22 +6979,19 @@ app.post(
                   <li>Include numbers for better security</li>
                   <li>Avoid using common words or personal information</li>
                 </ul>
-                ${
-                  strengthWarning
-                    ? `<p style="color: #f59e0b; margin-top: 8px;">⚠️ ${strengthWarning}</p>`
-                    : ""
-                }
+                ${strengthWarning
+            ? `<p style="color: #f59e0b; margin-top: 8px;">⚠️ ${strengthWarning}</p>`
+            : ""
+          }
               </div>
               
               <div style="text-align: center;">
-                <a href="${
-                  process.env.CLIENT_URL || "http://localhost:5173"
-                }/login" class="button">🔑 Login to Your Account</a>
+                <a href="${process.env.CLIENT_URL || "http://localhost:5173"
+          }/login" class="button">🔑 Login to Your Account</a>
               </div>
               
-              <p style="margin-top: 20px;">If you did not request this password reset, please contact our support team immediately at <a href="mailto:${
-                process.env.EMAIL_USER
-              }" style="color: #2563eb;">${process.env.EMAIL_USER}</a>.</p>
+              <p style="margin-top: 20px;">If you did not request this password reset, please contact our support team immediately at <a href="mailto:${process.env.EMAIL_USER
+          }" style="color: #2563eb;">${process.env.EMAIL_USER}</a>.</p>
               
               <p>Best regards,<br><strong>Job Portal Security Team</strong></p>
             </div>
@@ -7042,9 +7001,8 @@ app.post(
                 <small>This is an automated security notification. Please do not reply to this email.</small>
               </p>
               <p style="margin-top: 10px;">
-                <small>This password reset was performed by: ${
-                  currentUser.email
-                } (${currentRole})</small>
+                <small>This password reset was performed by: ${currentUser.email
+          } (${currentRole})</small>
               </p>
             </div>
           </div>
@@ -7100,11 +7058,10 @@ app.post(
 
       res.json({
         success: true,
-        message: `Password reset successfully for ${targetUser.email}${
-          emailSent
+        message: `Password reset successfully for ${targetUser.email}${emailSent
             ? ". An email notification has been sent to the user."
             : ". Email notification could not be sent, but password has been reset."
-        }`,
+          }`,
         data: {
           user_id: userId,
           user_email: targetUser.email,
@@ -7393,7 +7350,7 @@ app.put(
       const userId = req.user!.id;
       const {
         email_notifications,
-        application_alerts, 
+        application_alerts,
         marketing_emails,
         push_notifications,
         status_changes,
@@ -7550,15 +7507,12 @@ app.post(
             </div>
             <div style="padding: 30px; background: #f9fafb;">
               <h3>Hello ${seeker.full_name},</h3>
-              <p>Your application for <strong>${
-                job.title
-              }</strong> at <strong>${
-            job.employer.company_name
-          }</strong> has been submitted successfully.</p>
+              <p>Your application for <strong>${job.title
+            }</strong> at <strong>${job.employer.company_name
+            }</strong> has been submitted successfully.</p>
               <p>The employer will review your application and update you on the status.</p>
-              <a href="${
-                process.env.CLIENT_URL || "http://localhost:5173"
-              }/applications" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">Track Your Application</a>
+              <a href="${process.env.CLIENT_URL || "http://localhost:5173"
+            }/applications" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">Track Your Application</a>
               <p>Best regards,<br><strong>Job Portal Team</strong></p>
             </div>
             <div style="text-align: center; padding: 20px; font-size: 12px; color: #6b7280;">
@@ -7600,24 +7554,21 @@ app.post(
             </div>
             <div style="padding: 30px; background: #f9fafb;">
               <h3>Hello ${job.employer.company_name} Team,</h3>
-              <p>A new candidate has applied for <strong>${
-                job.title
-              }</strong>.</p>
+              <p>A new candidate has applied for <strong>${job.title
+            }</strong>.</p>
               <div style="background: #e0e7ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
                 <p><strong>Applicant:</strong> ${seeker.full_name}</p>
                 <p><strong>Email:</strong> ${req.user!.email}</p>
-                ${
-                  coverLetter
-                    ? `<p><strong>Cover Letter:</strong> ${coverLetter.substring(
-                        0,
-                        200
-                      )}${coverLetter.length > 200 ? "..." : ""}</p>`
-                    : ""
-                }
+                ${coverLetter
+              ? `<p><strong>Cover Letter:</strong> ${coverLetter.substring(
+                0,
+                200
+              )}${coverLetter.length > 200 ? "..." : ""}</p>`
+              : ""
+            }
               </div>
-              <a href="${
-                process.env.CLIENT_URL || "http://localhost:5173"
-              }/employer/applications" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">View Application</a>
+              <a href="${process.env.CLIENT_URL || "http://localhost:5173"
+            }/employer/applications" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">View Application</a>
               <p>Best regards,<br><strong>Job Portal Team</strong></p>
             </div>
           </div>
@@ -7955,30 +7906,24 @@ app.post(
             <div class="content">
               <div class="success-icon">📝</div>
               <h3>Hello ${seeker.full_name},</h3>
-              <p>Your application for <strong>${
-                job.title
-              }</strong> at <strong>${
-          job.employer.company_name
-        }</strong> has been submitted successfully.</p>
+              <p>Your application for <strong>${job.title
+          }</strong> at <strong>${job.employer.company_name
+          }</strong> has been submitted successfully.</p>
               <div style="background: #e0e7ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
                 <p style="margin: 0;"><strong>Job Details:</strong></p>
                 <p style="margin: 5px 0;">📍 Location: ${job.location}</p>
-                <p style="margin: 5px 0;">💼 Type: ${
-                  job.employment_type_id === 1 ? "Full-time" : "Part-time"
-                }</p>
-                ${
-                  job.salary_range
-                    ? `<p style="margin: 5px 0;">💰 Salary: ${job.salary_range}</p>`
-                    : ""
-                }
+                <p style="margin: 5px 0;">💼 Type: ${job.employment_type_id === 1 ? "Full-time" : "Part-time"
+          }</p>
+                ${job.salary_range
+            ? `<p style="margin: 5px 0;">💰 Salary: ${job.salary_range}</p>`
+            : ""
+          }
               </div>
               <p>The employer will review your application and update you on the status.</p>
               <div style="text-align: center;">
-               <a href="${
-                 process.env.CLIENT_URL || "http://localhost:5173"
-               }/applications/${
-          application.id
-        }" class="button">View This Application</a>
+               <a href="${process.env.CLIENT_URL || "http://localhost:5173"
+          }/applications/${application.id
+          }" class="button">View This Application</a>
               </div>
               <p>Best regards,<br><strong>Job Portal Team</strong></p>
             </div>
@@ -7999,8 +7944,7 @@ app.post(
         });
 
         console.log(
-          `✅ Application confirmation email sent to job seeker: ${
-            req.user!.email
+          `✅ Application confirmation email sent to job seeker: ${req.user!.email
           }`
         );
       } catch (emailError) {
@@ -8042,26 +7986,23 @@ app.post(
             </div>
             <div class="content">
               <h3>Hello ${job.employer.company_name} Team,</h3>
-              <p>A new candidate has applied for <strong>${
-                job.title
-              }</strong>.</p>
+              <p>A new candidate has applied for <strong>${job.title
+          }</strong>.</p>
               <div style="background: #e0e7ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
                 <p style="margin: 0;"><strong>Applicant Details:</strong></p>
                 <p style="margin: 5px 0;">👤 Name: ${seeker.full_name}</p>
                 <p style="margin: 5px 0;">📧 Email: ${req.user!.email}</p>
-                ${
-                  coverLetter
-                    ? `<p style="margin: 5px 0;">📝 Cover Letter: ${coverLetter.substring(
-                        0,
-                        200
-                      )}${coverLetter.length > 200 ? "..." : ""}</p>`
-                    : ""
-                }
+                ${coverLetter
+            ? `<p style="margin: 5px 0;">📝 Cover Letter: ${coverLetter.substring(
+              0,
+              200
+            )}${coverLetter.length > 200 ? "..." : ""}</p>`
+            : ""
+          }
               </div>
               <div style="text-align: center;">
-                <a href="${
-                  process.env.CLIENT_URL || "http://localhost:5173"
-                }/employer/applications" class="button">👁️ View Application</a>
+                <a href="${process.env.CLIENT_URL || "http://localhost:5173"
+          }/employer/applications" class="button">👁️ View Application</a>
               </div>
               <p>Best regards,<br><strong>Job Portal Team</strong></p>
             </div>
@@ -8228,9 +8169,8 @@ app.put(
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: linear-gradient(135deg, #2563eb, #1e40af); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
             .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-            .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; background: ${
-              statusColors[newStatus.status_name]
-            }; color: white; }
+            .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; background: ${statusColors[newStatus.status_name]
+          }; color: white; }
             .button { background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }
             .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
             .message-box { background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; }
@@ -8243,24 +8183,20 @@ app.put(
             </div>
             <div class="content">
               <h3>Hello ${application.seeker.full_name},</h3>
-              <p>Your application status for <strong>${
-                application.job.title
-              }</strong> at <strong>${
-          employer.company_name
-        }</strong> has been updated.</p>
+              <p>Your application status for <strong>${application.job.title
+          }</strong> at <strong>${employer.company_name
+          }</strong> has been updated.</p>
               <p style="text-align: center; margin: 30px 0;">
                 <span class="status">${newStatus.status_name}</span>
               </p>
               <p><strong>${statusMessages[newStatus.status_name]}</strong></p>
-              ${
-                message
-                  ? `<div class="message-box"><strong>Message from employer:</strong><br>${message}</div>`
-                  : ""
-              }
+              ${message
+            ? `<div class="message-box"><strong>Message from employer:</strong><br>${message}</div>`
+            : ""
+          }
               <p style="text-align: center;">
-                <a href="${
-                  process.env.CLIENT_URL || "http://localhost:5173"
-                }/applications" class="button">View Applications</a>
+                <a href="${process.env.CLIENT_URL || "http://localhost:5173"
+          }/applications" class="button">View Applications</a>
               </p>
             </div>
             <div class="footer">
@@ -8290,8 +8226,7 @@ app.put(
       await createNotification(
         application.seeker.user_id,
         "Application Status Updated",
-        `Your application for "${
-          application.job.title
+        `Your application for "${application.job.title
         }" has been ${newStatus.status_name.toLowerCase()}`,
         "application_update",
         { application_id: id, status: newStatus.status_name }
@@ -8369,9 +8304,8 @@ app.post(
               </ul>
             </ul>
             <div style="text-align: center;">
-              <a href="${
-                process.env.CLIENT_URL || "http://localhost:5173"
-              }/notifications" class="button">Manage Notifications</a>
+              <a href="${process.env.CLIENT_URL || "http://localhost:5173"
+        }/notifications" class="button">Manage Notifications</a>
             </div>
             <p>Best regards,<br><strong>Job Portal Team</strong></p>
           </div>
@@ -8612,12 +8546,12 @@ app.get(
           averageViewsPerJob:
             totalJobs > 0
               ? Math.round(
-                  (
-                    await prisma.jobPost.aggregate({
-                      _sum: { views_count: true },
-                    })
-                  )._sum.views_count! / totalJobs
-                )
+                (
+                  await prisma.jobPost.aggregate({
+                    _sum: { views_count: true },
+                  })
+                )._sum.views_count! / totalJobs
+              )
               : 0,
           averageApplicationsPerJob:
             totalJobs > 0
@@ -8626,12 +8560,12 @@ app.get(
           conversionRate:
             totalApplications > 0
               ? Math.round(
-                  ((await prisma.jobApplication.count({
-                    where: { status: { status_name: "Accepted" } },
-                  })) /
-                    totalApplications) *
-                    100
-                )
+                ((await prisma.jobApplication.count({
+                  where: { status: { status_name: "Accepted" } },
+                })) /
+                  totalApplications) *
+                100
+              )
               : 0,
           jobsByMonth: [
             { month: "Jan", users: 0, jobs: 0, applications: 0 },
@@ -9019,11 +8953,11 @@ app.get(
       const userGrowth =
         lastMonthUsers > 0
           ? Math.round(
-              ((newUsersThisMonth - lastMonthUsers) / lastMonthUsers) * 100
-            )
+            ((newUsersThisMonth - lastMonthUsers) / lastMonthUsers) * 100
+          )
           : newUsersThisMonth > 0
-          ? 100
-          : 0;
+            ? 100
+            : 0;
 
       const lastMonthJobs = await prisma.jobPost.count({
         where: { created_at: { gte: startOfLastMonth, lt: startOfMonth } },
@@ -9031,11 +8965,11 @@ app.get(
       const jobGrowth =
         lastMonthJobs > 0
           ? Math.round(
-              ((newJobsThisMonth - lastMonthJobs) / lastMonthJobs) * 100
-            )
+            ((newJobsThisMonth - lastMonthJobs) / lastMonthJobs) * 100
+          )
           : newJobsThisMonth > 0
-          ? 100
-          : 0;
+            ? 100
+            : 0;
 
       // ========== ENGAGEMENT METRICS ==========
       const totalViewsResult = await prisma.jobPost.aggregate({
@@ -10026,12 +9960,10 @@ app.put(
           await prisma.notification.create({
             data: {
               user_id: admin.id,
-              title: `Maintenance Mode ${
-                maintenanceMode ? "Enabled" : "Disabled"
-              }`,
-              message: `System maintenance mode has been ${
-                maintenanceMode ? "enabled" : "disabled"
-              } by ${req.user!.email}`,
+              title: `Maintenance Mode ${maintenanceMode ? "Enabled" : "Disabled"
+                }`,
+              message: `System maintenance mode has been ${maintenanceMode ? "enabled" : "disabled"
+                } by ${req.user!.email}`,
               type: "system",
               created_at: new Date(),
             },
@@ -10141,9 +10073,8 @@ app.post(
           </div>
           <div style="padding: 30px; background: #f9fafb; border-radius: 10px; margin-top: 20px;">
             <h3>Hello ${req.user!.full_name || "Admin"},</h3>
-            <p>This is a test email from your <strong>${
-              settings.site_name
-            }</strong> system.</p>
+            <p>This is a test email from your <strong>${settings.site_name
+          }</strong> system.</p>
             <p>If you received this email, your email configuration is working correctly!</p>
             <hr style="margin: 20px 0;" />
             <p><strong>Configuration Details:</strong></p>
@@ -10163,9 +10094,8 @@ app.post(
 
       res.json({
         success: true,
-        message: `Test email sent successfully to ${
-          testEmail || req.user!.email
-        }`,
+        message: `Test email sent successfully to ${testEmail || req.user!.email
+          }`,
       });
     } catch (error: any) {
       console.error("Error sending test email:", error);
