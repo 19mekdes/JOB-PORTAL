@@ -21,7 +21,7 @@ const createUploadFolders = () => {
 
 createUploadFolders()
 
-// Storage configuration
+
 const storage = multer.diskStorage({
   destination: (
     req: Request,
@@ -52,13 +52,13 @@ const storage = multer.diskStorage({
   }
 })
 
-// File filter
+
 const fileFilter = (
   req: Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ) => {
-  // Image uploads (avatar and cover)
+  
   if (file.fieldname === 'avatar' || file.fieldname === 'cover_image') {
     const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
     if (allowedImageTypes.includes(file.mimetype)) {
@@ -67,7 +67,7 @@ const fileFilter = (
       cb(new Error('Only JPG, JPEG, PNG, and WEBP images are allowed'))
     }
   }
-  // Resume uploads
+ 
   else if (file.fieldname === 'resume') {
     const allowedResumeTypes = [
       'application/pdf',
@@ -85,7 +85,7 @@ const fileFilter = (
   }
 }
 
-// Create multer instance
+
 const upload = multer({
   storage,
   fileFilter,

@@ -11,11 +11,11 @@ const { authorize } = require('../middleware/roleMiddleware');
 
 const router = express.Router();
 
-// All bookmark routes require authentication and Job Seeker role
+
 router.use(protect);
 router.use(authorize('Job Seeker'));
 
-// Test route to verify router is working
+
 router.get('/test', (req, res) => {
   res.json({ success: true, message: 'Bookmark routes are working!' });
 });

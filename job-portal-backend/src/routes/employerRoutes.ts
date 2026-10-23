@@ -13,10 +13,10 @@ import {
 
 const router = Router();
 
-// First apply auth middleware to all routes
+
 router.use(authMiddleware);
 
-// Then apply role-based authorization
+
 router.use(authorizeAny('Employer', 'Admin', 'Super Admin'));
 
 // Company management
