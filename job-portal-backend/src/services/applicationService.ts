@@ -81,7 +81,7 @@ export class ApplicationService {
       throw new NotFoundError('Job not found or is no longer accepting applications')
     }
 
-    // Check if already applied
+    
     const existingApplication = await this.prisma.jobApplication.findFirst({
       where: {
         job_id: jobId,
@@ -93,7 +93,7 @@ export class ApplicationService {
       throw new ValidationError('You have already applied for this job')
     }
 
-    // Get pending status
+    
     const pendingStatus = await this.prisma.jobApplicationStatus.findFirst({
       where: { status_name: 'Pending' }
     })
@@ -102,7 +102,7 @@ export class ApplicationService {
       throw new ValidationError('Application status configuration error')
     }
 
-    // Create application
+    
     const application = await this.prisma.jobApplication.create({
       data: {
         job_id: jobId,
@@ -123,13 +123,13 @@ export class ApplicationService {
       }
     })
 
-    // Update job applications count
+    
     await this.prisma.jobPost.update({
       where: { id: jobId },
       data: { applications_count: { increment: 1 } }
     })
 
-    // Create notification for employer
+    
     await this.prisma.notification.create({
       data: {
         user_id: job.employer.user.id,
@@ -139,7 +139,7 @@ export class ApplicationService {
       }
     })
 
-    // Create notification for job seeker (confirmation)
+    
     await this.prisma.notification.create({
       data: {
         user_id: seekerUserId,

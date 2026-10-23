@@ -2950,7 +2950,7 @@ app.put(
 
       statusId = statusRecord.id;
 
-      // Update job status
+      
       const updatedJob = await prisma.jobPost.update({
         where: { id },
         data: {
@@ -2959,7 +2959,7 @@ app.put(
         },
       });
 
-      // Send email notification to employer
+      
       if (job.employer?.user?.email) {
         try {
           const nodemailer = require("nodemailer");
@@ -3028,7 +3028,7 @@ app.put(
         }
       }
 
-      // Create notification for employer
+    
       await prisma.notification.create({
         data: {
           user_id: job.employer.user_id,
@@ -3063,7 +3063,7 @@ app.put(
 // ========== GET ALL USERS (Admin & Super Admin) ==========
 app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) => {
   try {
-    // Check if user is Admin or Super Admin
+    
     const currentUser = await prisma.user.findUnique({
       where: { id: req.user!.id },
       include: { user_type: true }
@@ -3092,12 +3092,12 @@ app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) 
       ];
     }
     
-    // Role filter
+   
     if (role && role !== 'all') {
       where.user_type = { type_name: role as string };
     }
     
-    // Status filter
+   
     if (status && status !== 'all') {
       where.is_active = status === 'active';
     }

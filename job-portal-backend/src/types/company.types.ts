@@ -13,7 +13,7 @@ export interface Company {
   updated_at: Date;
 }
 
-// Company creation data (omit auto-generated fields)
+
 export interface CreateCompanyDTO {
   user_id: string;
   company_name: string;
@@ -38,14 +38,13 @@ export interface UpdateCompanyDTO {
   is_verified?: boolean;
 }
 
-// Company response (with additional fields)
 export interface CompanyResponse extends Company {
   industry_name?: string;
   jobs_count?: number;
   total_jobs?: number;
 }
 
-// Company with owner info
+
 export interface CompanyWithOwner extends Company {
   owner?: {
     id: string;
@@ -55,7 +54,6 @@ export interface CompanyWithOwner extends Company {
   };
 }
 
-// Company industry interface
 export interface Industry {
   id: number;
   name: string;
@@ -63,7 +61,7 @@ export interface Industry {
   created_at?: Date;
 }
 
-// Company statistics
+
 export interface CompanyStats {
   total_companies: number;
   active_companies: number;
@@ -89,7 +87,7 @@ export interface CompanyFilters {
   sort_order?: 'asc' | 'desc';
 }
 
-// Company search result with pagination
+
 export interface CompanySearchResult {
   companies: Company[];
   pagination: {
@@ -100,21 +98,21 @@ export interface CompanySearchResult {
   };
 }
 
-// Company verification request
+
 export interface VerifyCompanyDTO {
   company_id: string;
   is_verified: boolean;
   admin_notes?: string;
 }
 
-// Company activation request
+
 export interface ActivateCompanyDTO {
   company_id: string;
   is_active: boolean;
   reason?: string;
 }
 
-// Company registration request
+
 export interface RegisterCompanyDTO {
   company_name: string;
   company_description: string;
@@ -128,7 +126,6 @@ export interface RegisterCompanyDTO {
   employee_count?: number;
 }
 
-// Extended company with additional details
 export interface CompanyExtended extends Company {
   website?: string;
   email?: string;
