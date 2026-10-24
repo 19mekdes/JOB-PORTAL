@@ -2193,7 +2193,7 @@ app.delete(
   }
 );
 
-// 4. GET SINGLE USER 
+
 app.get(
   "/api/admin/users/:userId",
   authMiddleware,
@@ -2330,14 +2330,14 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
       },
     });
 
-    // Check if user is an employer
+    
     if (user?.user_type?.type_name !== "Employer") {
       return res
         .status(403)
         .json({ success: false, message: "Only employers can post jobs" });
     }
 
-    // Check if employer profile exists
+    
     if (!user.employer_profile) {
       return res
         .status(403)
@@ -2347,7 +2347,7 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
         });
     }
 
-    //  Require verification before posting
+    
     if (!user.employer_profile.is_verified) {
       return res.status(403).json({
         success: false,
@@ -2357,7 +2357,7 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
       });
     }
 
-    //  Check if company is active (not suspended)
+    
     if (user.employer_profile.is_active === false) {
       return res.status(403).json({
         success: false,
@@ -2366,7 +2366,7 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
       });
     }
 
-    // Validate required fields
+    
     if (
       !title ||
       !description ||
@@ -2379,12 +2379,12 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
         .json({ success: false, message: "Missing required fields" });
     }
 
-    // Get PENDING status
+    
     let pendingStatus = await prisma.jobPostStatus.findFirst({
       where: { status_name: "Pending" },
     });
 
-    // Create Pending status if it doesn't exist
+    
     if (!pendingStatus) {
       pendingStatus = await prisma.jobPostStatus.create({
         data: { status_name: "Pending" },
@@ -2718,7 +2718,7 @@ app.get(
           .json({ success: false, message: "Employer profile not found" });
       }
 
-      // Get all jobs
+      
       const jobs = await prisma.jobPost.findMany({
         where: { employer_id: employer.id },
         include: {
@@ -2752,7 +2752,7 @@ app.get(
         orderBy: { applied_at: "desc" },
       });
 
-      // Calculate stats
+   
       const totalJobs = jobs.length;
       const activeJobs = jobs.filter(
         (job) => job.status?.status_name === "Open"
@@ -2769,7 +2769,7 @@ app.get(
         0
       );
 
-      // This month stats
+      
       const now = new Date();
       const currentMonth = now.getMonth();
       const currentYear = now.getFullYear();
@@ -2801,7 +2801,7 @@ app.get(
         return sum;
       }, 0);
 
-      // Status counts
+      
       const pendingApplications = allApplications.filter(
         (app) => app.status?.status_name === "Pending"
       ).length;
