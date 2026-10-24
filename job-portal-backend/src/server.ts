@@ -1802,7 +1802,7 @@ app.get(
           });
       }
 
-      // Get audit logs from database 
+
       let auditLogs = [];
       try {
         auditLogs = await prisma.auditLog.findMany({
@@ -1840,13 +1840,13 @@ app.get(
       res.json({ success: true, data: formattedLogs });
     } catch (error: any) {
       console.error("Error fetching audit logs:", error);
-      // Return empty array on error 
+
       res.json({ success: true, data: [] });
     }
   }
 );
 
-// Export audit logs as CSV 
+
 app.get(
   "/api/admin/audit-logs/export",
   authMiddleware,
@@ -1926,7 +1926,7 @@ app.get(
   }
 );
 
-// Helper function to create audit log 
+
 async function createAuditLog(data: {
   admin_id: string;
   action: string;
@@ -1955,7 +1955,7 @@ async function createAuditLog(data: {
 
 // ========== SUPER ADMIN - FULL ADMIN MANAGEMENT ENDPOINTS ==========
 
-// 1. UPDATE ADMIN 
+
 app.put(
   "/api/admin/users/:userId",
   authMiddleware,
@@ -1968,7 +1968,7 @@ app.put(
       console.log(`🔄 UPDATE ADMIN called for: ${userId}`);
       console.log(`   Data:`, { full_name, phone, role });
 
-      // Check if user exists
+
       const existingUser = await prisma.user.findUnique({
         where: { id: userId },
         include: { user_type: true, seeker_profile: true },
@@ -1980,7 +1980,7 @@ app.put(
           .json({ success: false, message: "User not found" });
       }
 
-      // Prepare update data
+
       const updateData: any = {
         updated_at: new Date(),
       };
@@ -1992,7 +1992,7 @@ app.put(
         );
       }
 
-      // Update role if provided
+
       if (role && role !== existingUser.user_type?.type_name) {
         const userType = await prisma.userType.findFirst({
           where: { type_name: role },
@@ -2005,14 +2005,14 @@ app.put(
         }
       }
 
-      // Update user
+
       const updatedUser = await prisma.user.update({
         where: { id: userId },
         data: updateData,
         include: { user_type: true },
       });
 
-      // Update phone in seeker profile if exists
+
       if (existingUser.seeker_profile && phone !== undefined) {
         await prisma.jobSeekerProfile.update({
           where: { id: existingUser.seeker_profile.id },
@@ -2035,7 +2035,7 @@ app.put(
   }
 );
 
-// 2. RESET PASSWORD - Reset admin password
+
 app.post(
   "/api/admin/users/:userId/reset-password",
   authMiddleware,
@@ -2074,7 +2074,7 @@ app.post(
         },
       });
 
-      // Create notification
+
       await prisma.notification.create({
         data: {
           user_id: userId,
@@ -2099,7 +2099,7 @@ app.post(
   }
 );
 
-// 3. DELETE ADMIN 
+
 app.delete(
   "/api/admin/users/:userId",
   authMiddleware,
@@ -2110,7 +2110,7 @@ app.delete(
 
       console.log(`🗑️ DELETE ADMIN: ${userId}`);
 
-      // Prevent self-deletion
+
       if (userId === req.user!.id) {
         return res.status(400).json({
           success: false,
@@ -2136,7 +2136,7 @@ app.delete(
       const userEmail = existingUser.email;
       const userName = existingUser.full_name || userEmail;
 
-      // Delete related records
+
       if (existingUser.seeker_profile) {
         await prisma.jobApplication.deleteMany({
           where: { seeker_id: existingUser.seeker_profile.id },
@@ -2330,14 +2330,14 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
       },
     });
 
-    
+
     if (user?.user_type?.type_name !== "Employer") {
       return res
         .status(403)
         .json({ success: false, message: "Only employers can post jobs" });
     }
 
-    
+
     if (!user.employer_profile) {
       return res
         .status(403)
@@ -2347,7 +2347,7 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
         });
     }
 
-    
+
     if (!user.employer_profile.is_verified) {
       return res.status(403).json({
         success: false,
@@ -2357,7 +2357,7 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
       });
     }
 
-    
+
     if (user.employer_profile.is_active === false) {
       return res.status(403).json({
         success: false,
@@ -2366,7 +2366,7 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
       });
     }
 
-    
+
     if (
       !title ||
       !description ||
@@ -2379,12 +2379,12 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
         .json({ success: false, message: "Missing required fields" });
     }
 
-    
+
     let pendingStatus = await prisma.jobPostStatus.findFirst({
       where: { status_name: "Pending" },
     });
 
-    
+
     if (!pendingStatus) {
       pendingStatus = await prisma.jobPostStatus.create({
         data: { status_name: "Pending" },
@@ -2718,7 +2718,7 @@ app.get(
           .json({ success: false, message: "Employer profile not found" });
       }
 
-      
+
       const jobs = await prisma.jobPost.findMany({
         where: { employer_id: employer.id },
         include: {
@@ -2752,7 +2752,7 @@ app.get(
         orderBy: { applied_at: "desc" },
       });
 
-   
+
       const totalJobs = jobs.length;
       const activeJobs = jobs.filter(
         (job) => job.status?.status_name === "Open"
@@ -2769,7 +2769,7 @@ app.get(
         0
       );
 
-      
+
       const now = new Date();
       const currentMonth = now.getMonth();
       const currentYear = now.getFullYear();
@@ -2801,7 +2801,7 @@ app.get(
         return sum;
       }, 0);
 
-      
+
       const pendingApplications = allApplications.filter(
         (app) => app.status?.status_name === "Pending"
       ).length;
@@ -7059,8 +7059,8 @@ app.post(
       res.json({
         success: true,
         message: `Password reset successfully for ${targetUser.email}${emailSent
-            ? ". An email notification has been sent to the user."
-            : ". Email notification could not be sent, but password has been reset."
+          ? ". An email notification has been sent to the user."
+          : ". Email notification could not be sent, but password has been reset."
           }`,
         data: {
           user_id: userId,
