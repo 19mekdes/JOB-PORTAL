@@ -59,7 +59,7 @@ const initialState: BookmarkState = {
 
 // ========== ASYNC THUNKS ==========
 
-// Fetch all bookmarks
+
 export const fetchBookmarks = createAsyncThunk(
   'bookmarks/fetchBookmarks',
   async (filters: BookmarkFilters = {}) => {
@@ -91,7 +91,7 @@ export const removeBookmark = createAsyncThunk(
   }
 )
 
-// Check if a job is bookmarked
+
 export const checkBookmarkStatus = createAsyncThunk(
   'bookmarks/checkBookmarkStatus',
   async (jobId: string) => {
@@ -100,7 +100,7 @@ export const checkBookmarkStatus = createAsyncThunk(
   }
 )
 
-// Get bookmark count
+
 export const getBookmarkCount = createAsyncThunk(
   'bookmarks/getBookmarkCount',
   async () => {
@@ -118,7 +118,6 @@ export const bulkAddBookmarks = createAsyncThunk(
   }
 )
 
-// Bulk remove bookmarks
 export const bulkRemoveBookmarks = createAsyncThunk(
   'bookmarks/bulkRemoveBookmarks',
   async (jobIds: string[]) => {
@@ -154,7 +153,7 @@ const bookmarkSlice = createSlice({
       state.bookmarks.unshift(action.payload)
       state.totalItems += 1
     },
-    // Optimistic update: remove bookmark from list
+    
     optimisticRemoveBookmark: (state, action: PayloadAction<string>) => {
       state.bookmarks = state.bookmarks.filter(b => b.job.id !== action.payload)
       state.totalItems -= 1
@@ -202,8 +201,7 @@ const bookmarkSlice = createSlice({
         state.isLoading = false
         state.error = action.error.message || 'Failed to save bookmark'
       })
-      
-      // Remove Bookmark
+    
       .addCase(removeBookmark.pending, (state) => {
         state.isLoading = true
         state.error = null
@@ -218,20 +216,19 @@ const bookmarkSlice = createSlice({
         state.error = action.error.message || 'Failed to remove bookmark'
       })
       
-      // Check Bookmark Status
+      
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .addCase(checkBookmarkStatus.fulfilled, (_state, _action) => {
-        // This doesn't modify the state directly, but can be used for UI updates
-        // The result is handled in the component
+        
       })
       
       // Get Bookmark Count
       .addCase(getBookmarkCount.fulfilled, (state, action) => {
-        // Count is handled in component, but we could store it
+        
         state.totalItems = action.payload
       })
       
-      // Bulk Add Bookmarks
+      
       .addCase(bulkAddBookmarks.fulfilled, (state, action) => {
         state.bookmarks = [...action.payload, ...state.bookmarks]
         state.totalItems += action.payload.length

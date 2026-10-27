@@ -11,7 +11,7 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
-  // Use your service's built-in helper to sync user on page loads/refreshes
+  
   user: authService.getStoredUser(), 
   isLoading: false,
   isError: false,
@@ -19,7 +19,7 @@ const initialState: AuthState = {
   message: ''
 }
 
-// ✅ FIXED LOGIN ACTION
+
 export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password, rememberMe }: LoginCredentials, thunkAPI) => {
@@ -27,7 +27,7 @@ export const login = createAsyncThunk(
       const response = await authService.login(email, password, rememberMe)
       
       if (response.success && response.user) {
-        // Use your service's helper function to structure and save user + token data
+       
         authService.storeUserData(response.user, response.token, response.refreshToken)
         return response.user
       } else {
@@ -47,9 +47,9 @@ export const register = createAsyncThunk(
     try {
       const response = await authService.register(userData)
       
-      // ✅ IMPORTANT: Only return success, NOT user data
+      
       if (response.success) {
-        // ✅ DO NOT store user data - just return success message
+        
         return { success: true, message: 'Registration successful! Please login.' }
       } else {
         return thunkAPI.rejectWithValue(response.message || 'Registration failed')
