@@ -83,19 +83,19 @@ export const useAuth = (): UseAuthReturn => {
   const login = useCallback(async (data: LoginData): Promise<boolean> => {
     try {
       const result = await dispatch(loginAction({ email: data.email, password: data.password })).unwrap()
-      
+
       if (result.user && data.rememberMe) {
         localStorage.setItem('rememberMe', 'true')
       } else if (!data.rememberMe) {
         localStorage.removeItem('rememberMe')
       }
-      
+
       toast({
         variant: "success",
         title: "Welcome Back!",
         description: `Successfully logged in as ${result.user.full_name || result.user.email}`,
       })
-      
+
       // Redirect based on user type
       if (result.user.user_type === 'Employer') {
         navigate('/employer/dashboard')
@@ -104,7 +104,7 @@ export const useAuth = (): UseAuthReturn => {
       } else {
         navigate('/dashboard')
       }
-      
+
       return true
     } catch (error: any) {
       toast({
@@ -127,14 +127,14 @@ export const useAuth = (): UseAuthReturn => {
     }
 
     try {
-      
-      
+
+
       toast({
         variant: "success",
         title: "Registration Successful!",
         description: "Please check your email to verify your account",
       })
-      
+
       navigate('/login')
       return true
     } catch (error: any) {
@@ -145,7 +145,7 @@ export const useAuth = (): UseAuthReturn => {
       })
       return false
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, navigate])
 
   const logout = useCallback(async (): Promise<void> => {
@@ -199,7 +199,7 @@ export const useAuth = (): UseAuthReturn => {
         current_password: data.current_password,
         new_password: data.new_password
       })).unwrap()
-      
+
       toast({
         variant: "success",
         title: "Password Changed",
@@ -300,7 +300,7 @@ export const useAuth = (): UseAuthReturn => {
 
   const hasRole = useCallback((roles: string | string[]): boolean => {
     if (!user) return false
-    
+
     const roleList = Array.isArray(roles) ? roles : [roles]
     return roleList.includes(user.user_type)
   }, [user])
@@ -345,9 +345,9 @@ interface UseProtectedRouteReturn {
 
 export const useProtectedRoute = (requiredRoles?: string | string[]): UseProtectedRouteReturn => {
   const { isLoading, isAuthenticated, hasRole } = useAuth()
-  
+
   let isAuthorized = false
-  
+
   if (!isLoading) {
     if (!isAuthenticated) {
       isAuthorized = false
@@ -357,7 +357,7 @@ export const useProtectedRoute = (requiredRoles?: string | string[]): UseProtect
       isAuthorized = true
     }
   }
-  
+
   return {
     isAuthorized,
     isLoading,

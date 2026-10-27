@@ -80,7 +80,7 @@ export function useThrottle<T extends (...args: any[]) => any>(
   return useCallback(
     (...args: Parameters<T>) => {
       const now = Date.now()
-      
+
       if (now - lastRunRef.current >= limit) {
         callback(...args)
         lastRunRef.current = now
@@ -129,9 +129,9 @@ export function useDebouncedAsync<T extends (...args: any[]) => Promise<any>>(
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current)
         }
-        
+
         pendingPromiseRef.current = { resolve, reject }
-        
+
         timeoutRef.current = setTimeout(async () => {
           try {
             const result = await callback(...args)
@@ -240,7 +240,7 @@ export const useApiDebounce = <T extends (...args: any[]) => Promise<any>>(
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
   const [data, setData] = useState<Awaited<ReturnType<T>> | null>(null)
-  
+
   const debouncedApiCall = useDebouncedAsync(apiCall, delay)
 
   const execute = useCallback(

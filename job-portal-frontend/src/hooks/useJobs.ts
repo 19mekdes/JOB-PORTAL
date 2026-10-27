@@ -115,7 +115,7 @@ export const useJobs = (initialFilters?: JobFilters): UseJobsReturn => {
   const fetchJobs = useCallback(async () => {
     setIsLoading(true)
     setError(null)
-    
+
     try {
       const params: any = {
         page: filters.page,
@@ -132,7 +132,7 @@ export const useJobs = (initialFilters?: JobFilters): UseJobsReturn => {
       if (filters.is_featured !== undefined) params.is_featured = filters.is_featured
       if (filters.date_posted) params.date_posted = filters.date_posted
       if (filters.experience_level) params.experience_level = filters.experience_level
-      
+
       const response = await api.get('/jobs', { params })
       setJobs(response.data.data)
       setTotalPages(response.data.pagination.pages)
@@ -237,7 +237,7 @@ export const useJobs = (initialFilters?: JobFilters): UseJobsReturn => {
         title: "Success",
         description: `Job ${response.data.data.status.status_name.toLowerCase()} successfully`,
       })
-      setJobs(prev => prev.map(job => 
+      setJobs(prev => prev.map(job =>
         job.id === id ? response.data.data : job
       ))
       if (currentJob?.id === id) {
@@ -261,7 +261,7 @@ export const useJobs = (initialFilters?: JobFilters): UseJobsReturn => {
         title: "Saved",
         description: "Job saved successfully",
       })
-      setJobs(prev => prev.map(job => 
+      setJobs(prev => prev.map(job =>
         job.id === id ? { ...job, is_saved: true } : job
       ))
       if (currentJob?.id === id) {
@@ -285,7 +285,7 @@ export const useJobs = (initialFilters?: JobFilters): UseJobsReturn => {
         title: "Removed",
         description: "Job removed from saved",
       })
-      setJobs(prev => prev.map(job => 
+      setJobs(prev => prev.map(job =>
         job.id === id ? { ...job, is_saved: false } : job
       ))
       if (currentJob?.id === id) {
