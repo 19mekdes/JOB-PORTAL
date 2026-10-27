@@ -804,7 +804,7 @@ app.get(
     }
   }
 );
-//PUT profile endpoint - only updates seeker profile fields
+
 app.put(
   "/api/auth/profile",
   authMiddleware,
@@ -1305,10 +1305,10 @@ app.get(
         },
       });
 
-      // Format companies
+      
       const companies = [];
       for (const employer of employers) {
-        // Get job count
+        
         let jobCount = 0;
         if (employer.employer_profile) {
           jobCount = await prisma.jobPost.count({
@@ -1357,7 +1357,7 @@ app.get(
   }
 );
 
-// GET single company
+
 app.get(
   "/api/super-admin/companies/:id",
   authMiddleware,
@@ -1385,7 +1385,7 @@ app.get(
           .json({ success: false, message: "Company not found" });
       }
 
-      // Get jobs
+     
       let jobs = [];
       let jobCount = 0;
       if (company.employer_profile) {
@@ -1435,7 +1435,7 @@ app.get(
   }
 );
 
-// Verify company
+
 app.put(
   "/api/super-admin/companies/:id/verify",
   authMiddleware,
@@ -1718,7 +1718,7 @@ app.post(
   }
 );
 
-// Download backup
+
 app.get(
   "/api/admin/backups/:id/download",
   authMiddleware,
@@ -1726,7 +1726,7 @@ app.get(
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      // Create a dummy file for download
+      
       const content = `Backup ID: ${id}\nCreated: ${new Date().toISOString()}\nThis is a simulated backup file.`;
 
       res.setHeader("Content-Type", "application/octet-stream");
@@ -1741,7 +1741,7 @@ app.get(
   }
 );
 
-// Delete backup
+
 app.delete(
   "/api/admin/backups/:id",
   authMiddleware,
@@ -1761,7 +1761,7 @@ app.delete(
   }
 );
 
-// Restore backup
+
 app.post(
   "/api/admin/backups/:id/restore",
   authMiddleware,
