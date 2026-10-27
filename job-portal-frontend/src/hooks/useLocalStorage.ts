@@ -165,7 +165,7 @@ export const useRecentSearches = (maxItems: number = 5) => {
 
   const addSearch = useCallback((searchTerm: string) => {
     if (!searchTerm.trim()) return
-    
+
     setSearches(prev => {
       const filtered = prev.filter(s => s !== searchTerm)
       return [searchTerm, ...filtered].slice(0, maxItems)
@@ -289,8 +289,8 @@ export const useDraftJobs = () => {
   }, [setDrafts])
 
   const updateDraft = useCallback((id: string, updates: Partial<DraftJob>) => {
-    setDrafts(prev => prev.map(draft => 
-      draft.id === id 
+    setDrafts(prev => prev.map(draft =>
+      draft.id === id
         ? { ...draft, ...updates, updatedAt: new Date().toISOString() }
         : draft
     ))

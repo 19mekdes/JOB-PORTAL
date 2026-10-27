@@ -95,10 +95,10 @@ export const useNotifications = (initialFilters?: NotificationFilters): UseNotif
 
   const fetchNotifications = useCallback(async () => {
     if (!user) return
-    
+
     setIsLoading(true)
     setError(null)
-    
+
     try {
       const params: any = {
         page: filters.page,
@@ -108,7 +108,7 @@ export const useNotifications = (initialFilters?: NotificationFilters): UseNotif
       if (filters.is_read !== undefined) params.is_read = filters.is_read
       if (filters.start_date) params.start_date = filters.start_date
       if (filters.end_date) params.end_date = filters.end_date
-      
+
       const response = await api.get('/notifications', { params })
       setNotifications(response.data.data.notifications)
       setTotalPages(response.data.pagination.pages)
@@ -123,7 +123,7 @@ export const useNotifications = (initialFilters?: NotificationFilters): UseNotif
 
   const fetchStats = useCallback(async () => {
     if (!user) return
-    
+
     try {
       const response = await api.get('/notifications/stats')
       setStats(response.data.data)
@@ -134,7 +134,7 @@ export const useNotifications = (initialFilters?: NotificationFilters): UseNotif
 
   const fetchPreferences = useCallback(async () => {
     if (!user) return
-    
+
     try {
       const response = await api.get('/notifications/preferences')
       setPreferences(response.data.data)
@@ -146,7 +146,7 @@ export const useNotifications = (initialFilters?: NotificationFilters): UseNotif
   const markAsRead = useCallback(async (id: number): Promise<boolean> => {
     try {
       await api.put(`/notifications/${id}/read`)
-      setNotifications(prev => prev.map(n => 
+      setNotifications(prev => prev.map(n =>
         n.id === id ? { ...n, is_read: true } : n
       ))
       setUnreadCount(prev => Math.max(0, prev - 1))
@@ -167,7 +167,7 @@ export const useNotifications = (initialFilters?: NotificationFilters): UseNotif
   const markMultipleAsRead = useCallback(async (ids: number[]): Promise<boolean> => {
     try {
       await api.put('/notifications/read/multiple', { notification_ids: ids })
-      setNotifications(prev => prev.map(n => 
+      setNotifications(prev => prev.map(n =>
         ids.includes(n.id) ? { ...n, is_read: true } : n
       ))
       const markedCount = ids.length
@@ -317,7 +317,7 @@ export const useNotifications = (initialFilters?: NotificationFilters): UseNotif
   // Real-time polling for new notifications (every 30 seconds)
   useEffect(() => {
     if (!user) return
-    
+
     const interval = setInterval(() => {
       getUnreadCount().then(count => {
         if (count > unreadCount) {
@@ -332,7 +332,7 @@ export const useNotifications = (initialFilters?: NotificationFilters): UseNotif
         setUnreadCount(count)
       })
     }, 30000)
-    
+
     return () => clearInterval(interval)
   }, [user, unreadCount, fetchNotifications, fetchStats, getUnreadCount])
 
@@ -422,14 +422,14 @@ export const useRealtimeNotifications = () => {
   }
 }
 
-// Hook for notification badge (simplified)
+
 export const useNotificationBadge = () => {
   const { unreadCount, fetchStats } = useNotifications()
-  
+
   useEffect(() => {
     fetchStats()
   }, [fetchStats])
-  
+
   return {
     count: unreadCount,
     hasUnread: unreadCount > 0

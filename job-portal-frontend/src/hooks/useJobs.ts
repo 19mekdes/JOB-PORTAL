@@ -379,7 +379,7 @@ export const useJobs = (initialFilters?: JobFilters): UseJobsReturn => {
   }
 }
 
-// Hook for job filters (simplified)
+
 interface UseJobFiltersReturn {
   filters: JobFilters
   updateFilter: <K extends keyof JobFilters>(key: K, value: JobFilters[K]) => void
@@ -439,7 +439,7 @@ export const useJobFilters = (initialFilters?: JobFilters): UseJobFiltersReturn 
   }
 }
 
-// Hook for saved jobs
+
 interface UseSavedJobsReturn {
   savedJobs: Job[]
   isLoading: boolean
