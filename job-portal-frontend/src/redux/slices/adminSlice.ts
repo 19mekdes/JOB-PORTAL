@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk, } from '@reduxjs/toolkit'
 import api from '../../services/api'
 
-// ========== TYPES ==========
 export interface User {
   id: string
   email: string
@@ -143,7 +142,6 @@ const initialState: AdminState = {
 
 // ========== ASYNC THUNKS ==========
 
-// Dashboard Stats
 export const fetchDashboardStats = createAsyncThunk(
   'admin/fetchDashboardStats',
   async () => {

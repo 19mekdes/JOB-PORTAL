@@ -8,7 +8,7 @@ import notificationReducer from './slices/notificationSlice'
 import bookmarkReducer from './slices/bookmarkSlice'
 import uiReducer from './slices/uiSlice'
 
-// Root reducer combining all slices
+
 const rootReducer = combineReducers({
   auth: authReducer,
   jobs: jobReducer,
