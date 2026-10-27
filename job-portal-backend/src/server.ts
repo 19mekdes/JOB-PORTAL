@@ -80,14 +80,14 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Helper to extract Cloudinary Public ID from an image URL for deletion
+
 const getPublicIdFromUrl = (url: string): string | null => {
   try {
 
     const parts = url.split("/upload/");
     if (parts.length < 2) return null;
 
-    // Remove the version segment (e.g., "v123456789/") and file extension
+   
     const pathWithExtension = parts[1].replace(/^v\d+\//, "");
     return pathWithExtension.substring(0, pathWithExtension.lastIndexOf("."));
   } catch (error) {
@@ -124,7 +124,7 @@ const upload = multer({
   },
 });
 
-// 2. NEW: Cloudinary Engine for Images
+
 const cloudinaryImageStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
@@ -144,7 +144,7 @@ const uploadImage = multer({
 app.use("/api/admin", adminRoutes);
 app.use("/api/auth", authRoutes);
 
-// Configure email transporter (use your email service)
+
 const emailTransporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -153,7 +153,6 @@ const emailTransporter = nodemailer.createTransport({
   },
 });
 
-// Email template function
 async function sendEmail(to: string, subject: string, html: string) {
   try {
     await emailTransporter.sendMail({
@@ -724,7 +723,7 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
   }
 });
 
-// GET profile endpoint
+
 app.get(
   "/api/profile/me",
   authMiddleware,
@@ -3936,7 +3935,7 @@ app.get(
       });
 
       if (!preferences) {
-        // Create default preferences if not exists
+        
         preferences = await prisma.notificationPreference.create({
           data: {
             user_id: req.user!.id,
@@ -3970,7 +3969,7 @@ app.get(
   }
 );
 
-// 7. UPDATE Notification Preferences
+
 app.put(
   "/api/notifications/preferences",
   authMiddleware,
@@ -4056,7 +4055,7 @@ app.post(
         });
       }
 
-      // Verify current password
+      
       const isValid = await bcrypt.compare(current_password, user.password);
       if (!isValid) {
         return res.status(401).json({
@@ -4065,7 +4064,7 @@ app.post(
         });
       }
 
-      // Check new password length
+      
       if (new_password.length < 6) {
         return res.status(400).json({
           success: false,
@@ -4073,10 +4072,10 @@ app.post(
         });
       }
 
-      // Hash new password
+      
       const hashedPassword = await bcrypt.hash(new_password, 10);
 
-      // Update password
+    
       await prisma.user.update({
         where: { id: req.user!.id },
         data: {
@@ -4152,7 +4151,7 @@ app.put(
           .json({ success: false, message: "Status is required" });
       }
 
-      // Verify employer owns this job
+      
       const user = await prisma.user.findUnique({
         where: { id: req.user!.id },
         include: { employer_profile: true },
