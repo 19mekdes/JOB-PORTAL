@@ -157,7 +157,7 @@ const jobSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Jobs
+   
       .addCase(fetchJobs.pending, (state) => {
         state.isLoading = true
         state.error = null
@@ -186,7 +186,7 @@ const jobSlice = createSlice({
         state.isLoading = false
         state.error = action.error.message || 'Failed to fetch job details'
       })
-      // Create Job
+     
       .addCase(createJob.pending, (state) => {
         state.isLoading = true
         state.error = null
@@ -199,7 +199,7 @@ const jobSlice = createSlice({
         state.isLoading = false
         state.error = action.error.message || 'Failed to create job'
       })
-      // Update Job
+      
       .addCase(updateJob.fulfilled, (state, action) => {
         const index = state.jobs.findIndex(job => job.id === action.payload.data.id)
         if (index !== -1) {
@@ -209,14 +209,14 @@ const jobSlice = createSlice({
           state.currentJob = action.payload.data
         }
       })
-      // Delete Job
+     
       .addCase(deleteJob.fulfilled, (state, action) => {
         state.jobs = state.jobs.filter(job => job.id !== action.payload)
         if (state.currentJob?.id === action.payload) {
           state.currentJob = null
         }
       })
-      // Toggle Job Status
+     
       .addCase(toggleJobStatus.fulfilled, (state, action) => {
         const index = state.jobs.findIndex(job => job.id === action.payload.data.id)
         if (index !== -1) {

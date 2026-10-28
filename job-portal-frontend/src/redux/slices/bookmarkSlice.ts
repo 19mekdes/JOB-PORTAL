@@ -73,7 +73,7 @@ export const fetchBookmarks = createAsyncThunk(
   }
 )
 
-// Add a bookmark
+
 export const addBookmark = createAsyncThunk(
   'bookmarks/addBookmark',
   async (jobId: string) => {
@@ -82,7 +82,7 @@ export const addBookmark = createAsyncThunk(
   }
 )
 
-// Remove a bookmark
+
 export const removeBookmark = createAsyncThunk(
   'bookmarks/removeBookmark',
   async (jobId: string) => {
@@ -109,7 +109,7 @@ export const getBookmarkCount = createAsyncThunk(
   }
 )
 
-// Bulk add bookmarks
+
 export const bulkAddBookmarks = createAsyncThunk(
   'bookmarks/bulkAddBookmarks',
   async (jobIds: string[]) => {
@@ -148,7 +148,7 @@ const bookmarkSlice = createSlice({
       state.error = null
     },
     resetState: () => initialState,
-    // Optimistic update: add bookmark to list
+    
     optimisticAddBookmark: (state, action: PayloadAction<BookmarkedJob>) => {
       state.bookmarks.unshift(action.payload)
       state.totalItems += 1
@@ -170,7 +170,7 @@ const bookmarkSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Bookmarks
+     
       .addCase(fetchBookmarks.pending, (state) => {
         state.isLoading = true
         state.error = null
@@ -187,7 +187,7 @@ const bookmarkSlice = createSlice({
         state.error = action.error.message || 'Failed to fetch bookmarks'
       })
       
-      // Add Bookmark
+     
       .addCase(addBookmark.pending, (state) => {
         state.isLoading = true
         state.error = null
@@ -222,7 +222,7 @@ const bookmarkSlice = createSlice({
         
       })
       
-      // Get Bookmark Count
+  
       .addCase(getBookmarkCount.fulfilled, (state, action) => {
         
         state.totalItems = action.payload
@@ -234,7 +234,7 @@ const bookmarkSlice = createSlice({
         state.totalItems += action.payload.length
       })
       
-      // Bulk Remove Bookmarks
+ 
       .addCase(bulkRemoveBookmarks.fulfilled, (state, action) => {
         state.bookmarks = state.bookmarks.filter(b => !action.payload.includes(b.job.id))
         state.totalItems -= action.payload.length

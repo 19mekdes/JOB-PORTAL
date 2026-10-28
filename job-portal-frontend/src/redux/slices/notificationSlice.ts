@@ -78,7 +78,7 @@ const initialState: NotificationState = {
   }
 }
 
-// Fetch all notifications
+
 export const fetchNotifications = createAsyncThunk(
   'notifications/fetchNotifications',
   async (filters: NotificationFilters = {}) => {
@@ -95,7 +95,6 @@ export const fetchNotifications = createAsyncThunk(
   }
 )
 
-// Get unread count
 export const fetchUnreadCount = createAsyncThunk(
   'notifications/fetchUnreadCount',
   async () => {
@@ -104,7 +103,6 @@ export const fetchUnreadCount = createAsyncThunk(
   }
 )
 
-// Get notification statistics
 export const fetchNotificationStats = createAsyncThunk(
   'notifications/fetchNotificationStats',
   async () => {
@@ -113,7 +111,6 @@ export const fetchNotificationStats = createAsyncThunk(
   }
 )
 
-// Get notification preferences
 export const fetchNotificationPreferences = createAsyncThunk(
   'notifications/fetchNotificationPreferences',
   async () => {
@@ -122,7 +119,6 @@ export const fetchNotificationPreferences = createAsyncThunk(
   }
 )
 
-// Update notification preferences
 export const updateNotificationPreferences = createAsyncThunk(
   'notifications/updateNotificationPreferences',
   async (preferences: Partial<NotificationPreferences>) => {
@@ -131,7 +127,6 @@ export const updateNotificationPreferences = createAsyncThunk(
   }
 )
 
-// Mark a single notification as read
 export const markAsRead = createAsyncThunk(
   'notifications/markAsRead',
   async (id: number) => {
@@ -140,7 +135,6 @@ export const markAsRead = createAsyncThunk(
   }
 )
 
-// Mark multiple notifications as read
 export const markMultipleAsRead = createAsyncThunk(
   'notifications/markMultipleAsRead',
   async (ids: number[]) => {
@@ -149,7 +143,6 @@ export const markMultipleAsRead = createAsyncThunk(
   }
 )
 
-// Mark all notifications as read
 export const markAllAsRead = createAsyncThunk(
   'notifications/markAllAsRead',
   async () => {
@@ -158,7 +151,6 @@ export const markAllAsRead = createAsyncThunk(
   }
 )
 
-// Delete a single notification
 export const deleteNotification = createAsyncThunk(
   'notifications/deleteNotification',
   async (id: number) => {
@@ -167,7 +159,6 @@ export const deleteNotification = createAsyncThunk(
   }
 )
 
-// Delete all read notifications
 export const deleteAllRead = createAsyncThunk(
   'notifications/deleteAllRead',
   async () => {
@@ -176,7 +167,6 @@ export const deleteAllRead = createAsyncThunk(
   }
 )
 
-// Send test notification
 export const sendTestNotification = createAsyncThunk(
   'notifications/sendTestNotification',
   async () => {
@@ -217,7 +207,7 @@ const notificationSlice = createSlice({
         }
       }
     },
-    // Optimistic update: mark all as read
+   
     optimisticMarkAllAsRead: (state) => {
       state.notifications.forEach(n => {
         n.is_read = true
