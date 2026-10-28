@@ -89,7 +89,7 @@ export const fetchNotifications = createAsyncThunk(
     if (filters.end_date) params.append('end_date', filters.end_date)
     if (filters.page) params.append('page', filters.page.toString())
     if (filters.limit) params.append('limit', filters.limit.toString())
-    
+
     const response = await api.get(`/notifications${params.toString() ? `?${params}` : ''}`)
     return response.data
   }
@@ -207,7 +207,7 @@ const notificationSlice = createSlice({
         }
       }
     },
-   
+
     optimisticMarkAllAsRead: (state) => {
       state.notifications.forEach(n => {
         n.is_read = true
@@ -241,7 +241,7 @@ const notificationSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Notifications
+   
       .addCase(fetchNotifications.pending, (state) => {
         state.isLoading = true
         state.error = null
@@ -258,27 +258,26 @@ const notificationSlice = createSlice({
         state.isLoading = false
         state.error = action.error.message || 'Failed to fetch notifications'
       })
+
       
-      // Fetch Unread Count
       .addCase(fetchUnreadCount.fulfilled, (state, action) => {
         state.unreadCount = action.payload
       })
-      
-      // Fetch Notification Stats
+
+     
       .addCase(fetchNotificationStats.fulfilled, (state, action) => {
         state.stats = action.payload
       })
+
       
-      // Fetch Notification Preferences
       .addCase(fetchNotificationPreferences.fulfilled, (state, action) => {
         state.preferences = action.payload
       })
-      
-      // Update Notification Preferences
+
       .addCase(updateNotificationPreferences.fulfilled, (state, action) => {
         state.preferences = action.payload
       })
-      
+
       // Mark as Read
       .addCase(markAsRead.fulfilled, (state, action) => {
         const notification = state.notifications.find(n => n.id === action.payload)
@@ -290,8 +289,7 @@ const notificationSlice = createSlice({
           }
         }
       })
-      
-      // Mark Multiple as Read
+
       .addCase(markMultipleAsRead.fulfilled, (state, action) => {
         const ids = action.payload
         let markedCount = 0
@@ -306,8 +304,7 @@ const notificationSlice = createSlice({
           state.stats.unread = Math.max(0, state.stats.unread - markedCount)
         }
       })
-      
-      // Mark All as Read
+
       .addCase(markAllAsRead.fulfilled, (state) => {
         state.notifications.forEach(notification => {
           notification.is_read = true
@@ -317,8 +314,7 @@ const notificationSlice = createSlice({
           state.stats.unread = 0
         }
       })
-      
-      // Delete Notification
+
       .addCase(deleteNotification.fulfilled, (state, action) => {
         const deleted = state.notifications.find(n => n.id === action.payload)
         if (deleted && !deleted.is_read) {
@@ -330,17 +326,17 @@ const notificationSlice = createSlice({
         state.notifications = state.notifications.filter(n => n.id !== action.payload)
         state.totalItems -= 1
       })
+
       
-      // Delete All Read
       .addCase(deleteAllRead.fulfilled, (state) => {
         state.notifications = state.notifications.filter(n => !n.is_read)
-        // Unread count stays the same, total items decreases
+        
         state.totalItems = state.notifications.length
       })
+
       
-      // Send Test Notification
       .addCase(sendTestNotification.fulfilled, (state, action) => {
-        // Optionally add test notification to list
+        
         if (action.payload) {
           state.notifications.unshift(action.payload)
           state.totalItems += 1
