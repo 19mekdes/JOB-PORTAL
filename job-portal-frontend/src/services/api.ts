@@ -16,7 +16,7 @@ const getApiUrl = () => {
     // Use the environment variable or default to localhost
     return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   }
-  
+
   // On phone or network access - use the same hostname but port 5000
   // This works because the phone accesses via PC's IP address
   const hostname = window.location.hostname;
@@ -60,17 +60,17 @@ const isPublicEndpoint = (url: string | undefined): boolean => {
 }
 
 // ========== REQUEST INTERCEPTOR ==========
-// Add auth token to every request
+
 api.interceptors.request.use(
   (config) => {
-    // Try multiple token locations
+
     let token = localStorage.getItem('token')
-    
+
     if (!token) {
       token = localStorage.getItem('admin_token')
     }
-    
-    // Also check for user object
+
+
     if (!token) {
       const userStr = localStorage.getItem('user')
       if (userStr) {
@@ -82,7 +82,7 @@ api.interceptors.request.use(
         }
       }
     }
-    
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
       if (import.meta.env.DEV && !isPublicEndpoint(config.url)) {
@@ -91,12 +91,12 @@ api.interceptors.request.use(
     } else if (!isPublicEndpoint(config.url)) {
       console.log(`[API] ⚠️ No token for: ${config.url}`)
     }
-    
-    // Log request in development
+
+
     if (import.meta.env.DEV) {
       console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`)
     }
-    
+
     return config
   },
   (error) => {
@@ -109,7 +109,7 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    
+
     if (import.meta.env.DEV) {
       console.log(`[API Response] ${response.config.url}`, response.data)
     }
@@ -118,18 +118,18 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean }
     const isPublic = isPublicEndpoint(originalRequest.url)
-    
-   
+
+
     if (import.meta.env.DEV) {
       console.error('[API Error]', error.response?.status, error.response?.data, 'Public endpoint:', isPublic)
     }
-    
+
     // ========== HANDLE 401 UNAUTHORIZED ==========
     if (error.response?.status === 401) {
-      
+
       if (isPublic) {
         console.log('[API] Public endpoint 401, returning empty response')
-       
+
         return Promise.resolve({
           data: {
             success: true,
@@ -142,29 +142,29 @@ api.interceptors.response.use(
           config: originalRequest
         } as AxiosResponse)
       }
-      
-      
+
+
       if (!originalRequest._retry) {
         originalRequest._retry = true
-        
-        
+
+
         try {
           const refreshToken = localStorage.getItem('refreshToken')
           if (refreshToken) {
             const response = await axios.post(`${API_URL}/auth/refresh-token`, {
               refresh_token: refreshToken
             })
-            
+
             const { token } = response.data
-            
-            
+
+
             const userStr = localStorage.getItem('user')
             if (userStr) {
               const user = JSON.parse(userStr)
               user.token = token
               localStorage.setItem('user', JSON.stringify(user))
             }
-          
+
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`
             }
@@ -173,18 +173,18 @@ api.interceptors.response.use(
         } catch (refreshError) {
           console.error('Token refresh failed:', refreshError)
         }
-        
+
         localStorage.removeItem('user')
         localStorage.removeItem('refreshToken')
         localStorage.removeItem('token')
         localStorage.removeItem('admin_token')
-      
+
         if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
           window.location.href = '/login'
         }
       }
     }
-    
+
     // ========== HANDLE 403 FORBIDDEN ==========
     if (error.response?.status === 403) {
       console.error('Access forbidden:', error.response?.data)
@@ -192,14 +192,14 @@ api.interceptors.response.use(
         window.location.href = '/unauthorized'
       }
     }
-    
-    
+
+
     const apiError: ApiError = {
       message: (error.response?.data as any)?.message || error.message || 'An unexpected error occurred',
       status: error.response?.status || 500,
       errors: (error.response?.data as any)?.errors,
     }
-    
+
     return Promise.reject(apiError)
   }
 )

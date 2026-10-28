@@ -347,10 +347,8 @@ export const getSystemStats = async () => {
 }
 
 const adminService = {
-  // Dashboard
-  getDashboardStats,
   
-  // User Management
+  getDashboardStats,
   getUsers,
   getUserById,
   suspendUser,
