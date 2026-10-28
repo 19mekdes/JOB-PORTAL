@@ -11,8 +11,8 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
-  
-  user: authService.getStoredUser(), 
+
+  user: authService.getStoredUser(),
   isLoading: false,
   isError: false,
   isSuccess: false,
@@ -25,9 +25,9 @@ export const login = createAsyncThunk(
   async ({ email, password, rememberMe }: LoginCredentials, thunkAPI) => {
     try {
       const response = await authService.login(email, password, rememberMe)
-      
+
       if (response.success && response.user) {
-       
+
         authService.storeUserData(response.user, response.token, response.refreshToken)
         return response.user
       } else {
@@ -40,16 +40,15 @@ export const login = createAsyncThunk(
   }
 )
 
-// ✅ FIXED REGISTER ACTION - NO AUTO LOGIN
 export const register = createAsyncThunk(
   'auth/register',
   async (userData: any, thunkAPI) => {
     try {
       const response = await authService.register(userData)
-      
-      
+
+
       if (response.success) {
-        
+
         return { success: true, message: 'Registration successful! Please login.' }
       } else {
         return thunkAPI.rejectWithValue(response.message || 'Registration failed')
@@ -61,13 +60,12 @@ export const register = createAsyncThunk(
   }
 )
 
-// ✅ LOGOUT ACTION
 export const logout = createAsyncThunk('auth/logout', async () => {
   await authService.logout()
   return null
 })
 
-// ✅ GET CURRENT USER ACTION
+
 export const getMe = createAsyncThunk('auth/getMe', async () => {
   const response = await authService.getMe()
   return response
@@ -155,7 +153,7 @@ const authSlice = createSlice({
       state.isSuccess = false
       state.message = ''
     },
-    // ✅ Add a clearSuccess action
+    
     clearSuccess: (state) => {
       state.isSuccess = false
       state.message = ''
@@ -180,7 +178,7 @@ const authSlice = createSlice({
         state.message = action.payload as string
         state.user = null
       })
-      // ✅ FIXED REGISTER - DO NOT set user
+     
       .addCase(register.pending, (state) => {
         state.isLoading = true
         state.isError = false
@@ -190,8 +188,7 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false
         state.isSuccess = true
-        // ✅ IMPORTANT: Do NOT set state.user here
-        // state.user remains null (user needs to login)
+        
         state.message = action.payload.message || 'Registration successful!'
       })
       .addCase(register.rejected, (state, action) => {
