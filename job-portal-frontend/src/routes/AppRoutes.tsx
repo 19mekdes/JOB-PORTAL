@@ -58,7 +58,6 @@ import SystemHealth from '@/components/superadmin/SystemHealth'
 import NotificationList from '@/components/notifications/NotificationList'
 import NotificationPreferences from '@/components/notifications/NotificationPreferences'
 
-// Private Route Components
 import PrivateRoute from '@/components/common/PrivateRoute'
 import { JobSeekerRoute, EmployerRoute, AdminRoute, SuperAdminRoute } from '@/components/common/PrivateRoute'
 

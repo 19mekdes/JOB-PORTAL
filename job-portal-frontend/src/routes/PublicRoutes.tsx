@@ -10,9 +10,9 @@ interface PublicRoutesProps {
   restricted?: boolean
 }
 
-const PublicRoutes: React.FC<PublicRoutesProps> = ({ 
+const PublicRoutes: React.FC<PublicRoutesProps> = ({
   redirectTo = '/dashboard',
-  restricted = true 
+  restricted = true
 }) => {
   const location = useLocation()
   const { user, isLoading } = useSelector((state: RootState) => state.auth)
@@ -21,9 +21,9 @@ const PublicRoutes: React.FC<PublicRoutesProps> = ({
     return <LoadingSpinner />
   }
 
-  // If user is authenticated and route is restricted, redirect to dashboard
+
   if (restricted && user) {
-    // Get the intended destination or redirect to dashboard
+
     const from = (location.state as any)?.from?.pathname || redirectTo
     return <Navigate to={from} replace />
   }
@@ -94,10 +94,10 @@ interface RoleGateProps {
   fallback?: React.ReactNode
 }
 
-export const RoleGate: React.FC<RoleGateProps> = ({ 
-  children, 
-  allowedRoles, 
-  fallback = null 
+export const RoleGate: React.FC<RoleGateProps> = ({
+  children,
+  allowedRoles,
+  fallback = null
 }) => {
   const { user, isLoading } = useSelector((state: RootState) => state.auth)
 

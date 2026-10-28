@@ -41,7 +41,7 @@ const PrivateRoutes: React.FC<PrivateRoutesProps> = ({
     }
   }
 
-  
+
   return <Outlet />
 }
 
@@ -74,7 +74,7 @@ export const PublicRoutes: React.FC = () => {
   }
 
   if (user) {
-  
+
     const from = (location.state as any)?.from?.pathname || '/dashboard'
     return <Navigate to={from} replace />
   }
@@ -160,9 +160,9 @@ interface LazyRouteProps {
   fallback?: React.ReactNode
 }
 
-export const LazyRoute: React.FC<LazyRouteProps> = ({ 
-  children, 
-  fallback = <LoadingSpinner fullScreen /> 
+export const LazyRoute: React.FC<LazyRouteProps> = ({
+  children,
+  fallback = <LoadingSpinner fullScreen />
 }) => {
   return (
     <React.Suspense fallback={fallback}>
