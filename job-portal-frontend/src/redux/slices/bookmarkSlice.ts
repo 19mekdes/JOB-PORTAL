@@ -91,7 +91,6 @@ export const removeBookmark = createAsyncThunk(
   }
 )
 
-
 export const checkBookmarkStatus = createAsyncThunk(
   'bookmarks/checkBookmarkStatus',
   async (jobId: string) => {
@@ -99,7 +98,6 @@ export const checkBookmarkStatus = createAsyncThunk(
     return { jobId, isBookmarked: response.data.data.isBookmarked }
   }
 )
-
 
 export const getBookmarkCount = createAsyncThunk(
   'bookmarks/getBookmarkCount',

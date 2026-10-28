@@ -42,41 +42,41 @@ export interface LoadingState {
 interface UIState {
   // Theme
   theme: ThemeMode
-  
+
   // Sidebar
   sidebarOpen: boolean
   sidebarCollapsed: boolean
-  
+
   // Loading states
   loading: LoadingState
-  
+
   // Notifications
   toasts: Toast[]
-  
+
   // Modals
   modals: Modal[]
-  
+
   // Drawers
   drawer: DrawerConfig
-  
+
   // Mobile menu
   mobileMenuOpen: boolean
-  
+
   // Search
   searchOpen: boolean
   searchQuery: string
-  
+
   // Filters
   filtersOpen: boolean
   filtersApplied: number
-  
+
   // Page specific
   currentPage: string
   previousPage: string | null
-  
+
   // Scroll position
   scrollPosition: Record<string, number>
-  
+
   // Errors
   globalError: string | null
 }
@@ -112,22 +112,22 @@ const initialState: UIState = {
 // ========== HELPER FUNCTIONS ==========
 const generateId = () => Math.random().toString(36).substring(2, 11)
 
-// ========== SLICE ==========
+
 const uiSlice = createSlice({
   name: 'ui',
   initialState,
   reducers: {
-    // Theme
+    
     setTheme: (state, action: PayloadAction<ThemeMode>) => {
       state.theme = action.payload
-      // Apply theme to document
+      
       if (typeof document !== 'undefined') {
         if (action.payload === 'dark') {
           document.documentElement.classList.add('dark')
         } else if (action.payload === 'light') {
           document.documentElement.classList.remove('dark')
         } else {
-          // System preference
+          
           const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
           if (isDark) {
             document.documentElement.classList.add('dark')
@@ -142,8 +142,8 @@ const uiSlice = createSlice({
       const currentIndex = themes.indexOf(state.theme)
       const nextIndex = (currentIndex + 1) % themes.length
       state.theme = themes[nextIndex]
+
       
-      // Apply theme to document
       if (typeof document !== 'undefined') {
         if (state.theme === 'dark') {
           document.documentElement.classList.add('dark')
@@ -159,8 +159,8 @@ const uiSlice = createSlice({
         }
       }
     },
+
     
-    // Sidebar
     toggleSidebar: (state) => {
       state.sidebarOpen = !state.sidebarOpen
     },
@@ -173,8 +173,8 @@ const uiSlice = createSlice({
     setSidebarCollapsed: (state, action: PayloadAction<boolean>) => {
       state.sidebarCollapsed = action.payload
     },
+
     
-    // Loading states
     setGlobalLoading: (state, action: PayloadAction<boolean>) => {
       state.loading.global = action.payload
     },
@@ -193,8 +193,8 @@ const uiSlice = createSlice({
       state.loading.page = false
       state.loading.actions = {}
     },
-    
-    // Toasts
+
+   
     addToast: (state, action: PayloadAction<Omit<Toast, 'id'>>) => {
       const id = generateId()
       state.toasts.push({ ...action.payload, id })
@@ -205,7 +205,7 @@ const uiSlice = createSlice({
     clearToasts: (state) => {
       state.toasts = []
     },
-    
+
     // Modals
     showModal: (state, action: PayloadAction<Omit<Modal, 'id'>>) => {
       const id = generateId()
@@ -220,7 +220,7 @@ const uiSlice = createSlice({
     clearModals: (state) => {
       state.modals = []
     },
-    
+
     // Drawer
     openDrawer: (state, action: PayloadAction<Partial<DrawerConfig>>) => {
       state.drawer = {
@@ -240,7 +240,7 @@ const uiSlice = createSlice({
         state.drawer.title = action.payload.title
       }
     },
-    
+
     // Mobile menu
     openMobileMenu: (state) => {
       state.mobileMenuOpen = true
@@ -251,8 +251,7 @@ const uiSlice = createSlice({
     toggleMobileMenu: (state) => {
       state.mobileMenuOpen = !state.mobileMenuOpen
     },
-    
-    // Search
+
     openSearch: (state) => {
       state.searchOpen = true
     },
@@ -269,8 +268,7 @@ const uiSlice = createSlice({
     clearSearchQuery: (state) => {
       state.searchQuery = ''
     },
-    
-    // Filters
+
     openFilters: (state) => {
       state.filtersOpen = true
     },
@@ -292,7 +290,7 @@ const uiSlice = createSlice({
     resetFiltersApplied: (state) => {
       state.filtersApplied = 0
     },
-    
+
     // Page navigation
     setCurrentPage: (state, action: PayloadAction<string>) => {
       state.previousPage = state.currentPage
@@ -301,14 +299,13 @@ const uiSlice = createSlice({
     setPreviousPage: (state, action: PayloadAction<string | null>) => {
       state.previousPage = action.payload
     },
+
     
-    // Scroll position
     saveScrollPosition: (state, action: PayloadAction<{ path: string; position: number }>) => {
       state.scrollPosition[action.payload.path] = action.payload.position
     },
     getScrollPosition: () => {
-      // This is a getter, but in Redux, getters should be selectors
-      // For now, just do nothing
+      
     },
     clearScrollPosition: (state, action: PayloadAction<string>) => {
       delete state.scrollPosition[action.payload]
@@ -316,65 +313,65 @@ const uiSlice = createSlice({
     clearAllScrollPositions: (state) => {
       state.scrollPosition = {}
     },
-    
-    // Global error
+
+  
     setGlobalError: (state, action: PayloadAction<string | null>) => {
       state.globalError = action.payload
     },
     clearGlobalError: (state) => {
       state.globalError = null
     },
+
     
-    // Reset UI state
     resetUI: () => initialState
   }
 })
 
 export const {
-  // Theme
+  
   setTheme,
   toggleTheme,
-  
+
   // Sidebar
   toggleSidebar,
   setSidebarOpen,
   toggleSidebarCollapsed,
   setSidebarCollapsed,
-  
+
   // Loading
   setGlobalLoading,
   setPageLoading,
   setActionLoading,
   clearAllLoading,
-  
+
   // Toasts
   addToast,
   removeToast,
   clearToasts,
-  
+
   // Modals
   showModal,
   hideModal,
   hideTopModal,
   clearModals,
-  
+
   // Drawer
   openDrawer,
   closeDrawer,
   setDrawerContent,
-  
+
   // Mobile menu
   openMobileMenu,
   closeMobileMenu,
   toggleMobileMenu,
-  
+
   // Search
   openSearch,
   closeSearch,
   toggleSearch,
   setSearchQuery,
   clearSearchQuery,
-  
+
   // Filters
   openFilters,
   closeFilters,
@@ -383,20 +380,20 @@ export const {
   incrementFiltersApplied,
   decrementFiltersApplied,
   resetFiltersApplied,
-  
+
   // Page navigation
   setCurrentPage,
   setPreviousPage,
-  
+
   // Scroll position
   saveScrollPosition,
   clearScrollPosition,
   clearAllScrollPositions,
-  
+
   // Global error
   setGlobalError,
   clearGlobalError,
-  
+
   // Reset
   resetUI
 } = uiSlice.actions

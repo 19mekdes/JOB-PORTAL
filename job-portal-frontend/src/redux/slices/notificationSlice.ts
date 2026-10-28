@@ -196,7 +196,7 @@ const notificationSlice = createSlice({
       state.error = null
     },
     resetState: () => initialState,
-    // Optimistic update: mark as read
+    
     optimisticMarkAsRead: (state, action: PayloadAction<number>) => {
       const notification = state.notifications.find(n => n.id === action.payload)
       if (notification && !notification.is_read) {
@@ -217,7 +217,6 @@ const notificationSlice = createSlice({
         state.stats.unread = 0
       }
     },
-    // Optimistic update: delete notification
     optimisticDeleteNotification: (state, action: PayloadAction<number>) => {
       const deleted = state.notifications.find(n => n.id === action.payload)
       if (deleted && !deleted.is_read) {
@@ -278,7 +277,6 @@ const notificationSlice = createSlice({
         state.preferences = action.payload
       })
 
-      // Mark as Read
       .addCase(markAsRead.fulfilled, (state, action) => {
         const notification = state.notifications.find(n => n.id === action.payload)
         if (notification && !notification.is_read) {

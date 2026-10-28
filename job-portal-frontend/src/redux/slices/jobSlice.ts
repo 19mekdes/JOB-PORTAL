@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import api from '../../services/api'
-
 export interface Job {
   id: string
   title: string
@@ -173,7 +172,7 @@ const jobSlice = createSlice({
         state.isLoading = false
         state.error = action.error.message || 'Failed to fetch jobs'
       })
-      // Fetch Job By ID
+      
       .addCase(fetchJobById.pending, (state) => {
         state.isLoading = true
         state.error = null
