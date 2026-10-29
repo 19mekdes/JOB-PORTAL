@@ -107,8 +107,6 @@ export interface UpdateJobData extends Partial<CreateJobData> {
 }
 
 // ========== JOB SEEKER SERVICES ==========
-
-// Get all jobs with filters
 export const getJobs = async (filters: JobFilters = {}): Promise<JobResponse> => {
   const params = new URLSearchParams()
   if (filters.search) params.append('search', filters.search)
@@ -141,7 +139,6 @@ export const searchJobs = async (query: string, page: number = 1, limit: number 
   return response.data
 }
 
-// Get jobs by industry
 export const getJobsByIndustry = async (industryId: number, page: number = 1, limit: number = 10): Promise<JobResponse> => {
   const response = await api.get(`/jobs/industry/${industryId}?page=${page}&limit=${limit}`)
   return response.data
@@ -153,13 +150,10 @@ export const getJobsByLocation = async (city: string, page: number = 1, limit: n
   return response.data
 }
 
-// Get recommended jobs for job seeker
 export const getRecommendedJobs = async (limit: number = 10): Promise<Job[]> => {
   const response = await api.get(`/jobs/recommended?limit=${limit}`)
   return response.data.data
 }
-
-// Get job filters options (industries, employment types, locations)
 export const getJobFilters = async (): Promise<{
   industries: Array<{ id: number; industry_name: string }>
   employment_types: Array<{ id: number; type_name: string }>
@@ -171,8 +165,6 @@ export const getJobFilters = async (): Promise<{
 }
 
 // ========== EMPLOYER SERVICES ==========
-
-// Create a new job posting
 export const createJob = async (jobData: CreateJobData): Promise<Job> => {
   const response = await api.post('/jobs', jobData)
   return response.data.data
@@ -199,14 +191,10 @@ export const getEmployerJobs = async (status?: string, page: number = 1, limit: 
   const response = await api.get(`/jobs/employer/my-jobs${params.toString() ? `?${params}` : ''}`)
   return response.data
 }
-
-// Get job statistics for employer
 export const getJobStats = async (): Promise<JobStats> => {
   const response = await api.get('/jobs/employer/stats')
   return response.data.data
 }
-
-// Get applications for a specific job (employer view)
 export const getJobApplications = async (jobId: string, status?: string, page: number = 1, limit: number = 10): Promise<any> => {
   const params = new URLSearchParams()
   if (status) params.append('status', status)
@@ -236,8 +224,6 @@ export const duplicateJob = async (id: string): Promise<Job> => {
 }
 
 // ========== ADMIN SERVICES ==========
-
-// Get all jobs for admin (with filters)
 export const getAllJobsForAdmin = async (filters: {
   search?: string
   status?: string
@@ -263,8 +249,6 @@ export const moderateJob = async (jobId: string, status: string, moderationNote?
 }
 
 // ========== HELPER FUNCTIONS ==========
-
-// Get salary range display string
 export const formatSalaryRange = (min: number | null, max: number | null): string => {
   if (min && max) {
     return `$${min.toLocaleString()} - $${max.toLocaleString()}`
@@ -305,8 +289,6 @@ export const filterJobsByTypes = (jobs: Job[], types: string[]): Job[] => {
   if (types.length === 0) return jobs
   return jobs.filter(job => types.includes(job.employment_type.type_name))
 }
-
-// Filter jobs by industries
 export const filterJobsByIndustries = (jobs: Job[], industries: string[]): Job[] => {
   if (industries.length === 0) return jobs
   return jobs.filter(job => industries.includes(job.industry.industry_name))
@@ -371,8 +353,6 @@ const jobService = {
   // Admin
   getAllJobsForAdmin,
   moderateJob,
-  
-  // Helpers
   formatSalaryRange,
   getRelativeTime,
   filterJobsBySalary,

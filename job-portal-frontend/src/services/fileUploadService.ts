@@ -48,8 +48,6 @@ export const validateFileSize = (file: File, maxSizeMB: number = 5): FileValidat
   }
   return { isValid: true }
 }
-
-// Validate file type
 export const validateFileType = (file: File, allowedTypes: string[]): FileValidationResult => {
   if (!allowedTypes.includes(file.type)) {
     return {
@@ -59,8 +57,6 @@ export const validateFileType = (file: File, allowedTypes: string[]): FileValida
   }
   return { isValid: true }
 }
-
-// Validate image dimensions
 export const validateImageDimensions = (
   file: File,
   minWidth?: number,
@@ -103,13 +99,10 @@ export const validateImageDimensions = (
     img.src = url
   })
 }
-
-// Validate file with rules
 export const validateFile = async (
   file: File,
   rules: FileValidationRules
 ): Promise<FileValidationResult> => {
-  // Validate size
   if (rules.maxSizeMB) {
     const sizeValidation = validateFileSize(file, rules.maxSizeMB)
     if (!sizeValidation.isValid) return sizeValidation
@@ -137,13 +130,10 @@ export const validateFile = async (
 }
 
 // ========== SINGLE FILE UPLOAD ==========
-
-// Upload resume
 export const uploadResume = async (
   file: File,
   options?: UploadOptions
 ): Promise<UploadResponse> => {
-  // Validate resume file
   const validation = await validateFile(file, {
     maxSizeMB: 5,
     allowedTypes: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']
@@ -172,12 +162,10 @@ export const uploadResume = async (
   return response.data.data
 }
 
-// Upload company logo
 export const uploadCompanyLogo = async (
   file: File,
   options?: UploadOptions
 ): Promise<UploadResponse> => {
-  // Validate logo file
   const validation = await validateFile(file, {
     maxSizeMB: 2,
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
@@ -292,7 +280,6 @@ export const uploadJobAttachment = async (
   jobId: string,
   options?: UploadOptions
 ): Promise<UploadResponse> => {
-  // Validate attachment
   const validation = await validateFile(file, {
     maxSizeMB: 10,
     allowedTypes: [
@@ -389,8 +376,6 @@ export const uploadMultipleJobAttachments = async (
 }
 
 // ========== FILE MANAGEMENT ==========
-
-// Delete uploaded file
 export const deleteFile = async (fileUrl: string): Promise<void> => {
   await api.delete('/upload/file', { data: { url: fileUrl } })
 }
@@ -402,8 +387,6 @@ export const getFileInfo = async (fileUrl: string): Promise<UploadResponse> => {
 }
 
 // ========== HELPER FUNCTIONS ==========
-
-// Format file size
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes'
   const k = 1024
@@ -427,8 +410,6 @@ export const getFileIcon = (fileType: string): string => {
   if (fileType.includes('audio')) return 'Music'
   return 'File'
 }
-
-// Check if file is an image
 export const isImageFile = (file: File): boolean => {
   return file.type.startsWith('image/')
 }
@@ -437,8 +418,6 @@ export const isImageFile = (file: File): boolean => {
 export const isPDFFile = (file: File): boolean => {
   return file.type === 'application/pdf'
 }
-
-// Check if file is a document
 export const isDocumentFile = (file: File): boolean => {
   const documentTypes = [
     'application/msword',
@@ -447,19 +426,14 @@ export const isDocumentFile = (file: File): boolean => {
   ]
   return documentTypes.includes(file.type)
 }
-
-// Generate file preview URL
 export const getFilePreviewUrl = (file: File): string => {
   return URL.createObjectURL(file)
 }
-
-// Revoke file preview URL
 export const revokePreviewUrl = (url: string): void => {
   URL.revokeObjectURL(url)
 }
 
 const fileUploadService = {
-  // Upload methods
   uploadResume,
   uploadCompanyLogo,
   uploadProfilePicture,
@@ -468,11 +442,9 @@ const fileUploadService = {
   uploadMultipleFiles,
   uploadMultipleJobAttachments,
   
-  // File management
   deleteFile,
   getFileInfo,
-  
-  // Validation
+
   validateFile,
   validateFileSize,
   validateFileType,
