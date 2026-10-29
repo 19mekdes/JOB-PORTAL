@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
-
-// ========== TYPES ==========
 export interface ApiError {
   message: string
   status: number
@@ -9,16 +7,11 @@ export interface ApiError {
 }
 
 // ========== CONFIGURATION ==========
-// Dynamic API URL that works on both PC and phone
 const getApiUrl = () => {
-  // Check if we're on localhost (PC development)
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    // Use the environment variable or default to localhost
     return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   }
 
-  // On phone or network access - use the same hostname but port 5000
-  // This works because the phone accesses via PC's IP address
   const hostname = window.location.hostname;
   return `http://${hostname}:5000/api`;
 };
@@ -28,7 +21,6 @@ const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000', 10);
 
 console.log('[API] Base URL:', API_URL); // Debug log
 
-// Create axios instance
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   timeout: API_TIMEOUT,

@@ -1,6 +1,4 @@
 import api from './api'
-
-// ========== TYPES ==========
 export interface Application {
   id: string
   job_id: string
@@ -87,7 +85,6 @@ export interface ApplicationNote {
 
 // ========== JOB SEEKER APPLICATION SERVICES ==========
 
-// Get all applications for the current job seeker
 export const getMyApplications = async (filters: ApplicationFilters = {}) => {
   const params = new URLSearchParams()
   if (filters.status && filters.status !== 'all') params.append('status', filters.status)
@@ -98,14 +95,10 @@ export const getMyApplications = async (filters: ApplicationFilters = {}) => {
   const response = await api.get(`/applications/my-applications${params.toString() ? `?${params}` : ''}`)
   return response.data
 }
-
-// Get a single application by ID (job seeker view)
 export const getApplicationById = async (id: string): Promise<Application> => {
   const response = await api.get(`/applications/${id}`)
   return response.data.data
 }
-
-// Apply for a job
 export const applyForJob = async (jobId: string, data: {
   cover_letter: string
   resume_url?: string
@@ -121,19 +114,13 @@ export const applyForJob = async (jobId: string, data: {
   const response = await api.post('/applications', { job_id: jobId, ...data })
   return response.data.data
 }
-
-// Withdraw an application
 export const withdrawApplication = async (id: string): Promise<void> => {
   await api.delete(`/applications/my-applications/${id}/withdraw`)
 }
-
-// Get application statistics for job seeker
 export const getApplicationStats = async (): Promise<ApplicationStats> => {
   const response = await api.get('/applications/my-stats')
   return response.data.data
 }
-
-// Export applications to CSV
 export const exportApplications = async (): Promise<Blob> => {
   const response = await api.get('/applications/export', {
     responseType: 'blob'
@@ -142,8 +129,6 @@ export const exportApplications = async (): Promise<Blob> => {
 }
 
 // ========== EMPLOYER APPLICATION SERVICES ==========
-
-// Get applications for a specific job (employer view)
 export const getJobApplications = async (jobId: string, filters: ApplicationFilters = {}) => {
   const params = new URLSearchParams()
   if (filters.status && filters.status !== 'all') params.append('status', filters.status)
@@ -154,8 +139,6 @@ export const getJobApplications = async (jobId: string, filters: ApplicationFilt
   const response = await api.get(`/applications/job/${jobId}${params.toString() ? `?${params}` : ''}`)
   return response.data
 }
-
-// Get all applications for employer (across all jobs)
 export const getAllEmployerApplications = async (filters: ApplicationFilters = {}) => {
   const params = new URLSearchParams()
   if (filters.status && filters.status !== 'all') params.append('status', filters.status)
@@ -178,8 +161,6 @@ export const addApplicationNote = async (id: string, note: string): Promise<Appl
   const response = await api.post(`/applications/${id}/notes`, { note_text: note })
   return response.data.data
 }
-
-// Get all notes for an application
 export const getApplicationNotes = async (id: string): Promise<ApplicationNote[]> => {
   const response = await api.get(`/applications/${id}/notes`)
   return response.data.data
