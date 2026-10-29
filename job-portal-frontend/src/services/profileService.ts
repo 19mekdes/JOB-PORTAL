@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import api from './api'
-
-// ========== TYPES ==========
 export interface SeekerProfile {
   id: string
   full_name: string
@@ -87,20 +85,15 @@ export interface Education {
 }
 
 // ========== PROFILE SERVICES ==========
-
-// Get current user's profile
 export const getProfile = async (): Promise<ProfileResponse> => {
   const response = await api.get('/profile/me')
   return response.data.data
 }
 
-// Update job seeker profile
 export const updateSeekerProfile = async (data: Partial<SeekerProfile>): Promise<SeekerProfile> => {
   const response = await api.put('/profile/seeker', data)
   return response.data.data
 }
-
-// Update employer profile
 export const updateEmployerProfile = async (data: Partial<EmployerProfile>): Promise<EmployerProfile> => {
   const response = await api.put('/profile/employer', data)
   return response.data.data
@@ -123,8 +116,6 @@ export const uploadCompanyLogo = async (logoUrl: string): Promise<EmployerProfil
   const response = await api.post('/profile/employer/logo', { logo_url: logoUrl })
   return response.data.data
 }
-
-// Delete company logo
 export const deleteCompanyLogo = async (): Promise<EmployerProfile> => {
   const response = await api.delete('/profile/employer/logo')
   return response.data.data
@@ -181,8 +172,6 @@ export const updateEducation = async (id: string, education: Partial<Education>)
 export const deleteEducation = async (id: string): Promise<void> => {
   await api.delete(`/profile/seeker/education/${id}`)
 }
-
-// Get public profile by user ID
 export const getPublicProfile = async (userId: string): Promise<ProfileResponse> => {
   const response = await api.get(`/profile/public/${userId}`)
   return response.data.data
@@ -199,8 +188,6 @@ export const getEmployerProfileById = async (employerId: string): Promise<Employ
   const response = await api.get(`/profile/employer/${employerId}`)
   return response.data.data
 }
-
-// Get profile completion percentage
 export const getProfileCompletion = async (): Promise<{
   percentage: number
   completed_fields: string[]
@@ -217,8 +204,6 @@ export const getProfileCompletion = async (): Promise<{
 }
 
 // ========== HELPER FUNCTIONS ==========
-
-// Calculate profile completion percentage
 export const calculateCompletionPercentage = (profile: SeekerProfile | EmployerProfile, userType: string): number => {
   if (userType === 'Job Seeker') {
     const seekerProfile = profile as SeekerProfile
@@ -262,8 +247,6 @@ export const parseExperience = (experience: string | null): Experience[] => {
     return []
   }
 }
-
-// Parse education JSON to array
 export const parseEducation = (education: string | null): Education[] => {
   if (!education) return []
   try {
@@ -282,8 +265,6 @@ export const stringifyExperience = (experience: Experience[]): string => {
 export const stringifyEducation = (education: Education[]): string => {
   return JSON.stringify(education)
 }
-
-// Get experience duration in years/months
 export const getExperienceDuration = (experience: Experience): string => {
   const start = new Date(experience.start_date)
   const end = experience.current ? new Date() : (experience.end_date ? new Date(experience.end_date) : null)
@@ -316,8 +297,6 @@ export const isProfileReadyForApplications = (profile: SeekerProfile): boolean =
     profile.skills.length > 0
   )
 }
-
-// Get missing profile fields
 export const getMissingProfileFields = (profile: SeekerProfile): string[] => {
   const missing: string[] = []
   if (!profile.full_name) missing.push('Full Name')
@@ -372,8 +351,7 @@ const profileService = {
   addExperience,
   updateExperience,
   deleteExperience,
-  
-  // Education
+
   addEducation,
   updateEducation,
   deleteEducation,

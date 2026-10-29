@@ -61,8 +61,6 @@ export interface NotificationResponse {
 }
 
 // ========== NOTIFICATION SERVICES ==========
-
-// Get all notifications for current user
 export const getNotifications = async (filters: NotificationFilters = {}): Promise<NotificationResponse> => {
   const params = new URLSearchParams()
   if (filters.type) params.append('type', filters.type)
@@ -71,53 +69,37 @@ export const getNotifications = async (filters: NotificationFilters = {}): Promi
   if (filters.end_date) params.append('end_date', filters.end_date)
   if (filters.page) params.append('page', filters.page.toString())
   if (filters.limit) params.append('limit', filters.limit.toString())
-  
+
   const response = await api.get(`/notifications${params.toString() ? `?${params}` : ''}`)
   return response.data.data
 }
-
-// Get unread notification count
 export const getUnreadCount = async (): Promise<number> => {
   const response = await api.get('/notifications/unread/count')
   return response.data.data.count
 }
-
-// Get notification by ID
 export const getNotificationById = async (id: number): Promise<Notification> => {
   const response = await api.get(`/notifications/${id}`)
   return response.data.data
 }
-
-// Mark a notification as read
 export const markAsRead = async (id: number): Promise<Notification> => {
   const response = await api.put(`/notifications/${id}/read`)
   return response.data.data
 }
-
-// Mark multiple notifications as read
 export const markMultipleAsRead = async (ids: number[]): Promise<{ updated_count: number }> => {
   const response = await api.put('/notifications/read/multiple', { notification_ids: ids })
   return response.data.data
 }
-
-// Mark all notifications as read
 export const markAllAsRead = async (): Promise<{ updated_count: number }> => {
   const response = await api.put('/notifications/all/read')
   return response.data.data
 }
-
-// Delete a notification
 export const deleteNotification = async (id: number): Promise<void> => {
   await api.delete(`/notifications/${id}`)
 }
-
-// Delete all read notifications
 export const deleteAllRead = async (): Promise<{ deleted_count: number }> => {
   const response = await api.delete('/notifications/read/all')
   return response.data.data
 }
-
-// Get notification statistics
 export const getNotificationStats = async (): Promise<NotificationStats> => {
   const response = await api.get('/notifications/stats')
   return response.data.data
@@ -128,8 +110,6 @@ export const getNotificationPreferences = async (): Promise<NotificationPreferen
   const response = await api.get('/notifications/preferences')
   return response.data.data
 }
-
-// Update notification preferences
 export const updateNotificationPreferences = async (preferences: Partial<NotificationPreferences>): Promise<NotificationPreferences> => {
   const response = await api.put('/notifications/preferences', preferences)
   return response.data.data
@@ -142,8 +122,6 @@ export const sendTestNotification = async (): Promise<Notification> => {
 }
 
 // ========== HELPER FUNCTIONS ==========
-
-// Get notification icon based on type
 export const getNotificationIcon = (type: string): string => {
   switch (type) {
     case 'application_submitted':
@@ -169,7 +147,6 @@ export const getNotificationIcon = (type: string): string => {
   }
 }
 
-// Get notification color based on type
 export const getNotificationColor = (type: string): string => {
   switch (type) {
     case 'application_submitted':
@@ -211,8 +188,6 @@ export const getNotificationTypeLabel = (type: string): string => {
   }
   return labels[type] || type
 }
-
-// Format notification time (relative)
 export const formatNotificationTime = (date: string): string => {
   const now = new Date()
   const notificationDate = new Date(date)
@@ -222,7 +197,7 @@ export const formatNotificationTime = (date: string): string => {
   const diffDays = Math.floor(diffMs / 86400000)
   const diffWeeks = Math.floor(diffDays / 7)
   const diffMonths = Math.floor(diffDays / 30)
-  
+
   if (diffMins < 1) return 'Just now'
   if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`
   if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
@@ -235,11 +210,9 @@ export const formatNotificationTime = (date: string): string => {
 export const formatNotificationDate = (date: string): string => {
   return new Date(date).toLocaleString()
 }
-
-// Group notifications by date
 export const groupNotificationsByDate = (notifications: Notification[]): Record<string, Notification[]> => {
   const grouped: Record<string, Notification[]> = {}
-  
+
   notifications.forEach(notification => {
     const date = new Date(notification.created_at).toLocaleDateString()
     if (!grouped[date]) {
@@ -247,7 +220,7 @@ export const groupNotificationsByDate = (notifications: Notification[]): Record<
     }
     grouped[date].push(notification)
   })
-  
+
   return grouped
 }
 
@@ -256,8 +229,6 @@ export const filterNotificationsByType = (notifications: Notification[], type: s
   if (type === 'all') return notifications
   return notifications.filter(n => n.type === type)
 }
-
-// Filter notifications by read status
 export const filterNotificationsByReadStatus = (notifications: Notification[], isRead: boolean): Notification[] => {
   return notifications.filter(n => n.is_read === isRead)
 }
@@ -267,7 +238,6 @@ export const getUnreadNotifications = (notifications: Notification[]): Notificat
   return notifications.filter(n => !n.is_read)
 }
 
-// Get read notifications
 export const getReadNotifications = (notifications: Notification[]): Notification[] => {
   return notifications.filter(n => n.is_read)
 }
@@ -283,8 +253,6 @@ export const getNotificationsByDateRange = (
     return date >= startDate && date <= endDate
   })
 }
-
-// Get recent notifications (last N days)
 export const getRecentNotifications = (notifications: Notification[], days: number = 7): Notification[] => {
   const cutoffDate = new Date()
   cutoffDate.setDate(cutoffDate.getDate() - days)
@@ -299,13 +267,9 @@ export const getNotificationCountByType = (notifications: Notification[]): Recor
   })
   return counts
 }
-
-// Check if there are unread notifications
 export const hasUnreadNotifications = (notifications: Notification[]): boolean => {
   return notifications.some(n => !n.is_read)
 }
-
-// Get notification navigation path
 export const getNotificationNavigationPath = (notification: Notification): string => {
   if (notification.metadata?.job_id) {
     return `/jobs/${notification.metadata.job_id}`
@@ -333,7 +297,7 @@ const notificationService = {
   getNotificationPreferences,
   updateNotificationPreferences,
   sendTestNotification,
-  
+
   // Helper methods
   getNotificationIcon,
   getNotificationColor,
