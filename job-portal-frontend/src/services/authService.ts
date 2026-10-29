@@ -79,39 +79,30 @@ export interface UserProfile {
 }
 
 // ========== AUTH SERVICE ==========
-
-// Register a new user
 export const register = async (data: RegisterData): Promise<AuthResponse> => {
   const response = await api.post('/auth/register', data)
   return response.data
 }
-
-// Login user
 export const login = async (email: string, password: string, rememberMe?: boolean): Promise<AuthResponse> => {
   const response = await api.post('/auth/login', { email, password, rememberMe })
-  
-  // Store tokens if remember me is enabled
+
   if (rememberMe && response.data.refreshToken) {
     localStorage.setItem('refreshToken', response.data.refreshToken)
   }
-  
+
   return response.data
 }
 
-// Logout user
 export const logout = async (): Promise<void> => {
   try {
     await api.post('/auth/logout')
   } catch (error) {
     console.error('Logout error:', error)
   } finally {
-    // Clear local storage regardless of API response
     localStorage.removeItem('user')
     localStorage.removeItem('refreshToken')
   }
 }
-
-// Get current user profile
 export const getMe = async (): Promise<UserProfile> => {
   const response = await api.get('/auth/me')
   return response.data.data
@@ -142,26 +133,19 @@ export const changePassword = async (current_password: string, new_password: str
   const response = await api.post('/auth/change-password', { current_password, new_password })
   return response.data
 }
-
-// Forgot password - request reset link
 export const forgotPassword = async (email: string): Promise<{ message: string }> => {
   const response = await api.post('/auth/forgot-password', { email })
   return response.data
 }
-
-// Reset password with token
 export const resetPassword = async (token: string, new_password: string): Promise<{ message: string }> => {
   const response = await api.post(`/auth/reset-password/${token}`, { new_password })
   return response.data
 }
 
-// Verify email with token
 export const verifyEmail = async (token: string): Promise<{ message: string }> => {
   const response = await api.get(`/auth/verify-email/${token}`)
   return response.data
 }
-
-// Resend verification email
 export const resendVerification = async (email: string): Promise<{ message: string }> => {
   const response = await api.post('/auth/resend-verification', { email })
   return response.data
@@ -174,8 +158,6 @@ export const refreshToken = async (refreshToken: string): Promise<{ token: strin
 }
 
 // ========== HELPER FUNCTIONS ==========
-
-// Store user data in localStorage
 export const storeUserData = (user: any, token: string, refreshToken?: string): void => {
   const userData = {
     ...user,
@@ -186,8 +168,6 @@ export const storeUserData = (user: any, token: string, refreshToken?: string): 
     localStorage.setItem('refreshToken', refreshToken)
   }
 }
-
-// Get stored user data
 export const getStoredUser = (): any => {
   const userStr = localStorage.getItem('user')
   if (userStr) {
@@ -221,7 +201,7 @@ export const clearAuthData = (): void => {
 export const isAuthenticated = (): boolean => {
   const token = getStoredToken()
   if (!token) return false
-  
+
   // Check if token is expired
   try {
     const payload = JSON.parse(atob(token.split('.')[1]))
@@ -241,7 +221,7 @@ export const getUserRole = (): string | null => {
 export const hasRole = (role: string | string[]): boolean => {
   const userRole = getUserRole()
   if (!userRole) return false
-  
+
   if (Array.isArray(role)) {
     return role.includes(userRole)
   }
@@ -263,7 +243,6 @@ export const isAdmin = (): boolean => {
   return hasRole(['Admin', 'Super Admin'])
 }
 
-// Check if user is super admin
 export const isSuperAdmin = (): boolean => {
   return hasRole('Super Admin')
 }
@@ -272,7 +251,7 @@ export const isSuperAdmin = (): boolean => {
 export const getUserInitials = (): string => {
   const user = getStoredUser()
   if (!user) return 'U'
-  
+
   if (user.full_name) {
     return user.full_name
       .split(' ')
@@ -281,7 +260,7 @@ export const getUserInitials = (): string => {
       .toUpperCase()
       .slice(0, 2)
   }
-  
+
   return user.email?.charAt(0).toUpperCase() || 'U'
 }
 
@@ -314,7 +293,6 @@ export const updateStoredUser = (updates: Partial<any>): void => {
 }
 
 const authService = {
-  // API methods
   register,
   login,
   logout,
@@ -326,7 +304,7 @@ const authService = {
   verifyEmail,
   resendVerification,
   refreshToken,
-  
+
   // Helper methods
   storeUserData,
   getStoredUser,

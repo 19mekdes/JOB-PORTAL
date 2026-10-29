@@ -1,6 +1,4 @@
 import api from './api'
-
-// ========== TYPES ==========
 export interface BookmarkedJob {
   id: number
   job: {
@@ -43,8 +41,6 @@ export interface BookmarkResponse {
 }
 
 // ========== BOOKMARK SERVICES ==========
-
-// Get all bookmarks for current user
 export const getBookmarks = async (filters: BookmarkFilters = {}): Promise<BookmarkResponse> => {
   const params = new URLSearchParams()
   if (filters.page) params.append('page', filters.page.toString())
@@ -54,14 +50,10 @@ export const getBookmarks = async (filters: BookmarkFilters = {}): Promise<Bookm
   const response = await api.get(`/bookmarks${params.toString() ? `?${params}` : ''}`)
   return response.data
 }
-
-// Get bookmark by ID
 export const getBookmarkById = async (bookmarkId: number): Promise<BookmarkedJob> => {
   const response = await api.get(`/bookmarks/${bookmarkId}`)
   return response.data.data
 }
-
-// Add a job to bookmarks
 export const addBookmark = async (jobId: string): Promise<BookmarkedJob> => {
   const response = await api.post(`/bookmarks/${jobId}`)
   return response.data.data
@@ -113,16 +105,12 @@ export const isJobBookmarked = (bookmarks: BookmarkedJob[], jobId: string): bool
 export const getBookmarkByJobId = (bookmarks: BookmarkedJob[], jobId: string): BookmarkedJob | undefined => {
   return bookmarks.find(bookmark => bookmark.job.id === jobId)
 }
-
-// Filter bookmarks by job status (active/closed)
 export const filterBookmarksByStatus = (bookmarks: BookmarkedJob[], activeOnly: boolean = true): BookmarkedJob[] => {
   if (activeOnly) {
     return bookmarks.filter(bookmark => bookmark.job.is_active)
   }
   return bookmarks
 }
-
-// Filter bookmarks by search term
 export const filterBookmarksBySearch = (bookmarks: BookmarkedJob[], searchTerm: string): BookmarkedJob[] => {
   if (!searchTerm.trim()) return bookmarks
   
@@ -133,8 +121,6 @@ export const filterBookmarksBySearch = (bookmarks: BookmarkedJob[], searchTerm: 
     bookmark.job.location.toLowerCase().includes(term)
   )
 }
-
-// Sort bookmarks
 export const sortBookmarks = (bookmarks: BookmarkedJob[], sortBy: 'recent' | 'oldest' | 'title' | 'company'): BookmarkedJob[] => {
   const sorted = [...bookmarks]
   
@@ -166,16 +152,12 @@ export const groupBookmarksByDate = (bookmarks: BookmarkedJob[]): Record<string,
   
   return grouped
 }
-
-// Get recently added bookmarks (last N days)
 export const getRecentBookmarks = (bookmarks: BookmarkedJob[], days: number = 7): BookmarkedJob[] => {
   const cutoffDate = new Date()
   cutoffDate.setDate(cutoffDate.getDate() - days)
   
   return bookmarks.filter(bookmark => new Date(bookmark.created_at) >= cutoffDate)
 }
-
-// Get expired bookmarks (jobs that are no longer active)
 export const getExpiredBookmarks = (bookmarks: BookmarkedJob[]): BookmarkedJob[] => {
   return bookmarks.filter(bookmark => !bookmark.job.is_active)
 }
@@ -200,8 +182,6 @@ export const getBookmarkStats = (bookmarks: BookmarkedJob[]) => {
     activePercentage: total > 0 ? Math.round((active / total) * 100) : 0
   }
 }
-
-// Get top industries from bookmarks
 export const getTopIndustriesFromBookmarks = (bookmarks: BookmarkedJob[], limit: number = 5): Array<{ industry: string; count: number }> => {
   const industryCount: Record<string, number> = {}
   
@@ -215,8 +195,6 @@ export const getTopIndustriesFromBookmarks = (bookmarks: BookmarkedJob[], limit:
     .sort((a, b) => b.count - a.count)
     .slice(0, limit)
 }
-
-// Get top companies from bookmarks
 export const getTopCompaniesFromBookmarks = (bookmarks: BookmarkedJob[], limit: number = 5): Array<{ company: string; count: number }> => {
   const companyCount: Record<string, number> = {}
   
