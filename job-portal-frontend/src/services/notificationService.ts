@@ -115,7 +115,6 @@ export const updateNotificationPreferences = async (preferences: Partial<Notific
   return response.data.data
 }
 
-// Send test notification
 export const sendTestNotification = async (): Promise<Notification> => {
   const response = await api.post('/notifications/test/send')
   return response.data.data
@@ -171,8 +170,6 @@ export const getNotificationColor = (type: string): string => {
       return 'text-gray-500'
   }
 }
-
-// Get notification type label
 export const getNotificationTypeLabel = (type: string): string => {
   const labels: Record<string, string> = {
     application_submitted: 'Application Submitted',
@@ -206,7 +203,6 @@ export const formatNotificationTime = (date: string): string => {
   return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`
 }
 
-// Format notification date (full)
 export const formatNotificationDate = (date: string): string => {
   return new Date(date).toLocaleString()
 }
@@ -224,7 +220,6 @@ export const groupNotificationsByDate = (notifications: Notification[]): Record<
   return grouped
 }
 
-// Filter notifications by type
 export const filterNotificationsByType = (notifications: Notification[], type: string): Notification[] => {
   if (type === 'all') return notifications
   return notifications.filter(n => n.type === type)
@@ -233,7 +228,6 @@ export const filterNotificationsByReadStatus = (notifications: Notification[], i
   return notifications.filter(n => n.is_read === isRead)
 }
 
-// Get unread notifications
 export const getUnreadNotifications = (notifications: Notification[]): Notification[] => {
   return notifications.filter(n => !n.is_read)
 }
@@ -242,7 +236,6 @@ export const getReadNotifications = (notifications: Notification[]): Notificatio
   return notifications.filter(n => n.is_read)
 }
 
-// Get notifications by date range
 export const getNotificationsByDateRange = (
   notifications: Notification[],
   startDate: Date,
@@ -259,7 +252,6 @@ export const getRecentNotifications = (notifications: Notification[], days: numb
   return notifications.filter(n => new Date(n.created_at) >= cutoffDate)
 }
 
-// Get notification count by type
 export const getNotificationCountByType = (notifications: Notification[]): Record<string, number> => {
   const counts: Record<string, number> = {}
   notifications.forEach(notification => {

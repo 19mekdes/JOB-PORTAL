@@ -99,19 +99,16 @@ export const updateEmployerProfile = async (data: Partial<EmployerProfile>): Pro
   return response.data.data
 }
 
-// Upload resume
+
 export const uploadResume = async (resumeUrl: string): Promise<SeekerProfile> => {
   const response = await api.post('/profile/seeker/resume', { resume_url: resumeUrl })
   return response.data.data
 }
 
-// Delete resume
 export const deleteResume = async (): Promise<SeekerProfile> => {
   const response = await api.delete('/profile/seeker/resume')
   return response.data.data
 }
-
-// Upload company logo
 export const uploadCompanyLogo = async (logoUrl: string): Promise<EmployerProfile> => {
   const response = await api.post('/profile/employer/logo', { logo_url: logoUrl })
   return response.data.data
@@ -120,55 +117,42 @@ export const deleteCompanyLogo = async (): Promise<EmployerProfile> => {
   const response = await api.delete('/profile/employer/logo')
   return response.data.data
 }
-
-// Update skills
 export const updateSkills = async (skills: string[]): Promise<SeekerProfile> => {
   const response = await api.put('/profile/seeker/skills', { skills })
   return response.data.data
 }
 
-// Add a skill
 export const addSkill = async (skill: string): Promise<SeekerProfile> => {
   const response = await api.post('/profile/seeker/skills', { skill })
   return response.data.data
 }
 
-// Remove a skill
 export const removeSkill = async (skill: string): Promise<SeekerProfile> => {
   const response = await api.delete(`/profile/seeker/skills/${encodeURIComponent(skill)}`)
   return response.data.data
 }
-
-// Add experience
 export const addExperience = async (experience: Omit<Experience, 'id'>): Promise<Experience> => {
   const response = await api.post('/profile/seeker/experience', experience)
   return response.data.data.experience
 }
 
-// Update experience
 export const updateExperience = async (id: string, experience: Partial<Experience>): Promise<Experience> => {
   const response = await api.put(`/profile/seeker/experience/${id}`, experience)
   return response.data.data
 }
 
-// Delete experience
 export const deleteExperience = async (id: string): Promise<void> => {
   await api.delete(`/profile/seeker/experience/${id}`)
 }
-
-// Add education
 export const addEducation = async (education: Omit<Education, 'id'>): Promise<Education> => {
   const response = await api.post('/profile/seeker/education', education)
   return response.data.data.education
 }
 
-// Update education
 export const updateEducation = async (id: string, education: Partial<Education>): Promise<Education> => {
   const response = await api.put(`/profile/seeker/education/${id}`, education)
   return response.data.data
 }
-
-// Delete education
 export const deleteEducation = async (id: string): Promise<void> => {
   await api.delete(`/profile/seeker/education/${id}`)
 }
@@ -176,14 +160,11 @@ export const getPublicProfile = async (userId: string): Promise<ProfileResponse>
   const response = await api.get(`/profile/public/${userId}`)
   return response.data.data
 }
-
-// Get job seeker profile by ID (for employers)
 export const getSeekerProfileById = async (seekerId: string): Promise<SeekerProfile> => {
   const response = await api.get(`/profile/seeker/${seekerId}`)
   return response.data.data
 }
 
-// Get employer profile by ID (for job seekers)
 export const getEmployerProfileById = async (employerId: string): Promise<EmployerProfile> => {
   const response = await api.get(`/profile/employer/${employerId}`)
   return response.data.data
@@ -238,7 +219,6 @@ export const calculateCompletionPercentage = (profile: SeekerProfile | EmployerP
   }
 }
 
-// Parse experience JSON to array
 export const parseExperience = (experience: string | null): Experience[] => {
   if (!experience) return []
   try {
@@ -256,12 +236,10 @@ export const parseEducation = (education: string | null): Education[] => {
   }
 }
 
-// Stringify experience array to JSON
 export const stringifyExperience = (experience: Experience[]): string => {
   return JSON.stringify(experience)
 }
 
-// Stringify education array to JSON
 export const stringifyEducation = (education: Education[]): string => {
   return JSON.stringify(education)
 }
@@ -281,14 +259,12 @@ export const getExperienceDuration = (experience: Experience): string => {
   return duration.trim() || 'Less than a month'
 }
 
-// Get education date range
 export const getEducationDateRange = (education: Education): string => {
   const start = new Date(education.start_date).getFullYear()
   const end = education.current ? 'Present' : (education.end_date ? new Date(education.end_date).getFullYear() : '')
   return `${start} - ${end}`
 }
 
-// Check if profile is complete enough for job applications
 export const isProfileReadyForApplications = (profile: SeekerProfile): boolean => {
   return !!(
     profile.full_name &&
@@ -309,7 +285,6 @@ export const getMissingProfileFields = (profile: SeekerProfile): string[] => {
   return missing
 }
 
-// Get profile summary for display
 export const getProfileSummary = (profile: SeekerProfile | EmployerProfile, userType: string): string => {
   if (userType === 'Job Seeker') {
     const seekerProfile = profile as SeekerProfile
@@ -325,7 +300,6 @@ export const getProfileSummary = (profile: SeekerProfile | EmployerProfile, user
 }
 
 const profileService = {
-  // Profile CRUD
   getProfile,
   updateSeekerProfile,
   updateEmployerProfile,
@@ -333,16 +307,11 @@ const profileService = {
   getSeekerProfileById,
   getEmployerProfileById,
   getProfileCompletion,
-  
-  // Resume
   uploadResume,
   deleteResume,
   
-  // Company Logo
   uploadCompanyLogo,
   deleteCompanyLogo,
-  
-  // Skills
   updateSkills,
   addSkill,
   removeSkill,
@@ -355,8 +324,7 @@ const profileService = {
   addEducation,
   updateEducation,
   deleteEducation,
-  
-  // Helpers
+
   calculateCompletionPercentage,
   parseExperience,
   parseEducation,
