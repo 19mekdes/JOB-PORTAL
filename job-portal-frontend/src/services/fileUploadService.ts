@@ -37,7 +37,6 @@ export interface FileValidationRules {
 
 // ========== FILE VALIDATION ==========
 
-// Validate file size
 export const validateFileSize = (file: File, maxSizeMB: number = 5): FileValidationResult => {
   const maxSizeBytes = maxSizeMB * 1024 * 1024
   if (file.size > maxSizeBytes) {
@@ -108,13 +107,11 @@ export const validateFile = async (
     if (!sizeValidation.isValid) return sizeValidation
   }
   
-  // Validate type
   if (rules.allowedTypes && rules.allowedTypes.length > 0) {
     const typeValidation = validateFileType(file, rules.allowedTypes)
     if (!typeValidation.isValid) return typeValidation
   }
   
-  // Validate image dimensions (only for images)
   if (file.type.startsWith('image/') && (rules.minWidth || rules.maxWidth || rules.minHeight || rules.maxHeight)) {
     const dimensionValidation = await validateImageDimensions(
       file,
@@ -198,12 +195,11 @@ export const uploadCompanyLogo = async (
   return response.data.data
 }
 
-// Upload profile picture
 export const uploadProfilePicture = async (
   file: File,
   options?: UploadOptions
 ): Promise<UploadResponse> => {
-  // Validate profile picture
+
   const validation = await validateFile(file, {
     maxSizeMB: 2,
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
@@ -236,12 +232,10 @@ export const uploadProfilePicture = async (
   return response.data.data
 }
 
-// Upload cover image
 export const uploadCoverImage = async (
   file: File,
   options?: UploadOptions
 ): Promise<UploadResponse> => {
-  // Validate cover image
   const validation = await validateFile(file, {
     maxSizeMB: 5,
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
@@ -274,7 +268,6 @@ export const uploadCoverImage = async (
   return response.data.data
 }
 
-// Upload job attachment
 export const uploadJobAttachment = async (
   file: File,
   jobId: string,
@@ -320,7 +313,6 @@ export const uploadJobAttachment = async (
 
 // ========== MULTIPLE FILE UPLOAD ==========
 
-// Upload multiple files
 export const uploadMultipleFiles = async (
   files: File[],
   endpoint: string,
@@ -347,7 +339,6 @@ export const uploadMultipleFiles = async (
   return response.data.data
 }
 
-// Upload multiple job attachments
 export const uploadMultipleJobAttachments = async (
   files: File[],
   jobId: string,
@@ -380,7 +371,6 @@ export const deleteFile = async (fileUrl: string): Promise<void> => {
   await api.delete('/upload/file', { data: { url: fileUrl } })
 }
 
-// Get file info
 export const getFileInfo = async (fileUrl: string): Promise<UploadResponse> => {
   const response = await api.get('/upload/info', { params: { url: fileUrl } })
   return response.data.data
@@ -395,12 +385,10 @@ export const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-// Get file extension
 export const getFileExtension = (filename: string): string => {
   return filename.slice((filename.lastIndexOf('.') - 1 >>> 0) + 2)
 }
 
-// Get file icon based on type
 export const getFileIcon = (fileType: string): string => {
   if (fileType.includes('pdf')) return 'FileText'
   if (fileType.includes('word') || fileType.includes('document')) return 'FileText'
@@ -414,7 +402,6 @@ export const isImageFile = (file: File): boolean => {
   return file.type.startsWith('image/')
 }
 
-// Check if file is a PDF
 export const isPDFFile = (file: File): boolean => {
   return file.type === 'application/pdf'
 }
@@ -450,7 +437,6 @@ const fileUploadService = {
   validateFileType,
   validateImageDimensions,
   
-  // Helpers
   formatFileSize,
   getFileExtension,
   getFileIcon,

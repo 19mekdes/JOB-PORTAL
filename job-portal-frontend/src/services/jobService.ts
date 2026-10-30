@@ -127,13 +127,12 @@ export const getJobs = async (filters: JobFilters = {}): Promise<JobResponse> =>
   return response.data
 }
 
-// Get job by ID
 export const getJobById = async (id: string): Promise<Job> => {
   const response = await api.get(`/jobs/${id}`)
   return response.data.data
 }
 
-// Search jobs
+
 export const searchJobs = async (query: string, page: number = 1, limit: number = 10): Promise<JobResponse> => {
   const response = await api.get(`/jobs/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`)
   return response.data
