@@ -174,15 +174,12 @@ export const exportJobApplications = async (jobId: string): Promise<Blob> => {
   return response.data
 }
 
-// Bulk update application status
 export const bulkUpdateApplicationStatus = async (ids: string[], status: string): Promise<{ updated_count: number }> => {
   const response = await api.put('/applications/bulk/status', { ids, status })
   return response.data.data
 }
 
 // ========== ADMIN APPLICATION SERVICES ==========
-
-// Get all applications (admin view)
 export const getAllApplicationsForAdmin = async (filters: {
   status?: string
   job_id?: string
@@ -198,16 +195,12 @@ export const getAllApplicationsForAdmin = async (filters: {
   const response = await api.get(`/admin/applications${params.toString() ? `?${params}` : ''}`)
   return response.data
 }
-
-// Get application by ID (admin view)
 export const getApplicationByIdForAdmin = async (id: string): Promise<Application> => {
   const response = await api.get(`/admin/applications/${id}`)
   return response.data.data
 }
 
 // ========== HELPER FUNCTIONS ==========
-
-// Get status color for UI
 export const getStatusColor = (status: string): string => {
   switch (status) {
     case 'Pending':
@@ -226,8 +219,6 @@ export const getStatusColor = (status: string): string => {
       return 'bg-gray-100 text-gray-800'
   }
 }
-
-// Get status badge variant for shadcn/ui
 export const getStatusBadgeVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' => {
   switch (status) {
     case 'Pending':
@@ -267,7 +258,6 @@ export const getStatusIcon = (status: string): string => {
   }
 }
 
-// Calculate application success rate
 export const calculateSuccessRate = (applications: Application[]): number => {
   if (applications.length === 0) return 0
   const accepted = applications.filter(app => app.status.status_name === 'Accepted').length
@@ -292,7 +282,6 @@ export const calculateAverageResponseTime = (applications: Application[]): numbe
   return Math.round(totalDays / withResponseDate.length)
 }
 
-// Filter applications by date range
 export const filterApplicationsByDateRange = (
   applications: Application[],
   startDate: Date,
@@ -303,8 +292,6 @@ export const filterApplicationsByDateRange = (
     return appliedDate >= startDate && appliedDate <= endDate
   })
 }
-
-// Group applications by month
 export const groupApplicationsByMonth = (applications: Application[]): Record<string, Application[]> => {
   const grouped: Record<string, Application[]> = {}
   

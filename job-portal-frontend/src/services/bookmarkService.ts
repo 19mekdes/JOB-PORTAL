@@ -59,36 +59,30 @@ export const addBookmark = async (jobId: string): Promise<BookmarkedJob> => {
   return response.data.data
 }
 
-// Remove a job from bookmarks
 export const removeBookmark = async (jobId: string): Promise<void> => {
   await api.delete(`/bookmarks/${jobId}`)
 }
 
-// Check if a job is bookmarked
 export const checkBookmarkStatus = async (jobId: string): Promise<boolean> => {
   const response = await api.get(`/bookmarks/check/${jobId}`)
   return response.data.data.isBookmarked
 }
 
-// Get total bookmark count
 export const getBookmarkCount = async (): Promise<number> => {
   const response = await api.get('/bookmarks/count')
   return response.data.data.count
 }
 
-// Get bookmarked job details
 export const getBookmarkedJobDetails = async (bookmarkId: number): Promise<BookmarkedJob> => {
   const response = await api.get(`/bookmarks/details/${bookmarkId}`)
   return response.data.data
 }
 
-// Bulk add bookmarks
 export const bulkAddBookmarks = async (jobIds: string[]): Promise<{ successful: number; failed: number }> => {
   const response = await api.post('/bookmarks/bulk', { jobIds })
   return response.data.data
 }
 
-// Bulk remove bookmarks
 export const bulkRemoveBookmarks = async (jobIds: string[]): Promise<{ deleted_count: number }> => {
   const response = await api.delete('/bookmarks/bulk', { data: { jobIds } })
   return response.data.data
@@ -96,12 +90,10 @@ export const bulkRemoveBookmarks = async (jobIds: string[]): Promise<{ deleted_c
 
 // ========== HELPER FUNCTIONS ==========
 
-// Check if job is in bookmarks list
 export const isJobBookmarked = (bookmarks: BookmarkedJob[], jobId: string): boolean => {
   return bookmarks.some(bookmark => bookmark.job.id === jobId)
 }
 
-// Get bookmark by job ID
 export const getBookmarkByJobId = (bookmarks: BookmarkedJob[], jobId: string): BookmarkedJob | undefined => {
   return bookmarks.find(bookmark => bookmark.job.id === jobId)
 }
@@ -137,8 +129,6 @@ export const sortBookmarks = (bookmarks: BookmarkedJob[], sortBy: 'recent' | 'ol
       return sorted
   }
 }
-
-// Group bookmarks by date
 export const groupBookmarksByDate = (bookmarks: BookmarkedJob[]): Record<string, BookmarkedJob[]> => {
   const grouped: Record<string, BookmarkedJob[]> = {}
   
@@ -162,12 +152,9 @@ export const getExpiredBookmarks = (bookmarks: BookmarkedJob[]): BookmarkedJob[]
   return bookmarks.filter(bookmark => !bookmark.job.is_active)
 }
 
-// Get active bookmarks
 export const getActiveBookmarks = (bookmarks: BookmarkedJob[]): BookmarkedJob[] => {
   return bookmarks.filter(bookmark => bookmark.job.is_active)
 }
-
-// Get bookmark statistics
 export const getBookmarkStats = (bookmarks: BookmarkedJob[]) => {
   const total = bookmarks.length
   const active = getActiveBookmarks(bookmarks).length
@@ -210,7 +197,6 @@ export const getTopCompaniesFromBookmarks = (bookmarks: BookmarkedJob[], limit: 
 }
 
 const bookmarkService = {
-  // API methods
   getBookmarks,
   getBookmarkById,
   addBookmark,
@@ -221,7 +207,6 @@ const bookmarkService = {
   bulkAddBookmarks,
   bulkRemoveBookmarks,
   
-  // Helper methods
   isJobBookmarked,
   getBookmarkByJobId,
   filterBookmarksByStatus,

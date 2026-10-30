@@ -5,7 +5,6 @@ export interface LoginCredentials {
   password: string
   rememberMe?: boolean
 }
-
 export interface RegisterData {
   email: string
   password: string
@@ -108,7 +107,6 @@ export const getMe = async (): Promise<UserProfile> => {
   return response.data.data
 }
 
-// Update user profile
 export const updateProfile = async (profileData: {
   full_name?: string
   phone?: string
@@ -128,7 +126,6 @@ export const updateProfile = async (profileData: {
   return response.data.data
 }
 
-// Change password
 export const changePassword = async (current_password: string, new_password: string): Promise<{ message: string }> => {
   const response = await api.post('/auth/change-password', { current_password, new_password })
   return response.data
@@ -180,29 +177,25 @@ export const getStoredUser = (): any => {
   return null
 }
 
-// Get stored token
 export const getStoredToken = (): string | null => {
   const user = getStoredUser()
   return user?.token || null
 }
 
-// Get stored refresh token
 export const getStoredRefreshToken = (): string | null => {
   return localStorage.getItem('refreshToken')
 }
 
-// Clear all auth data
 export const clearAuthData = (): void => {
   localStorage.removeItem('user')
   localStorage.removeItem('refreshToken')
 }
 
-// Check if user is authenticated
 export const isAuthenticated = (): boolean => {
   const token = getStoredToken()
   if (!token) return false
 
-  // Check if token is expired
+
   try {
     const payload = JSON.parse(atob(token.split('.')[1]))
     return payload.exp > Date.now() / 1000
@@ -210,14 +203,11 @@ export const isAuthenticated = (): boolean => {
     return false
   }
 }
-
-// Get user role
 export const getUserRole = (): string | null => {
   const user = getStoredUser()
   return user?.user_type || null
 }
 
-// Check if user has specific role
 export const hasRole = (role: string | string[]): boolean => {
   const userRole = getUserRole()
   if (!userRole) return false
@@ -228,17 +218,13 @@ export const hasRole = (role: string | string[]): boolean => {
   return userRole === role
 }
 
-// Check if user is job seeker
 export const isJobSeeker = (): boolean => {
   return hasRole('Job Seeker')
 }
 
-// Check if user is employer
 export const isEmployer = (): boolean => {
   return hasRole('Employer')
 }
-
-// Check if user is admin
 export const isAdmin = (): boolean => {
   return hasRole(['Admin', 'Super Admin'])
 }
@@ -246,8 +232,6 @@ export const isAdmin = (): boolean => {
 export const isSuperAdmin = (): boolean => {
   return hasRole('Super Admin')
 }
-
-// Get user initials for avatar
 export const getUserInitials = (): string => {
   const user = getStoredUser()
   if (!user) return 'U'
@@ -263,27 +247,22 @@ export const getUserInitials = (): string => {
 
   return user.email?.charAt(0).toUpperCase() || 'U'
 }
-
-// Get user display name
 export const getUserDisplayName = (): string => {
   const user = getStoredUser()
   if (!user) return 'Guest'
   return user.full_name || user.email?.split('@')[0] || 'User'
 }
 
-// Get user email
 export const getUserEmail = (): string | null => {
   const user = getStoredUser()
   return user?.email || null
 }
 
-// Get user ID
 export const getUserId = (): string | null => {
   const user = getStoredUser()
   return user?.id || null
 }
 
-// Update stored user data
 export const updateStoredUser = (updates: Partial<any>): void => {
   const user = getStoredUser()
   if (user) {
