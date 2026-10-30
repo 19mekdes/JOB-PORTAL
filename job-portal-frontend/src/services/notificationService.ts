@@ -1,5 +1,4 @@
 import api from './api'
-
 export interface Notification {
   id: number
   title: string
@@ -105,7 +104,7 @@ export const getNotificationStats = async (): Promise<NotificationStats> => {
   return response.data.data
 }
 
-// Get notification preferences
+
 export const getNotificationPreferences = async (): Promise<NotificationPreferences> => {
   const response = await api.get('/notifications/preferences')
   return response.data.data
@@ -170,6 +169,7 @@ export const getNotificationColor = (type: string): string => {
       return 'text-gray-500'
   }
 }
+
 export const getNotificationTypeLabel = (type: string): string => {
   const labels: Record<string, string> = {
     application_submitted: 'Application Submitted',

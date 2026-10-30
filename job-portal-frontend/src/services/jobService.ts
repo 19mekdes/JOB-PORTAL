@@ -143,8 +143,6 @@ export const getJobsByIndustry = async (industryId: number, page: number = 1, li
   const response = await api.get(`/jobs/industry/${industryId}?page=${page}&limit=${limit}`)
   return response.data
 }
-
-// Get jobs by location
 export const getJobsByLocation = async (city: string, page: number = 1, limit: number = 10): Promise<JobResponse> => {
   const response = await api.get(`/jobs/location/${encodeURIComponent(city)}?page=${page}&limit=${limit}`)
   return response.data
@@ -170,18 +168,15 @@ export const createJob = async (jobData: CreateJobData): Promise<Job> => {
   return response.data.data
 }
 
-// Update an existing job
 export const updateJob = async (id: string, jobData: UpdateJobData): Promise<Job> => {
   const response = await api.put(`/jobs/${id}`, jobData)
   return response.data.data
 }
 
-// Delete a job posting
 export const deleteJob = async (id: string): Promise<void> => {
   await api.delete(`/jobs/${id}`)
 }
 
-// Get employer's jobs
 export const getEmployerJobs = async (status?: string, page: number = 1, limit: number = 10): Promise<JobResponse> => {
   const params = new URLSearchParams()
   if (status) params.append('status', status)
@@ -205,19 +200,16 @@ export const getJobApplications = async (jobId: string, status?: string, page: n
   return response.data
 }
 
-// Toggle job status (Open/Close)
 export const toggleJobStatus = async (id: string): Promise<Job> => {
   const response = await api.patch(`/jobs/${id}/toggle-status`)
   return response.data.data
 }
 
-// Archive a job
 export const archiveJob = async (id: string): Promise<Job> => {
   const response = await api.patch(`/jobs/${id}/archive`)
   return response.data.data
 }
 
-// Duplicate a job posting
 export const duplicateJob = async (id: string): Promise<Job> => {
   const response = await api.post(`/jobs/${id}/duplicate`)
   return response.data.data
@@ -242,7 +234,6 @@ export const getAllJobsForAdmin = async (filters: {
   return response.data
 }
 
-// Moderate job (change status)
 export const moderateJob = async (jobId: string, status: string, moderationNote?: string): Promise<Job> => {
   const response = await api.put(`/admin/jobs/${jobId}/moderate`, { status, moderation_note: moderationNote })
   return response.data.data
@@ -262,7 +253,6 @@ export const formatSalaryRange = (min: number | null, max: number | null): strin
   return 'Not specified'
 }
 
-// Get relative time (e.g., "2 days ago")
 export const getRelativeTime = (date: string): string => {
   const now = new Date()
   const jobDate = new Date(date)
@@ -275,7 +265,6 @@ export const getRelativeTime = (date: string): string => {
   return `${Math.floor(diffDays / 30)} months ago`
 }
 
-// Filter jobs by salary range
 export const filterJobsBySalary = (jobs: Job[], minSalary: number, maxSalary: number): Job[] => {
   return jobs.filter(job => {
     const jobMin = job.salary_min || 0
@@ -284,7 +273,6 @@ export const filterJobsBySalary = (jobs: Job[], minSalary: number, maxSalary: nu
   })
 }
 
-// Filter jobs by job types
 export const filterJobsByTypes = (jobs: Job[], types: string[]): Job[] => {
   if (types.length === 0) return jobs
   return jobs.filter(job => types.includes(job.employment_type.type_name))
@@ -294,7 +282,6 @@ export const filterJobsByIndustries = (jobs: Job[], industries: string[]): Job[]
   return jobs.filter(job => industries.includes(job.industry.industry_name))
 }
 
-// Sort jobs
 export const sortJobs = (jobs: Job[], sortBy: string): Job[] => {
   const sorted = [...jobs]
   switch (sortBy) {
@@ -311,19 +298,16 @@ export const sortJobs = (jobs: Job[], sortBy: string): Job[] => {
   }
 }
 
-// Get unique locations from jobs
 export const getUniqueLocations = (jobs: Job[]): string[] => {
   const locations = new Set(jobs.map(job => job.location))
   return Array.from(locations).sort()
 }
 
-// Get unique industries from jobs
 export const getUniqueIndustries = (jobs: Job[]): string[] => {
   const industries = new Set(jobs.map(job => job.industry.industry_name))
   return Array.from(industries).sort()
 }
 
-// Get unique job types from jobs
 export const getUniqueJobTypes = (jobs: Job[]): string[] => {
   const types = new Set(jobs.map(job => job.employment_type.type_name))
   return Array.from(types).sort()
