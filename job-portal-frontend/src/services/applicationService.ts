@@ -149,14 +149,10 @@ export const getAllEmployerApplications = async (filters: ApplicationFilters = {
   const response = await api.get(`/applications/employer/all${params.toString() ? `?${params}` : ''}`)
   return response.data
 }
-
-// Update application status
 export const updateApplicationStatus = async (id: string, status: string, feedback?: string): Promise<Application> => {
   const response = await api.put(`/applications/${id}/status`, { status, feedback })
   return response.data.data
 }
-
-// Add note to application
 export const addApplicationNote = async (id: string, note: string): Promise<ApplicationNote> => {
   const response = await api.post(`/applications/${id}/notes`, { note_text: note })
   return response.data.data
@@ -165,8 +161,6 @@ export const getApplicationNotes = async (id: string): Promise<ApplicationNote[]
   const response = await api.get(`/applications/${id}/notes`)
   return response.data.data
 }
-
-// Export job applications to CSV
 export const exportJobApplications = async (jobId: string): Promise<Blob> => {
   const response = await api.get(`/applications/job/${jobId}/export`, {
     responseType: 'blob'
@@ -237,8 +231,6 @@ export const getStatusBadgeVariant = (status: string): 'default' | 'secondary' |
       return 'secondary'
   }
 }
-
-// Get status icon name
 export const getStatusIcon = (status: string): string => {
   switch (status) {
     case 'Pending':
@@ -309,15 +301,13 @@ export const groupApplicationsByMonth = (applications: Application[]): Record<st
 }
 
 const applicationService = {
-  // Job Seeker
   getMyApplications,
   getApplicationById,
   applyForJob,
   withdrawApplication,
   getApplicationStats,
   exportApplications,
-  
-  // Employer
+
   getJobApplications,
   getAllEmployerApplications,
   updateApplicationStatus,
@@ -325,12 +315,8 @@ const applicationService = {
   getApplicationNotes,
   exportJobApplications,
   bulkUpdateApplicationStatus,
-  
-  // Admin
   getAllApplicationsForAdmin,
   getApplicationByIdForAdmin,
-  
-  // Helpers
   getStatusColor,
   getStatusBadgeVariant,
   getStatusIcon,

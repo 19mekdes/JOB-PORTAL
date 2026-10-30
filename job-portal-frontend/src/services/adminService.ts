@@ -376,29 +376,24 @@ const adminService = {
   exportUsers,
   exportJobs,
   
-  // System Settings
+
   getSystemSettings,
   updateSystemSettings,
   toggleMaintenanceMode,
   
-  // System Health
   getSystemHealth,
-  
-  // Audit Logs
+
   getAuditLogs,
-  
-  // Backup & Restore
+
   getBackups,
   createBackup,
   downloadBackup,
   restoreBackup,
   deleteBackup,
   updateBackupSettings,
-  
-  // Data Cleanup
+
   cleanupOldData,
-  
-  // System Statistics
+
   getSystemStats
 }
 
