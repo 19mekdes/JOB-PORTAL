@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactNode } from 'react'
-
-// ========== ROUTE TYPES ==========
 export interface RouteConfig {
   path: string
   element: ReactNode

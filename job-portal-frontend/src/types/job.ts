@@ -1,6 +1,4 @@
 import { EmployerProfile, JobIndustry, EmploymentType, JobPostStatus } from './index'
-
-// ========== JOB TYPES ==========
 export interface Job {
   is_hybrid: boolean
   id: string
@@ -23,20 +21,17 @@ export interface Job {
   industry_id: number
   employment_type_id: number
   status_id: number
-  
+
   // Relations
   employer?: EmployerProfile
   industry?: JobIndustry
   employment_type?: EmploymentType
   status?: JobPostStatus
-  
-  // Computed fields
+
   has_applied?: boolean
   is_saved?: boolean
   match_score?: number
 }
-
-// ========== JOB STATUS ==========
 export type JobStatusType = 'Open' | 'Closed' | 'Draft' | 'Archived'
 
 export interface JobStatusInfo {
@@ -49,8 +44,6 @@ export interface JobStatusInfo {
   icon: string
   description: string
 }
-
-// ========== JOB FILTERS ==========
 export interface JobFilters {
   search?: string
   location?: string
@@ -67,7 +60,6 @@ export interface JobFilters {
   sort?: 'recent' | 'oldest' | 'salary_high' | 'salary_low' | 'relevance'
 }
 
-// ========== JOB SORT OPTIONS ==========
 export interface JobSortOption {
   value: string
   label: string
@@ -310,7 +302,7 @@ export const getRelativeTime = (date: string): string => {
   const now = new Date()
   const jobDate = new Date(date)
   const diffDays = Math.floor((now.getTime() - jobDate.getTime()) / (1000 * 60 * 60 * 24))
-  
+
   if (diffDays === 0) return 'Today'
   if (diffDays === 1) return 'Yesterday'
   if (diffDays < 7) return `${diffDays} days ago`
@@ -331,16 +323,16 @@ export const canApplyForJob = (job: Job, userId?: string): boolean => {
 
 export const calculateMatchScore = (job: Job, userSkills: string[]): number => {
   if (!job.requirements) return 0
-  
+
   const jobRequirements = job.requirements.toLowerCase()
   let matchCount = 0
-  
+
   userSkills.forEach(skill => {
     if (jobRequirements.includes(skill.toLowerCase())) {
       matchCount++
     }
   })
-  
+
   return Math.round((matchCount / userSkills.length) * 100)
 }
 
