@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// ========== API RESPONSE TYPES ==========
 export interface ApiResponse<T = any> {
   success: boolean
   message?: string
@@ -24,7 +23,6 @@ export interface ApiError {
   errors?: Record<string, string[]>
 }
 
-// ========== AUTH TYPES ==========
 export interface LoginRequest {
   email: string
   password: string
@@ -72,7 +70,6 @@ export interface RefreshTokenRequest {
   refresh_token: string
 }
 
-// ========== USER TYPES ==========
 export interface User {
   id: string
   email: string
@@ -230,8 +227,6 @@ export interface ApplicationFilters {
   limit?: number
   sort?: 'recent' | 'oldest'
 }
-
-// ========== PROFILE TYPES ==========
 export interface SeekerProfile {
   id: string
   full_name: string
@@ -309,8 +304,6 @@ export interface UpdateEmployerProfileRequest {
     instagram?: string
   }
 }
-
-// ========== NOTIFICATION TYPES ==========
 export interface Notification {
   id: number
   title: string
@@ -430,14 +423,10 @@ export interface Industry {
     employers: number
   }
 }
-
-// ========== EMPLOYMENT TYPE TYPES ==========
 export interface EmploymentType {
   id: number
   type_name: string
 }
-
-// ========== FILE UPLOAD TYPES ==========
 export interface UploadResponse {
   url: string
   filename: string
@@ -512,8 +501,6 @@ export interface SearchFilters {
   limit: number
   sort: string
 }
-
-// ========== HELPER TYPES ==========
 export type StatusType = 'Pending' | 'Reviewed' | 'Shortlisted' | 'Interview' | 'Accepted' | 'Rejected'
 export type JobStatusType = 'Open' | 'Closed' | 'Draft' | 'Archived'
 export type UserType = 'Job Seeker' | 'Employer' | 'Admin' | 'Super Admin'

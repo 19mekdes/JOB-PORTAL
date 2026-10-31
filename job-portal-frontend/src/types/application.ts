@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Job } from './index'
 
-// ========== APPLICATION STATUS ==========
 export type ApplicationStatus = 
   | 'Pending' 
   | 'Reviewed' 
@@ -52,8 +51,7 @@ export interface Application {
   employer_notes: string | null
   applied_at: string
   updated_at: string
-  
-  // Relations
+
   job?: Job
   seeker?: {
     id: string
@@ -157,14 +155,12 @@ export interface ApplicationTimeline {
   application_id: string
   events: ApplicationTimelineEvent[]
 }
-
-// ========== INTERVIEW SCHEDULING ==========
 export interface InterviewSchedule {
   id: string
   application_id: string
   scheduled_date: string
   scheduled_time: string
-  duration: number // minutes
+  duration: number
   type: 'video' | 'phone' | 'in-person'
   location?: string
   meeting_link?: string
