@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { UserType } from './index'
-
-// ========== AUTH STATE ==========
 export interface AuthState {
   user: User | null
   isLoading: boolean
@@ -9,8 +7,6 @@ export interface AuthState {
   isSuccess: boolean
   message: string
 }
-
-// ========== USER TYPES ==========
 export interface User {
   id: string
   email: string
@@ -89,8 +85,6 @@ export interface ResendVerificationRequest {
 export interface RefreshTokenRequest {
   refresh_token: string
 }
-
-// ========== AUTH RESPONSE TYPES ==========
 export interface AuthResponse {
   success: boolean
   token: string
@@ -236,8 +230,6 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
   [USER_ROLES.ADMIN]: 3,
   [USER_ROLES.SUPER_ADMIN]: 4
 }
-
-// ========== PERMISSIONS MATRIX ==========
 export const ROLE_PERMISSIONS: RolePermissions = {
   'Job Seeker': [
     { resource: 'profile', actions: ['read', 'update'] },
@@ -263,8 +255,6 @@ export const ROLE_PERMISSIONS: RolePermissions = {
     { resource: '*', actions: ['*'] }
   ]
 }
-
-// ========== HELPER FUNCTIONS ==========
 export const hasPermission = (userRole: UserRole, resource: string, action: string): boolean => {
   if (userRole === USER_ROLES.SUPER_ADMIN) return true
   
@@ -288,8 +278,6 @@ export const getRoleLevel = (userRole: UserRole): number => {
 export const isValidUserType = (type: string): type is UserRole => {
   return Object.values(USER_ROLES).includes(type as UserRole)
 }
-
-// ========== AUTH STORAGE KEYS ==========
 export const AUTH_STORAGE_KEYS = {
   USER: 'user',
   TOKEN: 'token',

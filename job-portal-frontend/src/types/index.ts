@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// ========== RE-EXPORT ALL TYPES ==========
+
 export * from './auth'
 export * from './user'
 export * from './job'
@@ -7,8 +7,6 @@ export * from './application'
 export type { BookmarkedJob } from './api'
 
 // ========== CORE TYPES ==========
-
-// User Types
 export interface User {
   id: string
   email: string
@@ -30,8 +28,6 @@ export interface UserType {
   users?: User[]
   created_at: string
 }
-
-// Profile Types
 export interface JobSeekerProfile {
   id: string
   full_name: string
@@ -62,8 +58,6 @@ export interface EmployerProfile {
   jobs?: JobPost[]
   notes?: JobApplicationNote[]
 }
-
-// Job Types
 export interface JobPost {
   id: string
   title: string
@@ -110,7 +104,6 @@ export interface JobPostStatus {
   jobs?: JobPost[]
 }
 
-// Application Types
 export interface JobApplication {
   id: string
   job_id: string
@@ -143,7 +136,6 @@ export interface JobApplicationNote {
   employer?: EmployerProfile
 }
 
-// Bookmark Types
 export interface JobBookmark {
   id: number
   seeker_id: string
@@ -152,8 +144,6 @@ export interface JobBookmark {
   seeker?: JobSeekerProfile
   job?: JobPost
 }
-
-// Notification Types
 export interface Notification {
   id: number
   user_id: string
@@ -179,8 +169,6 @@ export interface NotificationPreference {
   updated_at: string
   user?: User
 }
-
-// Search Types
 export interface SearchLog {
   id: number
   user_id: string | null
@@ -191,7 +179,6 @@ export interface SearchLog {
   user?: User
 }
 
-// System Types
 export interface SystemSetting {
   id: number
   site_name: string
@@ -220,8 +207,6 @@ export interface AuditLog {
   created_at: string
   admin?: User
 }
-
-// ========== REQUEST/RESPONSE TYPES ==========
 export interface ApiResponse<T = any> {
   success: boolean
   message?: string
@@ -272,8 +257,6 @@ export interface UserFilters {
   page?: number
   limit?: number
 }
-
-// ========== FORM TYPES ==========
 export interface LoginFormData {
   email: string
   password: string
@@ -334,8 +317,6 @@ export interface PaginationProps {
   showTotal?: boolean
   showFirstLast?: boolean
 }
-
-// ========== ENUM TYPES ==========
 export type UserRole = 'Job Seeker' | 'Employer' | 'Admin' | 'Super Admin'
 export type JobStatus = 'Open' | 'Closed' | 'Draft' | 'Archived'
 export type ApplicationStatus = 'Pending' | 'Reviewed' | 'Shortlisted' | 'Interview' | 'Accepted' | 'Rejected'
