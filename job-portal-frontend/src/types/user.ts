@@ -1,7 +1,6 @@
 import { JobPost, JobApplication, Notification, SearchLog, JobIndustry, JobApplicationNote, JobBookmark } from './index'
 import { USER_ROLES } from './auth'
 
-// ========== USER TYPES ==========
 export type UserRole = 'Job Seeker' | 'Employer' | 'Admin' | 'Super Admin'
 
 export interface User {
@@ -296,11 +295,11 @@ export const getProfileCompletion = (profile: JobSeekerProfile): UserProfileComp
     experience: !!profile.experience,
     education: !!profile.education
   }
-  
+
   const completedFields = Object.keys(fields).filter(key => fields[key as keyof typeof fields])
   const missingFields = Object.keys(fields).filter(key => !fields[key as keyof typeof fields])
   const percentage = Math.round((completedFields.length / Object.keys(fields).length) * 100)
-  
+
   const sections = [
     {
       section: 'Basic Information',
@@ -327,7 +326,7 @@ export const getProfileCompletion = (profile: JobSeekerProfile): UserProfileComp
       percentage: fields.resume_url ? 100 : 0
     }
   ]
-  
+
   return {
     percentage,
     completed_fields: completedFields,
@@ -345,8 +344,8 @@ export const canUserPostJob = (user: User): boolean => {
 }
 
 export const isUserAdmin = (user: User): boolean => {
-  return user.user_type?.type_name === USER_ROLES.ADMIN || 
-         user.user_type?.type_name === USER_ROLES.SUPER_ADMIN
+  return user.user_type?.type_name === USER_ROLES.ADMIN ||
+    user.user_type?.type_name === USER_ROLES.SUPER_ADMIN
 }
 
 export const isUserSuperAdmin = (user: User): boolean => {

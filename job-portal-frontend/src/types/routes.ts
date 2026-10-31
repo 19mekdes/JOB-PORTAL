@@ -37,8 +37,6 @@ export interface SuperAdminRouteParams {
   adminId?: string
   backupId?: string
 }
-
-// ========== ROUTE QUERY PARAMS ==========
 export interface JobsQueryParams {
   q?: string
   location?: string
@@ -87,8 +85,6 @@ export interface AuditLogsQueryParams {
   page?: string
   limit?: string
 }
-
-// ========== NAVIGATION TYPES ==========
 export interface NavItem {
   label: string
   path: string
@@ -121,20 +117,18 @@ export const ROUTES = {
   VERIFY_EMAIL: (token: string) => `/verify-email/${token}`,
   UNAUTHORIZED: '/unauthorized',
   NOT_FOUND: '/404',
-  
-  // Protected Routes
+
   DASHBOARD: '/dashboard',
   PROFILE: '/profile',
   NOTIFICATIONS: '/notifications',
   NOTIFICATION_SETTINGS: '/notifications/settings',
-  
-  // Job Seeker Routes
+
   MY_APPLICATIONS: '/jobseeker/applications',
   APPLICATION_STATUS: (id: string) => `/applications/${id}/status`,
   MY_BOOKMARKS: '/jobseeker/bookmarks',
   APPLY_JOB: (jobId: string) => `/apply/${jobId}`,
-  
-  // Employer Routes
+
+
   EMPLOYER_DASHBOARD: '/employer/dashboard',
   EMPLOYER_JOBS: '/employer/jobs',
   EMPLOYER_POST_JOB: '/employer/post-job',
@@ -142,8 +136,8 @@ export const ROUTES = {
   EMPLOYER_JOB_APPLICATIONS: (jobId: string) => `/employer/jobs/${jobId}/applications`,
   EMPLOYER_APPLICATION_DETAILS: (id: string) => `/employer/applications/${id}`,
   EMPLOYER_PROFILE: '/employer/profile',
-  
-  // Admin Routes
+
+
   ADMIN: '/admin',
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_USERS: '/admin/users',
@@ -152,7 +146,7 @@ export const ROUTES = {
   ADMIN_APPLICATIONS: '/admin/applications',
   ADMIN_REPORTS: '/admin/reports',
   ADMIN_SETTINGS: '/admin/settings',
-  
+
   // Super Admin Routes
   SUPER_ADMIN: '/super-admin',
   SUPER_ADMIN_DASHBOARD: '/super-admin/dashboard',
@@ -170,21 +164,21 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Find Jobs', path: ROUTES.JOBS },
   { label: 'About', path: ROUTES.ABOUT },
   { label: 'Contact', path: ROUTES.CONTACT },
-  
+
   // Dashboard (common)
   { label: 'Dashboard', path: ROUTES.DASHBOARD, roles: ['Job Seeker', 'Employer', 'Admin', 'Super Admin'] },
   { label: 'Profile', path: ROUTES.PROFILE, roles: ['Job Seeker', 'Employer', 'Admin', 'Super Admin'] },
   { label: 'Notifications', path: ROUTES.NOTIFICATIONS, roles: ['Job Seeker', 'Employer', 'Admin', 'Super Admin'] },
-  
+
   // Job Seeker
   { label: 'My Applications', path: ROUTES.MY_APPLICATIONS, roles: ['Job Seeker'] },
   { label: 'Saved Jobs', path: ROUTES.MY_BOOKMARKS, roles: ['Job Seeker'] },
-  
+
   // Employer
   { label: 'My Jobs', path: ROUTES.EMPLOYER_JOBS, roles: ['Employer'] },
   { label: 'Post a Job', path: ROUTES.EMPLOYER_POST_JOB, roles: ['Employer'] },
   { label: 'Company Profile', path: ROUTES.EMPLOYER_PROFILE, roles: ['Employer'] },
-  
+
   // Admin
   { label: 'Dashboard', path: ROUTES.ADMIN_DASHBOARD, roles: ['Admin', 'Super Admin'] },
   { label: 'User Management', path: ROUTES.ADMIN_USERS, roles: ['Admin', 'Super Admin'] },
@@ -192,7 +186,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Industries', path: ROUTES.ADMIN_INDUSTRIES, roles: ['Admin', 'Super Admin'] },
   { label: 'Reports', path: ROUTES.ADMIN_REPORTS, roles: ['Admin', 'Super Admin'] },
   { label: 'Settings', path: ROUTES.ADMIN_SETTINGS, roles: ['Admin', 'Super Admin'] },
-  
+
   // Super Admin
   { label: 'Admin Management', path: ROUTES.SUPER_ADMIN_ADMINS, roles: ['Super Admin'] },
   { label: 'Audit Logs', path: ROUTES.SUPER_ADMIN_AUDIT_LOGS, roles: ['Super Admin'] },
