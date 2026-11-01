@@ -55,8 +55,6 @@ const Register: React.FC = () => {
   const { isLoading, isError, message } = useSelector(
     (state: RootState) => state.auth
   );
-
-  // Password strength checker
   const checkPasswordStrength = (password: string): PasswordStrength => {
     return {
       hasMinLength: password.length >= 8,
@@ -109,7 +107,6 @@ const Register: React.FC = () => {
       
       setRegistrationSuccess(true);
       
-      // Redirect to login page after 1 second
       setTimeout(() => {
         navigate("/login");
       }, 1000);
@@ -119,7 +116,6 @@ const Register: React.FC = () => {
     }
   };
 
-  // Password strength indicator color
   const getPasswordStrengthColor = () => {
     const strength = Object.values(passwordStrength).filter(Boolean).length;
     if (strength <= 2) return "bg-red-500";
@@ -220,8 +216,6 @@ const Register: React.FC = () => {
                   </p>
                 )}
               </div>
-
-              {/* User Type */}
               <div>
                 <Label htmlFor="user_type">
                   I am a <span className="text-red-500">*</span>
@@ -382,8 +376,6 @@ const Register: React.FC = () => {
                   )}
               </div>
             </div>
-
-            {/* Submit Button */}
             <Button
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
