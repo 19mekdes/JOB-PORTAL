@@ -86,7 +86,6 @@ const VerifyEmail: React.FC = () => {
         })
       }, 1000)
       
-      // Clear success message after 5 seconds
       setTimeout(() => setResendSuccess(false), 5000)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
@@ -95,8 +94,6 @@ const VerifyEmail: React.FC = () => {
       setIsResending(false)
     }
   }
-
-  // Success State with Progress Bar
   if (isSuccess) {
     const progressPercentage = ((5 - redirectCountdown) / 5) * 100
     
@@ -140,8 +137,6 @@ const VerifyEmail: React.FC = () => {
       </div>
     )
   }
-
-  // Loading State
   if (isLoading && token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-gray-50">

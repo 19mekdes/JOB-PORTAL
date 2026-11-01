@@ -21,7 +21,6 @@ const ResetPassword: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [tokenValid, setTokenValid] = useState(true)
 
-  // Password strength checker
   const passwordStrength = {
     hasMinLength: password.length >= 8,
     hasNumber: /\d/.test(password),
@@ -35,7 +34,7 @@ const ResetPassword: React.FC = () => {
   const isFormValid = isPasswordStrong && doPasswordsMatch
 
   useEffect(() => {
-    // Validate token on mount
+
     const validateToken = async () => {
       try {
         await api.get(`/auth/validate-reset-token/${token}`)
