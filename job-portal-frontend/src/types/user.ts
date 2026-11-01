@@ -27,8 +27,6 @@ export interface UserType {
   users?: User[]
   created_at: string
 }
-
-// ========== PROFILE TYPES ==========
 export interface JobSeekerProfile {
   id: string
   full_name: string
@@ -188,8 +186,6 @@ export interface UpdateUserSettingsRequest {
   language?: string
   timezone?: string
 }
-
-// ========== USER SEARCH ==========
 export interface UserSearchFilters {
   search?: string
   user_type?: UserRole
@@ -211,8 +207,6 @@ export interface UserSearchResponse {
   }
   filters: UserSearchFilters
 }
-
-// ========== HELPER TYPES ==========
 export interface UserProfileCompletion {
   percentage: number
   completed_fields: string[]
@@ -236,8 +230,6 @@ export interface UserActivitySummary {
   }[]
 }
 
-// ========== CONSTANTS ==========
-
 export const PROFILE_VISIBILITY_OPTIONS = {
   PUBLIC: 'public',
   PRIVATE: 'private',
@@ -246,7 +238,6 @@ export const PROFILE_VISIBILITY_OPTIONS = {
 
 export type ProfileVisibility = typeof PROFILE_VISIBILITY_OPTIONS[keyof typeof PROFILE_VISIBILITY_OPTIONS]
 
-// ========== HELPER FUNCTIONS ==========
 export const getUserDisplayName = (user: User): string => {
   if (user.seeker_profile?.full_name) {
     return user.seeker_profile.full_name

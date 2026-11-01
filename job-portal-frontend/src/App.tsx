@@ -3,13 +3,11 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { store } from './redux/store'
 
-// Layouts
 import MainLayout from '@/components/layout/MainLayout'
 import AuthLayout from '@/components/layout/AuthLayout'
 import JobSeekerLayout from '@/pages/JobSeekerLayout'
 import EmployerLayout from '@/pages/employer/EmployerLayout'
 
-// Public Pages
 import Home from '@/pages/Home'
 import About from '@/pages/About'
 import Contact from '@/pages/Contact'
@@ -91,7 +89,6 @@ function App() {
       <BrowserRouter>
         <Routes>
 
-          {/* ========== PUBLIC ROUTES (MainLayout - No Sidebar) ========== */}
           <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
@@ -99,7 +96,6 @@ function App() {
             <Route path="/unauthorized" element={<Unauthorized />} />
           </Route>
 
-          {/* ========== PUBLIC JOB ROUTES (No Login Required - MainLayout) ========== */}
           <Route element={<MainLayout />}>
             <Route path="/jobs" element={<JobsPage />} />
             <Route path="/jobs/:id" element={<JobDetailsPage />} />
@@ -137,7 +133,6 @@ function App() {
             <Route path="/notifications/settings" element={<NotificationPreferences />} />
           </Route>
 
-          {/* ========== JOB SEEKER ONLY ROUTES (WITH SIDEBAR - Requires Login) ========== */}
           <Route element={<JobSeekerRoute />}>
             <Route element={<JobSeekerLayout />}>
               <Route path="/dashboard" element={<DashboardContent />} />
@@ -207,7 +202,6 @@ function App() {
             </Route>
           </Route>
 
-          {/* ========== 404 NOT FOUND ========== */}
           <Route path="*" element={<NotFound />} />
 
         </Routes>
