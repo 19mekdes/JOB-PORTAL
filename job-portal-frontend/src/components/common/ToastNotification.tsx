@@ -231,8 +231,6 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({
     </div>
   )
 }
-
-// Toast Context and Hook
 interface ToastContextType {
   toasts: ToastProps[]
   showToast: (toast: Omit<ToastProps, 'id'>) => void
@@ -327,7 +325,6 @@ export const toast = {
   }
 }
 
-// Loading Toast Component
 interface LoadingToastProps {
   message?: string
 }
@@ -353,7 +350,6 @@ export const promiseToast = async <T,>(
   options: PromiseToastOptions
 ): Promise<T> => {
 
-  // Show loading toast
   globalShowToast?.({
     type: 'info',
     title: options.loading,

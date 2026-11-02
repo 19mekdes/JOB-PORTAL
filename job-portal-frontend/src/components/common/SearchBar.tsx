@@ -111,13 +111,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    // Load recent searches from localStorage
+    
     const saved = localStorage.getItem('recentSearches')
     if (saved) {
       setRecentSearches(JSON.parse(saved))
     }
 
-    // Parse URL params on mount
     const params = new URLSearchParams(location.search)
     const keyword = params.get('q') || ''
     const locationParam = params.get('location') || ''
@@ -142,7 +141,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
       saveRecentSearch(filters.keyword)
     }
 
-    // Update URL params
     const params = new URLSearchParams()
     if (filters.keyword) params.set('q', filters.keyword)
     if (filters.location) params.set('location', filters.location)

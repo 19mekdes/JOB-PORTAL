@@ -108,7 +108,7 @@ const Pagination: React.FC<PaginationProps> = ({
   const handlePageSizeChange = (value: string) => {
     if (onPageSizeChange) {
       onPageSizeChange(parseInt(value))
-      onPageChange(1) // Reset to first page when changing page size
+      onPageChange(1) 
     }
   }
 
@@ -149,7 +149,6 @@ const Pagination: React.FC<PaginationProps> = ({
     )
   }
 
-  // Minimal variant
   if (variant === 'minimal') {
     return (
       <div className={cn("flex items-center justify-center gap-2", className)}>
@@ -176,7 +175,6 @@ const Pagination: React.FC<PaginationProps> = ({
     )
   }
 
-  // Default variant
   return (
     <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-4", className)}>
       {/* Left side - Showing results */}
@@ -287,8 +285,6 @@ const Pagination: React.FC<PaginationProps> = ({
     </div>
   )
 }
-
-// Simple Pagination for small datasets
 interface SimplePaginationProps {
   currentPage: number
   totalPages: number
@@ -327,7 +323,6 @@ export const SimplePagination: React.FC<SimplePaginationProps> = ({
   )
 }
 
-// Infinite Scroll Trigger
 interface InfiniteScrollTriggerProps {
   hasMore: boolean
   isLoading: boolean
