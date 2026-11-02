@@ -64,13 +64,12 @@ const ForgotPassword: React.FC = () => {
     
     try {
       await api.post('/auth/forgot-password', { email })
-      // Show success message
+   
     } catch (err) {
       console.error('Resend failed:', err)
     }
   }
 
-  // Success State
   if (isSubmitted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -129,8 +128,6 @@ const ForgotPassword: React.FC = () => {
       </div>
     )
   }
-
-  // Form State
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">

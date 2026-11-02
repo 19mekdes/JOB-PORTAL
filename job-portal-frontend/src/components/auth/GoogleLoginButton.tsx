@@ -24,7 +24,6 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
   const handleGoogleLogin = () => {
     setIsLoading(true)
     
-    // Open popup for Google login
     const width = 500
     const height = 600
     const left = window.screenX + (window.outerWidth - width) / 2
@@ -42,7 +41,6 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
       return
     }
 
-    // Listen for message from popup
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return
 
@@ -64,8 +62,6 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
     }
 
     window.addEventListener('message', handleMessage)
-
-    // Cleanup if popup closes
     const checkPopup = setInterval(() => {
       if (popup.closed) {
         clearInterval(checkPopup)
