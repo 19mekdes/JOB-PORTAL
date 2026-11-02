@@ -146,7 +146,6 @@ const Register: React.FC = () => {
           </p>
         </div>
 
-        {/* Success Alert */}
         {registrationSuccess && (
           <Alert className="bg-green-50 border-green-200">
             <CheckCircle className="h-4 w-4 text-green-600" />
@@ -165,7 +164,6 @@ const Register: React.FC = () => {
           </Alert>
         )}
 
-        {/* Form - Disable when registration is successful */}
         {!registrationSuccess ? (
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="bg-white shadow-md rounded-lg p-6 space-y-5">
@@ -234,7 +232,6 @@ const Register: React.FC = () => {
                 </select>
               </div>
 
-              {/* Password */}
               <div>
                 <Label htmlFor="password">
                   Password <span className="text-red-500">*</span>
@@ -391,7 +388,6 @@ const Register: React.FC = () => {
               )}
             </Button>
 
-            {/* Terms and Conditions */}
             <p className="text-xs text-gray-500 text-center">
               By signing up, you agree to our{" "}
               <Link to="/terms" className="text-blue-600 hover:text-blue-500">
@@ -404,14 +400,12 @@ const Register: React.FC = () => {
             </p>
           </form>
         ) : (
-          // Show loading state while redirecting
           <div className="text-center py-8">
             <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
             <p className="mt-2 text-gray-600">Redirecting to login page...</p>
           </div>
         )}
 
-        {/* Sign in link - Hide when registration is successful */}
         {!registrationSuccess && (
           <p className="text-center text-sm text-gray-600">
             Already have an account?{" "}
