@@ -66,7 +66,6 @@ const Reports: React.FC = () => {
     setIsGenerating(true)
     setGenerationProgress(0)
 
-    // Simulate progress
     const interval = setInterval(() => {
       setGenerationProgress(prev => {
         if (prev >= 90) {
@@ -201,7 +200,6 @@ const Reports: React.FC = () => {
         })}
       </div>
 
-      {/* Quick Reports */}
       <Card>
         <CardHeader>
           <CardTitle>Quick Reports</CardTitle>
@@ -231,7 +229,6 @@ const Reports: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Report Configuration */}
       <Card>
         <CardHeader>
           <CardTitle>Report Configuration</CardTitle>
@@ -329,7 +326,6 @@ const Reports: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Scheduled Reports */}
       <Card>
         <CardHeader>
           <CardTitle>Scheduled Reports</CardTitle>

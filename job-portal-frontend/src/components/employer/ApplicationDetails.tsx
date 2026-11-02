@@ -178,11 +178,10 @@ const ApplicationDetails: React.FC = () => {
         'Accepted': 5,
         'Rejected': 6
       }
-      
-      //  Send both statusId AND feedback message
+    
       const response = await api.put(`/applications/${id}/status`, { 
         statusId: statusMap[selectedStatus],
-        message: feedback  //  This is the feedback that will be emailed to candidate
+        message: feedback  
       })
       
       if (response.data.success) {

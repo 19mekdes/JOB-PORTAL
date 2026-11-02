@@ -127,7 +127,7 @@ const JobApplicationsList: React.FC = () => {
         setApplications(applicationsRes.data.data)
         setJob(jobRes.data.data)
       } else {
-        // Fetch all applications for employer
+
         const response = await api.get('/applications/employer/all')
         setApplications(response.data.data)
       }
@@ -432,8 +432,6 @@ const JobApplicationsList: React.FC = () => {
                       </div>
                     </div>
                   </div>
-
-                  {/* Right Section - Status & Actions */}
                   <div className="flex items-center gap-3 mt-3 md:mt-0">
                     {getStatusBadge(application.status.status_name)}
                     

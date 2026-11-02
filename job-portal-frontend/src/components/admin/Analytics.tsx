@@ -40,7 +40,6 @@ import {
   Area
 } from 'recharts'
 import api from '../../services/api'
-
 interface AnalyticsData {
   overview: {
     totalUsers: number
@@ -353,9 +352,8 @@ const Analytics: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Category Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Top Industries */}
+      
         <Card>
           <CardHeader>
             <CardTitle>Top Industries</CardTitle>

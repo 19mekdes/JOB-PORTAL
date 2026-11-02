@@ -40,11 +40,9 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     this.setState({
       errorInfo
     })
-    
-    // Log error to console
+  
     console.error('ErrorBoundary caught an error:', error, errorInfo)
-    
-    // Call custom error handler if provided
+
     if (this.props.onError) {
       this.props.onError(error, errorInfo)
     }
@@ -52,7 +50,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidUpdate(prevProps: ErrorBoundaryProps) {
-    // Reset error state when route changes if resetOnRouteChange is true
+    
     if (this.props.resetOnRouteChange && prevProps.children !== this.props.children && this.state.hasError) {
       this.resetError()
     }
@@ -96,12 +94,10 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     const { children, fallback, showDetails = false } = this.props
 
     if (hasError) {
-      // Use custom fallback if provided
+      
       if (fallback) {
         return fallback
       }
-
-      // Default error UI
       return (
         <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-red-50 via-white to-gray-50 p-4">
           <Card className="max-w-2xl w-full">

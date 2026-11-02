@@ -114,8 +114,7 @@ const CompanyProfile: React.FC = () => {
       const response = await api.get('/profile/employer')
       const data = response.data.data
       setProfile(data)
-      
-      // Populate form
+    
       setFormData({
         company_name: data.company_name || '',
         company_description: data.company_description || '',
