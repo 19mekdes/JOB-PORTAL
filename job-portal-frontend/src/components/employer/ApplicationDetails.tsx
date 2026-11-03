@@ -613,7 +613,6 @@ const ApplicationDetails: React.FC = () => {
         </div>
       </div>
 
-      {/* UPDATE STATUS DIALOG - FIXED to show feedback will be emailed */}
       <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
         <DialogContent className="bg-white rounded-xl shadow-2xl border border-gray-200 p-0 max-w-md">
           <div className="p-6">

@@ -119,7 +119,6 @@ const JobApplicationsList: React.FC = () => {
     setIsLoading(true)
     try {
       if (jobId) {
-        // Fetch applications for specific job
         const [applicationsRes, jobRes] = await Promise.all([
           api.get(`/applications/job/${jobId}`),
           api.get(`/jobs/${jobId}`)
@@ -252,7 +251,7 @@ const JobApplicationsList: React.FC = () => {
         </div>
       </div>
 
-      {/* Job Details (if specific job) */}
+    
       {job && (
         <Card>
           <CardContent className="pt-6">
@@ -389,7 +388,7 @@ const JobApplicationsList: React.FC = () => {
                   key={application.id}
                   className="flex flex-col md:flex-row md:items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  {/* Left Section - Candidate Info */}
+        
                   <div className="flex items-start gap-3 flex-1">
                     <Avatar className="h-12 w-12">
                       <AvatarFallback className="bg-blue-100 text-blue-600 text-lg">
