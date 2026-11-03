@@ -29,14 +29,10 @@ import {
   Building2,
 } from "lucide-react";
 
-// Import the NotificationBell component
 import NotificationBell from "@/components/notifications/NotificationBell";
 import api from "@/services/api";
 
-// Option 2: If logo is in src/assets folder
 const logoImage = "/images/jlogo.png";
-
-// Company Profile Interface
 interface CompanyProfile {
   id: string;
   company_name: string;
@@ -55,7 +51,6 @@ const Navbar: React.FC = () => {
   const [isLoadingCompany, setIsLoadingCompany] = useState(false);
   const [open, setOpen] = useState(false);
 
-  // Fetch company profile if user is employer
   useEffect(() => {
     if (user?.user_type === "Employer") {
       fetchCompanyProfile();
@@ -89,8 +84,6 @@ const Navbar: React.FC = () => {
     { name: "About", path: "/about", icon: Info },
     { name: "Contact", path: "/contact", icon: Phone },
   ];
-
-  // Get dashboard link based on user role
   const getDashboardLink = () => {
     if (!user) return "/dashboard";
     switch (user.user_type) {
@@ -127,8 +120,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    // ✅ SOLID WHITE BACKGROUND - NO BLUR, NO TRANSPARENCY
-    <header 
+    <header
       className="sticky top-0 z-50 w-full border-b bg-white shadow-md"
       style={{ backgroundColor: '#ffffff', backdropFilter: 'none' }}
     >
@@ -217,7 +209,7 @@ const Navbar: React.FC = () => {
                   <div className="hidden lg:block">
                     <span className="text-sm font-medium text-slate-700">
                       {user.user_type === "Employer" &&
-                      companyProfile?.company_name
+                        companyProfile?.company_name
                         ? companyProfile.company_name
                         : user?.full_name || user?.email?.split("@")[0]}
                     </span>
@@ -272,7 +264,7 @@ const Navbar: React.FC = () => {
                     />
                     <span>
                       {user?.user_type === "Employer" &&
-                      companyProfile?.company_name
+                        companyProfile?.company_name
                         ? companyProfile.company_name
                         : "JobPortal"}
                     </span>
@@ -281,7 +273,7 @@ const Navbar: React.FC = () => {
                   {user && (
                     <div className="mt-4 flex items-center gap-3">
                       {user.user_type === "Employer" &&
-                      companyProfile?.logo_url ? (
+                        companyProfile?.logo_url ? (
                         <img
                           src={companyProfile.logo_url}
                           alt="Company Logo"
@@ -295,7 +287,7 @@ const Navbar: React.FC = () => {
                       <div>
                         <p className="text-sm font-medium">
                           {user.user_type === "Employer" &&
-                          companyProfile?.company_name
+                            companyProfile?.company_name
                             ? companyProfile.company_name
                             : user?.full_name || user?.email?.split("@")[0]}
                         </p>
@@ -402,19 +394,19 @@ const Navbar: React.FC = () => {
 
                       {(user.user_type === "Admin" ||
                         user.user_type === "Super Admin") && (
-                        <Link
-                          to="/admin/dashboard"
-                          onClick={() => setOpen(false)}
-                        >
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start gap-3"
+                          <Link
+                            to="/admin/dashboard"
+                            onClick={() => setOpen(false)}
                           >
-                            <Shield className="h-4 w-4" />
-                            Admin Panel
-                          </Button>
-                        </Link>
-                      )}
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start gap-3"
+                            >
+                              <Shield className="h-4 w-4" />
+                              Admin Panel
+                            </Button>
+                          </Link>
+                        )}
 
                       {user.user_type === "Super Admin" && (
                         <Link

@@ -10,20 +10,20 @@ interface MainLayoutProps {
   className?: string
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ 
-  children, 
-  showFooter = true, 
+const MainLayout: React.FC<MainLayoutProps> = ({
+  children,
+  showFooter = true,
   showNavbar = true,
   className = ''
 }) => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {showNavbar && <Navbar />}
-      
+
       <main className={`grow ${className}`}>
         {children || <Outlet />}
       </main>
-      
+
       {showFooter && <Footer />}
     </div>
   )
