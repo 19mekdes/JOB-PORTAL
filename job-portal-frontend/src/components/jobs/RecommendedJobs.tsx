@@ -83,7 +83,7 @@ const RecommendedJobs: React.FC<RecommendedJobsProps> = ({
       // eslint-disable-next-line react-hooks/immutability
       fetchRecommendedJobs();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, limit]);
 
   const fetchRecommendedJobs = async () => {
@@ -289,11 +289,10 @@ const RecommendedJobs: React.FC<RecommendedJobsProps> = ({
               className="h-7 px-2"
             >
               <ThumbsUp
-                className={`h-3 w-3 ${
-                  feedbackGiven[job.id] === "like"
+                className={`h-3 w-3 ${feedbackGiven[job.id] === "like"
                     ? "fill-green-500 text-green-500"
                     : ""
-                }`}
+                  }`}
               />
             </Button>
             <Button
@@ -307,11 +306,10 @@ const RecommendedJobs: React.FC<RecommendedJobsProps> = ({
               className="h-7 px-2"
             >
               <ThumbsDown
-                className={`h-3 w-3 ${
-                  feedbackGiven[job.id] === "dislike"
+                className={`h-3 w-3 ${feedbackGiven[job.id] === "dislike"
                     ? "fill-red-500 text-red-500"
                     : ""
-                }`}
+                  }`}
               />
             </Button>
             <Button

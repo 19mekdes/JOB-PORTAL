@@ -43,28 +43,25 @@ import api from "../../services/api";
 const formatTextToBulletPoints = (text: string | null): string[] => {
   if (!text) return [];
   if (text.trim() === "") return [];
-  
+
   let items: string[] = [];
-  
-  // Split by new lines (how employers add requirements)
   if (text.includes("\n")) {
     items = text.split("\n");
   }
-  // Split by bullet points
   else if (text.includes("•") || text.includes("-") || text.includes("*")) {
     const bulletChar = text.includes("•") ? "•" : (text.includes("-") ? "-" : "*");
     items = text.split(bulletChar);
   }
-  // Split by commas
+  
   else if (text.includes(",")) {
     items = text.split(",");
   }
-  
+
   else {
     items = [text];
   }
-  
-  
+
+
   return items
     .map(item => item.trim())
     .filter(item => item.length > 0)
@@ -129,7 +126,7 @@ const JobDetails: React.FC = () => {
   useEffect(() => {
     fetchJobDetails();
     checkIfSaved();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchJobDetails = async () => {
@@ -366,14 +363,14 @@ const JobDetails: React.FC = () => {
                   <TabsTrigger value="requirements">Requirements</TabsTrigger>
                   <TabsTrigger value="benefits">Benefits</TabsTrigger>
                 </TabsList>
-                
+
                 {/* Description Tab */}
                 <TabsContent value="description" className="mt-4">
                   <div className="prose max-w-none">
                     <p className="whitespace-pre-wrap">{job.description}</p>
                   </div>
                 </TabsContent>
-                
+
                 {/* Requirements Tab - FIXED: Bullet points */}
                 <TabsContent value="requirements" className="mt-4">
                   {requirementsList.length === 0 ? (
@@ -393,8 +390,7 @@ const JobDetails: React.FC = () => {
                     </ul>
                   )}
                 </TabsContent>
-                
-                {/* Benefits Tab - FIXED: Bullet points */}
+
                 <TabsContent value="benefits" className="mt-4">
                   {benefitsList.length === 0 ? (
                     <div className="text-center py-8">
