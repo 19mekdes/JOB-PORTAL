@@ -186,9 +186,8 @@ const JobCard: React.FC<JobCardProps> = ({
   if (variant === "featured") {
     return (
       <Card
-        className={`relative overflow-hidden border-2 border-blue-200 shadow-lg transition-all duration-300 ${
-          isHovered ? "shadow-xl -translate-y-1" : ""
-        }`}
+        className={`relative overflow-hidden border-2 border-blue-200 shadow-lg transition-all duration-300 ${isHovered ? "shadow-xl -translate-y-1" : ""
+          }`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -268,9 +267,8 @@ const JobCard: React.FC<JobCardProps> = ({
 
   return (
     <Card
-      className={`hover:shadow-lg transition-all duration-300 cursor-pointer ${
-        isHovered ? "shadow-md" : ""
-      }`}
+      className={`hover:shadow-lg transition-all duration-300 cursor-pointer ${isHovered ? "shadow-md" : ""
+        }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => navigate(`/jobs/${job.id}`)}
@@ -296,9 +294,8 @@ const JobCard: React.FC<JobCardProps> = ({
             <div className="flex gap-1">
               <Button variant="ghost" size="icon" onClick={handleSaveJob}>
                 <Heart
-                  className={`h-4 w-4 ${
-                    isSaved ? "fill-red-500 text-red-500" : ""
-                  }`}
+                  className={`h-4 w-4 ${isSaved ? "fill-red-500 text-red-500" : ""
+                    }`}
                 />
               </Button>
               <Button variant="ghost" size="icon" onClick={handleShare}>

@@ -186,7 +186,7 @@ const ManageJobs: React.FC = () => {
       const duplicateData = {
         ...jobData,
         title: `${job.title} (Copy)`,
-        status_id: 3 // Draft status
+        status_id: 3 
       }
       await api.post('/jobs', duplicateData)
       toast({

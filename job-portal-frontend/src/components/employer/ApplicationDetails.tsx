@@ -471,7 +471,6 @@ const ApplicationDetails: React.FC = () => {
                   </TabsContent>
                 </Tabs>
 
-                {/* Cover Letter */}
                 <Separator className="my-4" />
                 <div>
                   <h3 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
