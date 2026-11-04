@@ -105,7 +105,6 @@ const AdminManagement: React.FC = () => {
   const fetchAdmins = async () => {
     setIsLoading(true)
     try {
-      // FIXED: Use correct super-admin endpoint
       const response = await api.get('/super-admin/admins')
       setAdmins(response.data.data)
     } catch (error) {
@@ -161,7 +160,6 @@ const AdminManagement: React.FC = () => {
 
     setIsSubmitting(true)
     try {
-      // FIXED: Use correct super-admin endpoint
       await api.post('/super-admin/admins', {
         email: formData.email,
         password: formData.password,
@@ -192,7 +190,7 @@ const AdminManagement: React.FC = () => {
 
     setIsSubmitting(true)
     try {
-      // FIXED: Use correct super-admin endpoint
+    
       await api.put(`/super-admin/admins/${selectedAdmin.id}`, {
         email: formData.email,
         role: formData.role,
@@ -223,7 +221,7 @@ const AdminManagement: React.FC = () => {
 
     setIsSubmitting(true)
     try {
-      // FIXED: Use correct super-admin endpoint
+     
       await api.delete(`/super-admin/admins/${selectedAdmin.id}`)
       toast({
         title: "Success",

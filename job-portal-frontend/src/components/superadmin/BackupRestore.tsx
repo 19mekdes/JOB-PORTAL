@@ -121,7 +121,7 @@ const BackupRestore: React.FC = () => {
   const createBackup = async () => {
     setIsCreatingBackup(true)
     setBackupProgress(0)
-    
+
     const interval = setInterval(() => {
       setBackupProgress(prev => {
         if (prev >= 90) {
@@ -185,7 +185,7 @@ const BackupRestore: React.FC = () => {
 
   const restoreBackup = async () => {
     if (!selectedBackup) return
-    
+
     setIsRestoring(true)
     try {
       await api.post(`/super-admin/backups/${selectedBackup.id}/restore`)
@@ -210,7 +210,7 @@ const BackupRestore: React.FC = () => {
 
   const deleteBackup = async () => {
     if (!selectedBackup) return
-    
+
     try {
       await api.delete(`/super-admin/backups/${selectedBackup.id}`)
       toast({
