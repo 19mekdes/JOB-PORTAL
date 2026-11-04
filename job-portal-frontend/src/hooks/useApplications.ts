@@ -202,7 +202,6 @@ export const useApplications = (
     }
   }, [user, filters])
 
-  // ================= STATUS STATS =================
 
   const calculateStatusStats = (apps: Application[]) => {
     const statusMap = new Map<string, number>()
@@ -223,8 +222,6 @@ export const useApplications = (
       })
     )
   }
-
-  // ================= MONTHLY STATS =================
 
   const calculateMonthlyStats = (apps: Application[]) => {
     const monthMap = new Map<string, number>()
@@ -262,8 +259,6 @@ export const useApplications = (
       })
     )
   }
-
-  // ================= GET APPLICATION BY ID =================
 
   const fetchApplicationById = useCallback(
     async (id: string): Promise<Application | null> => {
@@ -305,7 +300,7 @@ export const useApplications = (
       }
 
       try {
-        // FIXED ROUTE
+     
         const response = await api.post(
           `/applications/apply/${jobId}`,
           data,
@@ -343,7 +338,7 @@ export const useApplications = (
     [fetchApplications, isMissingProfile]
   )
 
-  // ================= UPDATE STATUS =================
+  
 
   const updateApplicationStatus = useCallback(
     async (
@@ -381,8 +376,6 @@ export const useApplications = (
     [fetchApplications]
   )
 
-  // ================= ADD NOTE =================
-
   const addNote = useCallback(
     async (id: string, note: string): Promise<boolean> => {
       try {
@@ -412,8 +405,6 @@ export const useApplications = (
     },
     [fetchApplications]
   )
-
-  // ================= WITHDRAW =================
 
   const withdrawApplication = useCallback(
     async (id: string): Promise<boolean> => {

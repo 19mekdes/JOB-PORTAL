@@ -95,8 +95,6 @@ export const useAuth = (): UseAuthReturn => {
         title: "Welcome Back!",
         description: `Successfully logged in as ${result.user.full_name || result.user.email}`,
       })
-
-      // Redirect based on user type
       if (result.user.user_type === 'Employer') {
         navigate('/employer/dashboard')
       } else if (result.user.user_type === 'Admin' || result.user.user_type === 'Super Admin') {
@@ -305,7 +303,6 @@ export const useAuth = (): UseAuthReturn => {
     return roleList.includes(user.user_type)
   }, [user])
 
-  // Check for remembered user on mount
   useEffect(() => {
     const remembered = localStorage.getItem('rememberMe')
     if (remembered && user) {
@@ -335,8 +332,6 @@ export const useAuth = (): UseAuthReturn => {
     hasRole
   }
 }
-
-// Hook for protected routes
 interface UseProtectedRouteReturn {
   isAuthorized: boolean
   isLoading: boolean
@@ -364,20 +359,14 @@ export const useProtectedRoute = (requiredRoles?: string | string[]): UseProtect
     requiredRole: requiredRoles
   }
 }
-
-// Hook for checking if user is logged in (simpler version)
 export const useIsAuthenticated = (): boolean => {
   const { isAuthenticated, isLoading } = useAuth()
   return !isLoading && isAuthenticated
 }
-
-// Hook for getting current user type
 export const useUserType = (): string | null => {
   const { userType, isLoading } = useAuth()
   return !isLoading ? userType : null
 }
-
-// Hook for checking specific user type
 export const useIsUserType = (type: string | string[]): boolean => {
   const { hasRole, isLoading } = useAuth()
   return !isLoading && hasRole(type)
