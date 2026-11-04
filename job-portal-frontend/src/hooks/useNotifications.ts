@@ -314,7 +314,7 @@ export const useNotifications = (initialFilters?: NotificationFilters): UseNotif
     }
   }, [user, fetchNotifications, fetchStats, fetchPreferences])
 
-  // Real-time polling for new notifications (every 30 seconds)
+
   useEffect(() => {
     if (!user) return
 
@@ -323,7 +323,7 @@ export const useNotifications = (initialFilters?: NotificationFilters): UseNotif
         if (count > unreadCount) {
           fetchNotifications()
           fetchStats()
-          // Show toast for new notification
+         
           toast({
             title: "New Notification",
             description: "You have a new notification",
@@ -360,8 +360,6 @@ export const useNotifications = (initialFilters?: NotificationFilters): UseNotif
     getUnreadCount
   }
 }
-
-// Hook for real-time notification subscription (WebSocket)
 export const useRealtimeNotifications = () => {
   const { user } = useSelector((state: RootState) => state.auth)
   const [lastNotification, setLastNotification] = useState<Notification | null>(null)
@@ -371,7 +369,6 @@ export const useRealtimeNotifications = () => {
   useEffect(() => {
     if (!user) return
 
-    // Connect to WebSocket
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const wsUrl = `${protocol}//${window.location.host}/ws/notifications`
     const websocket = new WebSocket(wsUrl)
@@ -384,7 +381,7 @@ export const useRealtimeNotifications = () => {
     websocket.onmessage = (event) => {
       const data = JSON.parse(event.data)
       setLastNotification(data)
-      // Show toast for real-time notification
+      
       toast({
         title: data.title,
         description: data.message,

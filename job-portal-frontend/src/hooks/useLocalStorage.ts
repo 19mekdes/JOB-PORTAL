@@ -12,7 +12,6 @@ export function useLocalStorage<T>(
   key: string,
   initialValue: T
 ): [T, (value: T | ((val: T) => T)) => void, () => void] {
-  // Get stored value from localStorage
   const readValue = useCallback((): T => {
     if (typeof window === 'undefined') {
       return initialValue
@@ -29,7 +28,7 @@ export function useLocalStorage<T>(
 
   const [storedValue, setStoredValue] = useState<T>(readValue)
 
-  // Return a wrapped version of useState's setter function that persists the new value to localStorage
+  
   const setValue = useCallback(
     (value: T | ((val: T) => T)) => {
       try {
@@ -60,7 +59,6 @@ export function useLocalStorage<T>(
     setStoredValue(readValue())
   }, [readValue])
 
-  // Listen for changes in other tabs/windows
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === key && event.newValue !== null) {
@@ -76,10 +74,6 @@ export function useLocalStorage<T>(
 
   return [storedValue, setValue, removeValue]
 }
-
-/**
- * Hook for storing user preferences
- */
 interface UserPreferences {
   theme: 'light' | 'dark' | 'system'
   language: string
@@ -113,10 +107,6 @@ export const useUserPreferences = () => {
     resetPreferences
   }
 }
-
-/**
- * Hook for storing job search filters
- */
 interface SearchFilters {
   keyword: string
   location: string
@@ -156,10 +146,6 @@ export const useSavedSearchFilters = () => {
     clearFilters
   }
 }
-
-/**
- * Hook for storing recent searches
- */
 export const useRecentSearches = (maxItems: number = 5) => {
   const [searches, setSearches] = useLocalStorage<string[]>('recent_searches', [])
 
@@ -188,9 +174,6 @@ export const useRecentSearches = (maxItems: number = 5) => {
   }
 }
 
-/**
- * Hook for storing recently viewed jobs
- */
 interface RecentlyViewedJob {
   id: string
   title: string
@@ -233,10 +216,6 @@ export const useAuthToken = () => {
     isAuthenticated: !!token
   }
 }
-
-/**
- * Hook for storing user data
- */
 interface UserData {
   id: string
   email: string
@@ -261,9 +240,6 @@ export const useUserData = () => {
   }
 }
 
-/**
- * Hook for storing draft job posts (for employers)
- */
 interface DraftJob {
   id: string
   title: string
@@ -317,10 +293,6 @@ export const useDraftJobs = () => {
     clearAllDrafts
   }
 }
-
-/**
- * Hook for storing application form data
- */
 export const useApplicationFormDraft = (jobId: string) => {
   const key = `application_draft_${jobId}`
   const [draft, setDraft, removeDraft] = useLocalStorage<any>(key, null)
@@ -344,10 +316,6 @@ export const useApplicationFormDraft = (jobId: string) => {
     hasDraft
   }
 }
-
-/**
- * Hook for storing notification preferences
- */
 interface NotificationPrefs {
   email_enabled: boolean
   push_enabled: boolean
