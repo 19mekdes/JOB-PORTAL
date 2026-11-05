@@ -89,7 +89,6 @@ const EmployerJobs: React.FC = () => {
     }
   }
 
-  // FIXED: Close job - send status as 'Closed' string, not status_id
   const handleCloseJob = async (jobId: string, jobTitle: string) => {
     try {
       console.log('Closing job:', jobId);
@@ -111,8 +110,6 @@ const EmployerJobs: React.FC = () => {
       });
     }
   }
-
-  // FIXED: Reopen job - send status as 'Open' string, not status_id
   const handleReopenJob = async (jobId: string, jobTitle: string) => {
     try {
       console.log('Reopening job:', jobId);
@@ -135,7 +132,6 @@ const EmployerJobs: React.FC = () => {
     }
   }
 
-  // FIXED: Delete job
   const handleDeleteJob = async (jobId: string, jobTitle: string) => {
     try {
       const response = await api.delete(`/jobs/${jobId}`);

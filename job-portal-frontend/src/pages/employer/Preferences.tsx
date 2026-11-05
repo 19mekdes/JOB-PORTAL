@@ -10,8 +10,8 @@ import { Sun, Moon, Monitor, Palette, Globe } from 'lucide-react'
 
 const Preferences: React.FC = () => {
   const [preferences, setPreferences] = useState({
-    theme: 'light',      // light, dark, system
-    language: 'en',      // en, es, fr, de
+    theme: 'light',
+    language: 'en',
     compact_mode: false,
     animations: true,
     sidebar_collapsed: false,
@@ -20,15 +20,13 @@ const Preferences: React.FC = () => {
   })
 
   useEffect(() => {
-    // Load saved preferences from localStorage
     const saved = localStorage.getItem('user_preferences')
     if (saved) {
       setPreferences(JSON.parse(saved))
     }
-    
-    // Apply theme
+
     applyTheme(preferences.theme)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const applyTheme = (theme: string) => {
@@ -47,12 +45,12 @@ const Preferences: React.FC = () => {
   }
 
   const handleSave = () => {
-    // Save to localStorage
+
     localStorage.setItem('user_preferences', JSON.stringify(preferences))
-    
-    // Apply theme immediately
+
+
     applyTheme(preferences.theme)
-    
+
     alert('Preferences saved successfully!')
   }
 
@@ -77,43 +75,40 @@ const Preferences: React.FC = () => {
               <Label>Theme</Label>
               <div className="flex gap-3 mt-2">
                 <button
-                  onClick={() => setPreferences({...preferences, theme: 'light'})}
-                  className={`flex-1 p-3 rounded-lg border text-center transition-all ${
-                    preferences.theme === 'light' 
-                      ? 'border-blue-500 bg-blue-50' 
+                  onClick={() => setPreferences({ ...preferences, theme: 'light' })}
+                  className={`flex-1 p-3 rounded-lg border text-center transition-all ${preferences.theme === 'light'
+                      ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <Sun className="h-5 w-5 mx-auto mb-1" />
                   <span className="text-sm">Light</span>
                 </button>
-                
+
                 <button
-                  onClick={() => setPreferences({...preferences, theme: 'dark'})}
-                  className={`flex-1 p-3 rounded-lg border text-center transition-all ${
-                    preferences.theme === 'dark' 
-                      ? 'border-blue-500 bg-blue-50' 
+                  onClick={() => setPreferences({ ...preferences, theme: 'dark' })}
+                  className={`flex-1 p-3 rounded-lg border text-center transition-all ${preferences.theme === 'dark'
+                      ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <Moon className="h-5 w-5 mx-auto mb-1" />
                   <span className="text-sm">Dark</span>
                 </button>
-                
+
                 <button
-                  onClick={() => setPreferences({...preferences, theme: 'system'})}
-                  className={`flex-1 p-3 rounded-lg border text-center transition-all ${
-                    preferences.theme === 'system' 
-                      ? 'border-blue-500 bg-blue-50' 
+                  onClick={() => setPreferences({ ...preferences, theme: 'system' })}
+                  className={`flex-1 p-3 rounded-lg border text-center transition-all ${preferences.theme === 'system'
+                      ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <Monitor className="h-5 w-5 mx-auto mb-1" />
                   <span className="text-sm">System</span>
                 </button>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <Label>Compact Mode</Label>
@@ -121,10 +116,10 @@ const Preferences: React.FC = () => {
               </div>
               <Switch
                 checked={preferences.compact_mode}
-                onCheckedChange={(checked) => setPreferences({...preferences, compact_mode: checked})}
+                onCheckedChange={(checked) => setPreferences({ ...preferences, compact_mode: checked })}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <Label>Animations</Label>
@@ -132,7 +127,7 @@ const Preferences: React.FC = () => {
               </div>
               <Switch
                 checked={preferences.animations}
-                onCheckedChange={(checked) => setPreferences({...preferences, animations: checked})}
+                onCheckedChange={(checked) => setPreferences({ ...preferences, animations: checked })}
               />
             </div>
           </CardContent>
@@ -149,9 +144,9 @@ const Preferences: React.FC = () => {
           <CardContent className="space-y-4">
             <div>
               <Label>Language</Label>
-              <Select 
-                value={preferences.language} 
-                onValueChange={(value) => setPreferences({...preferences, language: value})}
+              <Select
+                value={preferences.language}
+                onValueChange={(value) => setPreferences({ ...preferences, language: value })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -164,7 +159,7 @@ const Preferences: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <Label>Notification Sounds</Label>
@@ -172,15 +167,15 @@ const Preferences: React.FC = () => {
               </div>
               <Switch
                 checked={preferences.notifications_sound}
-                onCheckedChange={(checked) => setPreferences({...preferences, notifications_sound: checked})}
+                onCheckedChange={(checked) => setPreferences({ ...preferences, notifications_sound: checked })}
               />
             </div>
-            
+
             <div>
               <Label>Email Digest</Label>
-              <Select 
-                value={preferences.email_digest} 
-                onValueChange={(value) => setPreferences({...preferences, email_digest: value})}
+              <Select
+                value={preferences.email_digest}
+                onValueChange={(value) => setPreferences({ ...preferences, email_digest: value })}
               >
                 <SelectTrigger>
                   <SelectValue />

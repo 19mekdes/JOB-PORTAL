@@ -43,7 +43,7 @@ import {
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
-// Import recharts components
+
 import {
   ResponsiveContainer,
   LineChart,
@@ -56,7 +56,7 @@ import {
   Tooltip
 } from 'recharts'
 
-// Dashboard content component
+
 const DashboardContent: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats>({
     totalJobs: 0,
@@ -86,13 +86,11 @@ const fetchDashboardData = async () => {
     setLoading(true)
     const response = await api.get('/employer/dashboard')
     const dashboardData = response.data.data
-    
-    // Debug: Log what we received
+
     console.log('Dashboard Data:', dashboardData)
     console.log('Recent Jobs:', JSON.stringify(dashboardData.recentJobs, null, 2))
     console.log('Recent Applications:', JSON.stringify(dashboardData.recentApplications, null, 2))
-    
-    // Update stats
+  
     setStats({
       totalJobs: dashboardData.totalJobs || 0,
       activeJobs: dashboardData.activeJobs || 0,
@@ -109,10 +107,9 @@ const fetchDashboardData = async () => {
       thisMonthViews: dashboardData.thisMonthViews || 0
     })
     
-    // Set recent jobs directly - status should already be a string from backend
+    
     setRecentJobs(dashboardData.recentJobs || [])
     
-    // Set recent applications directly - status should already be a string from backend
     setRecentApplications(dashboardData.recentApplications || [])
     
   } catch (error) {
@@ -128,13 +125,13 @@ const fetchDashboardData = async () => {
 }
 
   const getStatusBadge = (status: any) => {
-  // Handle different possible formats of status
+  
   let statusStr = 'Unknown'
   
   if (typeof status === 'string') {
     statusStr = status
   } else if (status && typeof status === 'object') {
-    // If it's an object with status_name property
+    
     statusStr = status.status_name || status.name || 'Unknown'
   } else if (status && status.toString) {
     statusStr = status.toString()
