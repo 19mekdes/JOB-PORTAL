@@ -103,20 +103,16 @@ const EmployerApplications: React.FC = () => {
       setLoading(false)
     }
   }
-
-  // ✅ WORKING EXPORT FUNCTION - Same style as AdminApplications
   const exportToCSV = () => {
-    // Get filtered applications based on current filters
+  
     let filteredApps = [...applications]
     
-    // Filter by status
     if (statusFilter !== 'all') {
       filteredApps = filteredApps.filter(app => 
         (app.status?.status_name || 'Pending').toLowerCase() === statusFilter.toLowerCase()
       )
     }
     
-    // Filter by search term
     if (searchTerm) {
       filteredApps = filteredApps.filter(app => {
         const name = getSeekerName(app).toLowerCase()
@@ -137,7 +133,6 @@ const EmployerApplications: React.FC = () => {
       return
     }
     
-    // Create CSV headers and data
     const headers = ['Applicant Name', 'Email', 'Job Title', 'Location', 'Status', 'Applied Date']
     const csvData = filteredApps.map(app => [
       getSeekerName(app),
@@ -148,7 +143,6 @@ const EmployerApplications: React.FC = () => {
       new Date(app.applied_at).toLocaleDateString()
     ])
     
-    // Create CSV content
     const csvContent = [headers, ...csvData].map(row => row.join(',')).join('\n')
     const blob = new Blob([csvContent], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)

@@ -107,7 +107,6 @@ const DashboardContent: React.FC = () => {
     }
   }
 
-  // FIXED: Handle non-string status values
   const getStatusBadge = (status: string | number | undefined | null) => {
     if (!status) {
       return <Badge variant="secondary" className="border-0">Unknown</Badge>

@@ -143,7 +143,6 @@ const CompanyProfile: React.FC = () => {
         industry_id: profileData?.industry_id?.toString() || ''
       })
 
-      // Handle social links if they exist
       let socialLinksData = { linkedin: '', twitter: '', facebook: '', instagram: '' }
       if (profileData?.social_links) {
         try {
