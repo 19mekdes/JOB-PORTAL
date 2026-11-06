@@ -167,7 +167,7 @@ const AdminApplications: React.FC = () => {
         })
       }
       
-      // Extract unique companies for filter
+      
       const uniqueCompanies = [...new Set(response.data.data.map((app: Application) => app.job?.employer?.company_name).filter(Boolean))]
       setCompanies(uniqueCompanies as string[])
     } catch (error) {

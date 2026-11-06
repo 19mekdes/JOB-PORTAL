@@ -114,7 +114,7 @@ const AdminDashboard: React.FC = () => {
       
       console.log('Dashboard API Response:', response.data)
       
-      // Extract data from backend structure
+    
       const backendData = response.data?.data || response.data || {}
       
       // Calculate totals from backend data
