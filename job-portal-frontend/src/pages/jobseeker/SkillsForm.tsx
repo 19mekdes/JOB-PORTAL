@@ -19,12 +19,12 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [suggestedSkills] = useState<string[]>([
-    'JavaScript', 'TypeScript', 'React', 'Node.js', 'Python', 'Java', 
+    'JavaScript', 'TypeScript', 'React', 'Node.js', 'Python', 'Java',
     'HTML/CSS', 'SQL', 'MongoDB', 'Express.js', 'Next.js', 'Tailwind CSS',
     'GraphQL', 'Docker', 'Git', 'AWS', 'Figma', 'UI/UX Design'
   ])
 
-  
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/immutability
     fetchSkills()
@@ -43,13 +43,12 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
     }
   }
 
-  // Add new skill
   const addSkill = async () => {
     if (!newSkill.trim()) {
       toast({ variant: "destructive", title: "Error", description: "Please enter a skill" })
       return
     }
-    
+
     if (skills.includes(newSkill.trim())) {
       toast({ variant: "destructive", title: "Error", description: "Skill already exists" })
       return
@@ -58,7 +57,7 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
     const updatedSkills = [...skills, newSkill.trim()]
     setSkills(updatedSkills)
     setNewSkill('')
-    
+
     try {
       await api.put('/auth/profile', { skills: updatedSkills })
       toast({ title: "Success", description: "Skill added successfully" })
@@ -68,12 +67,10 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
       toast({ variant: "destructive", title: "Error", description: "Failed to add skill" })
     }
   }
-
-  // Remove skill
   const removeSkill = async (skillToRemove: string) => {
     const updatedSkills = skills.filter(s => s !== skillToRemove)
     setSkills(updatedSkills)
-    
+
     try {
       await api.put('/auth/profile', { skills: updatedSkills })
       toast({ title: "Success", description: "Skill removed" })
@@ -84,7 +81,6 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
     }
   }
 
-  // Add suggested skill
   const addSuggestedSkill = async (skill: string) => {
     if (skills.includes(skill)) {
       toast({ variant: "destructive", title: "Error", description: "Skill already exists" })
@@ -93,7 +89,7 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
 
     const updatedSkills = [...skills, skill]
     setSkills(updatedSkills)
-    
+
     try {
       await api.put('/auth/profile', { skills: updatedSkills })
       toast({ title: "Success", description: `${skill} added` })
@@ -104,7 +100,6 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
     }
   }
 
-  // Save all skills
   const handleSave = async () => {
     setSaving(true)
     try {
@@ -119,7 +114,6 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
     }
   }
 
-  // Handle Enter key press
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault()
@@ -147,7 +141,7 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
         </CardTitle>
         <p className="text-sm text-gray-500 mt-1">Add your technical and professional skills</p>
       </CardHeader>
-      
+
       <CardContent className="p-6 space-y-6">
         {/* Add New Skill Section */}
         <div className="space-y-3">
@@ -161,7 +155,7 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
                 placeholder="e.g., JavaScript, React, Python, Project Management"
                 className="pr-24 rounded-lg border-gray-200 focus:border-blue-500 focus:ring-blue-500"
               />
-              <Button 
+              <Button
                 onClick={addSkill}
                 size="sm"
                 className="absolute right-1 top-1 h-8 bg-blue-600 hover:bg-blue-700"
@@ -187,9 +181,9 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
             ) : (
               <div className="flex flex-wrap gap-2">
                 {skills.map((skill, index) => (
-                  <Badge 
-                    key={index} 
-                    variant="secondary" 
+                  <Badge
+                    key={index}
+                    variant="secondary"
                     className="bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-full px-4 py-2 text-sm font-medium transition-colors group"
                   >
                     {skill}
@@ -231,8 +225,8 @@ const SkillsForm: React.FC<SkillsFormProps> = ({ onUpdate, initialSkills = [] })
 
         {/* Save Button */}
         <div className="pt-4 border-t border-gray-100">
-          <Button 
-            onClick={handleSave} 
+          <Button
+            onClick={handleSave}
             disabled={saving}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5"
           >

@@ -99,7 +99,7 @@ const About: React.FC = () => {
             Connecting Talent with Opportunity
           </h1>
           <p className="text-xl text-blue-100 max-w-3xl mx-auto">
-            Since 2014, we've been on a mission to revolutionize the way people find jobs 
+            Since 2014, we've been on a mission to revolutionize the way people find jobs
             and companies hire talent.
           </p>
         </div>
@@ -157,13 +157,13 @@ const About: React.FC = () => {
               <Badge className="mb-4 bg-blue-100 text-blue-700">Our Journey</Badge>
               <h2 className="text-3xl font-bold text-gray-900 mb-4">How It All Started</h2>
               <p className="text-gray-600 mb-4">
-                JobPortal was founded in 2014 with a simple yet powerful vision: to make job searching 
-                easier, faster, and more effective for everyone. What started as a small startup has 
+                JobPortal was founded in 2014 with a simple yet powerful vision: to make job searching
+                easier, faster, and more effective for everyone. What started as a small startup has
                 grown into a global platform connecting millions of job seekers with their dream careers.
               </p>
               <p className="text-gray-600 mb-6">
-                Today, we're proud to serve thousands of businesses and job seekers across 50+ countries, 
-                helping them find the perfect match for their needs. Our AI-powered matching technology 
+                Today, we're proud to serve thousands of businesses and job seekers across 50+ countries,
+                helping them find the perfect match for their needs. Our AI-powered matching technology
                 ensures that candidates find relevant opportunities and employers find qualified talent.
               </p>
               <div className="flex gap-4">
