@@ -126,7 +126,7 @@ const MyApplications: React.FC = () => {
 
   const handleWithdraw = async (applicationId: string) => {
     if (!confirm('Are you sure you want to withdraw this application? This action cannot be undone.')) return
-    
+
     try {
       await api.delete(`/applications/my-applications/${applicationId}/withdraw`)
       toast({ title: "Application Withdrawn", description: "Your application has been withdrawn successfully" })
@@ -149,7 +149,7 @@ const MyApplications: React.FC = () => {
   const filteredApplications = applications
     .filter(app => {
       const matchesSearch = app.job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           app.job.employer.company_name.toLowerCase().includes(searchTerm.toLowerCase())
+        app.job.employer.company_name.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesStatus = statusFilter === 'all' || app.status.status_name === statusFilter
       return matchesSearch && matchesStatus
     })
@@ -301,8 +301,8 @@ const MyApplications: React.FC = () => {
               <Briefcase className="h-12 w-12 mx-auto text-gray-400 mb-4" />
               <h3 className="text-lg font-semibold mb-2">No applications found</h3>
               <p className="text-gray-500 mb-4">
-                {searchTerm || statusFilter !== 'all' 
-                  ? "Try adjusting your filters" 
+                {searchTerm || statusFilter !== 'all'
+                  ? "Try adjusting your filters"
                   : "You haven't applied to any jobs yet"}
               </p>
               {!searchTerm && statusFilter === 'all' && (

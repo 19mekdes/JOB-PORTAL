@@ -10,7 +10,8 @@ import {
   Trash2,
   ExternalLink,
   Search,
-  RefreshCw} from 'lucide-react'
+  RefreshCw
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -124,7 +125,7 @@ const MyBookmarks: React.FC = () => {
   }
 
   const filteredBookmarks = bookmarks
-    .filter(bookmark => 
+    .filter(bookmark =>
       bookmark.job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       bookmark.job.employer.company_name.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -228,8 +229,8 @@ const MyBookmarks: React.FC = () => {
             <Bookmark className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-semibold mb-2">No saved jobs found</h3>
             <p className="text-gray-500 mb-4">
-              {searchTerm 
-                ? "No jobs match your search criteria" 
+              {searchTerm
+                ? "No jobs match your search criteria"
                 : "Start saving jobs to see them here"}
             </p>
             {!searchTerm && (
@@ -295,21 +296,21 @@ const MyBookmarks: React.FC = () => {
 
                   {/* Right Section - Actions */}
                   <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => navigate(`/jobs/${bookmark.job.id}`)}
                     >
                       <ExternalLink className="h-4 w-4 mr-1" />
                       View Job
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => {
                         setJobToRemove(bookmark);
                         setIsRemoveDialogOpen(true);
-                      }} 
+                      }}
                       className="text-red-500 hover:text-red-600"
                     >
                       <Trash2 className="h-4 w-4" />
