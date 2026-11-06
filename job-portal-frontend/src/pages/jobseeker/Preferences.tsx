@@ -4,11 +4,11 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { 
-  Bell, 
-  Mail, 
-  Eye, 
-  Save, 
+import {
+  Bell,
+  Mail,
+  Eye,
+  Save,
   Loader2,
   Briefcase,
   BellRing,
@@ -56,7 +56,7 @@ const JobSeekerPreferences: React.FC = () => {
   const [testingPush, setTestingPush] = useState(false)
   const [notificationPermission, setNotificationPermission] = useState('default')
   const [industries, setIndustries] = useState<Industry[]>([])
-  
+
   const [preferences, setPreferences] = useState<JobSeekerPreferences>({
     user_id: '',
     job_alerts_enabled: true,
@@ -75,7 +75,7 @@ const JobSeekerPreferences: React.FC = () => {
   })
 
   useEffect(() => {
-    
+
     fetchPreferences()
     fetchIndustries()
     checkNotificationPermission()
@@ -122,7 +122,7 @@ const JobSeekerPreferences: React.FC = () => {
 
     const permission = await Notification.requestPermission()
     setNotificationPermission(permission)
-    
+
     if (permission === 'granted') {
       toast({
         title: "Permission Granted",
@@ -219,8 +219,7 @@ const JobSeekerPreferences: React.FC = () => {
           title: "Success",
           description: "Preferences saved successfully",
         })
-        
-        // If push notifications were enabled, request permission
+
         if (preferences.push_notifications && notificationPermission !== 'granted') {
           await requestNotificationPermission()
         }
@@ -277,16 +276,16 @@ const JobSeekerPreferences: React.FC = () => {
             </div>
             <Switch
               checked={preferences.job_alerts_enabled}
-              onCheckedChange={(checked) => setPreferences({...preferences, job_alerts_enabled: checked})}
+              onCheckedChange={(checked) => setPreferences({ ...preferences, job_alerts_enabled: checked })}
             />
           </div>
-          
+
           {preferences.job_alerts_enabled && (
             <div>
               <Label className="text-xs font-medium text-gray-700">Notification Frequency</Label>
-              <Select 
-                value={preferences.notification_frequency} 
-                onValueChange={(value: any) => setPreferences({...preferences, notification_frequency: value})}
+              <Select
+                value={preferences.notification_frequency}
+                onValueChange={(value: any) => setPreferences({ ...preferences, notification_frequency: value })}
               >
                 <SelectTrigger className="mt-1 h-9 text-sm bg-white border-gray-300">
                   <SelectValue />
@@ -329,12 +328,12 @@ const JobSeekerPreferences: React.FC = () => {
             <div className="flex items-center gap-3">
               <Switch
                 checked={preferences.email_notifications}
-                onCheckedChange={(checked) => setPreferences({...preferences, email_notifications: checked})}
+                onCheckedChange={(checked) => setPreferences({ ...preferences, email_notifications: checked })}
               />
               {preferences.email_notifications && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={testEmailNotification}
                   disabled={testingEmail}
                   className="h-7 px-2 text-xs border-gray-300"
@@ -344,7 +343,7 @@ const JobSeekerPreferences: React.FC = () => {
               )}
             </div>
           </div>
-          
+
           {/* Push Notifications */}
           <div className="flex items-center justify-between">
             <div className="flex-1">
@@ -370,7 +369,7 @@ const JobSeekerPreferences: React.FC = () => {
               <Switch
                 checked={preferences.push_notifications}
                 onCheckedChange={async (checked) => {
-                  setPreferences({...preferences, push_notifications: checked})
+                  setPreferences({ ...preferences, push_notifications: checked })
                   if (checked && notificationPermission !== 'granted') {
                     await requestNotificationPermission()
                     checkNotificationPermission()
@@ -378,9 +377,9 @@ const JobSeekerPreferences: React.FC = () => {
                 }}
               />
               {preferences.push_notifications && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={testPushNotification}
                   disabled={testingPush}
                   className="h-7 px-2 text-xs border-gray-300"
@@ -409,7 +408,7 @@ const JobSeekerPreferences: React.FC = () => {
                 name="visibility"
                 value="public"
                 checked={preferences.profile_visibility === 'public'}
-                onChange={(e) => setPreferences({...preferences, profile_visibility: e.target.value as any})}
+                onChange={(e) => setPreferences({ ...preferences, profile_visibility: e.target.value as any })}
                 className="h-3.5 w-3.5 text-blue-600"
               />
               <div>
@@ -417,14 +416,14 @@ const JobSeekerPreferences: React.FC = () => {
                 <p className="text-xs text-gray-500">Your profile is visible to all employers</p>
               </div>
             </label>
-            
+
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
                 name="visibility"
                 value="employers_only"
                 checked={preferences.profile_visibility === 'employers_only'}
-                onChange={(e) => setPreferences({...preferences, profile_visibility: e.target.value as any})}
+                onChange={(e) => setPreferences({ ...preferences, profile_visibility: e.target.value as any })}
                 className="h-3.5 w-3.5 text-blue-600"
               />
               <div>
@@ -432,14 +431,14 @@ const JobSeekerPreferences: React.FC = () => {
                 <p className="text-xs text-gray-500">Only registered employers can view your profile</p>
               </div>
             </label>
-            
+
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
                 name="visibility"
                 value="private"
                 checked={preferences.profile_visibility === 'private'}
-                onChange={(e) => setPreferences({...preferences, profile_visibility: e.target.value as any})}
+                onChange={(e) => setPreferences({ ...preferences, profile_visibility: e.target.value as any })}
                 className="h-3.5 w-3.5 text-blue-600"
               />
               <div>
@@ -448,7 +447,7 @@ const JobSeekerPreferences: React.FC = () => {
               </div>
             </label>
           </div>
-          
+
           <div className="flex items-center justify-between pt-2">
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-900">Show Resume to Employers</p>
@@ -456,10 +455,10 @@ const JobSeekerPreferences: React.FC = () => {
             </div>
             <Switch
               checked={preferences.resume_visibility}
-              onCheckedChange={(checked) => setPreferences({...preferences, resume_visibility: checked})}
+              onCheckedChange={(checked) => setPreferences({ ...preferences, resume_visibility: checked })}
             />
           </div>
-          
+
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-900">Allow Employer Contact</p>
@@ -467,7 +466,7 @@ const JobSeekerPreferences: React.FC = () => {
             </div>
             <Switch
               checked={preferences.allow_employer_contact}
-              onCheckedChange={(checked) => setPreferences({...preferences, allow_employer_contact: checked})}
+              onCheckedChange={(checked) => setPreferences({ ...preferences, allow_employer_contact: checked })}
             />
           </div>
         </CardContent>
@@ -492,9 +491,9 @@ const JobSeekerPreferences: React.FC = () => {
                     type="checkbox"
                     checked={preferences.preferred_job_types.includes(type)}
                     onChange={() => toggleArrayItem(
-                      preferences.preferred_job_types, 
-                      type, 
-                      (newArray) => setPreferences({...preferences, preferred_job_types: newArray})
+                      preferences.preferred_job_types,
+                      type,
+                      (newArray) => setPreferences({ ...preferences, preferred_job_types: newArray })
                     )}
                     className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600"
                   />
@@ -514,9 +513,9 @@ const JobSeekerPreferences: React.FC = () => {
                     type="checkbox"
                     checked={preferences.preferred_industries.includes(industry.id)}
                     onChange={() => toggleArrayItem(
-                      preferences.preferred_industries, 
-                      industry.id, 
-                      (newArray) => setPreferences({...preferences, preferred_industries: newArray})
+                      preferences.preferred_industries,
+                      industry.id,
+                      (newArray) => setPreferences({ ...preferences, preferred_industries: newArray })
                     )}
                     className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600"
                   />
@@ -534,7 +533,7 @@ const JobSeekerPreferences: React.FC = () => {
                 type="number"
                 placeholder="Min"
                 value={preferences.min_salary || ''}
-                onChange={(e) => setPreferences({...preferences, min_salary: e.target.value ? Number(e.target.value) : null})}
+                onChange={(e) => setPreferences({ ...preferences, min_salary: e.target.value ? Number(e.target.value) : null })}
                 className="mt-1 h-9 text-sm bg-white border-gray-300"
               />
             </div>
@@ -544,7 +543,7 @@ const JobSeekerPreferences: React.FC = () => {
                 type="number"
                 placeholder="Max"
                 value={preferences.max_salary || ''}
-                onChange={(e) => setPreferences({...preferences, max_salary: e.target.value ? Number(e.target.value) : null})}
+                onChange={(e) => setPreferences({ ...preferences, max_salary: e.target.value ? Number(e.target.value) : null })}
                 className="mt-1 h-9 text-sm bg-white border-gray-300"
               />
             </div>
@@ -553,9 +552,9 @@ const JobSeekerPreferences: React.FC = () => {
           {/* Experience Level */}
           <div>
             <Label className="text-xs font-medium text-gray-700">Experience Level</Label>
-            <Select 
-              value={preferences.experience_level} 
-              onValueChange={(value) => setPreferences({...preferences, experience_level: value})}
+            <Select
+              value={preferences.experience_level}
+              onValueChange={(value) => setPreferences({ ...preferences, experience_level: value })}
             >
               <SelectTrigger className="mt-1 h-9 text-sm bg-white border-gray-300">
                 <SelectValue placeholder="Select experience level" />
@@ -573,9 +572,9 @@ const JobSeekerPreferences: React.FC = () => {
 
       {/* Save Button */}
       <div className="flex justify-end pt-2">
-        <Button 
-          onClick={handleSave} 
-          disabled={saving} 
+        <Button
+          onClick={handleSave}
+          disabled={saving}
           className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 text-sm"
         >
           {saving ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <Save className="h-3.5 w-3.5 mr-2" />}

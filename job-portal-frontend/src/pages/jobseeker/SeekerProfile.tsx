@@ -106,21 +106,20 @@ const SeekerProfile: React.FC = () => {
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [activeTab, setActiveTab] = useState("basic");
 
-  // Cover Image state
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isSavingCover, setIsSavingCover] = useState(false);
 
-  // Profile Picture (Avatar) state
+  
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
 
-  // Skills state
+  
   const [newSkill, setNewSkill] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
 
-  // Experience states
+ 
   const [showExpDialog, setShowExpDialog] = useState(false);
   const [editingExp, setEditingExp] = useState<Experience | null>(null);
   const [expFormData, setExpFormData] = useState<Experience>({
@@ -134,7 +133,7 @@ const SeekerProfile: React.FC = () => {
     description: "",
   });
 
-  // Education states
+ 
   const [showEduDialog, setShowEduDialog] = useState(false);
   const [editingEdu, setEditingEdu] = useState<Education | null>(null);
   const [eduFormData, setEduFormData] = useState<Education>({
@@ -179,7 +178,7 @@ const SeekerProfile: React.FC = () => {
       console.log("Experience from API:", profileData?.experience);
       console.log("Education from API:", profileData?.education);
 
-      // Parse experience - handle both string and array
+      
       let experienceData: Experience[] = [];
       const expField = profileData?.experience;
       if (expField) {
@@ -195,7 +194,7 @@ const SeekerProfile: React.FC = () => {
         }
       }
 
-      // Parse education - handle both string and array
+      
       let educationData: Education[] = [];
       const eduField = profileData?.education;
       if (eduField) {
@@ -371,8 +370,6 @@ const SeekerProfile: React.FC = () => {
       setIsSavingAvatar(false);
     }
   };
-
-  // FIXED: handleSubmit - sends all data including title, linkedin, github, etc.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -425,7 +422,6 @@ const SeekerProfile: React.FC = () => {
     }
   };
 
-  // FIXED: addSkill - sends skills correctly
   const addSkill = async () => {
     if (!newSkill.trim()) return;
     if (skills.includes(newSkill.trim())) {
@@ -453,7 +449,7 @@ const SeekerProfile: React.FC = () => {
     }
   };
 
-  // FIXED: removeSkill - sends skills correctly
+  
   const removeSkill = async (skillToRemove: string) => {
     const updatedSkills = skills.filter((s) => s !== skillToRemove);
     setSkills(updatedSkills);
@@ -491,7 +487,6 @@ const SeekerProfile: React.FC = () => {
     setShowExpDialog(true);
   };
 
-  // FIXED: saveExperience - properly sends experience as JSON string
   const saveExperience = async () => {
     if (!expFormData.title || !expFormData.company) {
       toast({
@@ -570,7 +565,6 @@ const SeekerProfile: React.FC = () => {
     setShowEduDialog(true);
   };
 
-  // FIXED: saveEducation - properly sends education as JSON string
   const saveEducation = async () => {
     if (!eduFormData.institution || !eduFormData.degree) {
       toast({

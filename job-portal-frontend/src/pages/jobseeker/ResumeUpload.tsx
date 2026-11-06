@@ -44,7 +44,7 @@ interface ResumeUploadProps {
   allowedTypes?: string[]
 }
 
-const MAX_FILE_SIZE = 5 // 5MB
+const MAX_FILE_SIZE = 5 
 const ALLOWED_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']
 
 const getFileIcon = (fileType: string) => {
