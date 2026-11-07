@@ -8,11 +8,11 @@ import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { 
-  Bell, 
-  Mail, 
-  Smartphone, 
-  BellRing, 
+import {
+  Bell,
+  Mail,
+  Smartphone,
+  BellRing,
   Save,
   RefreshCw,
   CheckCircle,
@@ -24,7 +24,7 @@ import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
 interface NotificationSettingsData {
-  // Email Notifications
+
   emailNewJob: boolean
   emailApplicationReceived: boolean
   emailApplicationStatusUpdate: boolean
@@ -33,32 +33,27 @@ interface NotificationSettingsData {
   emailLoginAlert: boolean
   emailWeeklyDigest: boolean
   emailMonthlyReport: boolean
-  
-  // Push Notifications
+
   pushEnabled: boolean
   pushNewJob: boolean
   pushApplicationReceived: boolean
   pushApplicationStatusUpdate: boolean
-  
-  // In-App Notifications
+
   inAppEnabled: boolean
   inAppNewJob: boolean
   inAppApplicationReceived: boolean
   inAppApplicationStatusUpdate: boolean
-  
-  // Digest Settings
+
   weeklyDigestDay: string
   weeklyDigestTime: string
   monthlyReportDay: number
   dailyDigest: boolean
-  
-  // Alert Settings
+
   alertOnNewUser: boolean
   alertOnNewEmployer: boolean
   alertOnFlaggedContent: boolean
   alertOnSystemError: boolean
-  
-  // Admin Notifications
+
   adminEmailAlerts: boolean
   adminSlackWebhook: string
   adminDailySummary: boolean
@@ -78,27 +73,27 @@ const NotificationSettings: React.FC = () => {
     emailLoginAlert: false,
     emailWeeklyDigest: true,
     emailMonthlyReport: false,
-    
+
     pushEnabled: true,
     pushNewJob: true,
     pushApplicationReceived: true,
     pushApplicationStatusUpdate: true,
-    
+
     inAppEnabled: true,
     inAppNewJob: true,
     inAppApplicationReceived: true,
     inAppApplicationStatusUpdate: true,
-    
+
     weeklyDigestDay: 'Monday',
     weeklyDigestTime: '09:00',
     monthlyReportDay: 1,
     dailyDigest: false,
-    
+
     alertOnNewUser: true,
     alertOnNewEmployer: true,
     alertOnFlaggedContent: true,
     alertOnSystemError: true,
-    
+
     adminEmailAlerts: true,
     adminSlackWebhook: '',
     adminDailySummary: true
@@ -202,7 +197,7 @@ const NotificationSettings: React.FC = () => {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* Email Notifications */}
         <Card className="border border-gray-200 shadow-sm rounded-xl">
           <CardHeader className="border-b border-gray-100">
@@ -220,7 +215,7 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.emailNewJob}
-                onCheckedChange={(checked) => setSettings({...settings, emailNewJob: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, emailNewJob: checked })}
               />
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -230,7 +225,7 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.emailApplicationReceived}
-                onCheckedChange={(checked) => setSettings({...settings, emailApplicationReceived: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, emailApplicationReceived: checked })}
               />
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -240,7 +235,7 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.emailApplicationStatusUpdate}
-                onCheckedChange={(checked) => setSettings({...settings, emailApplicationStatusUpdate: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, emailApplicationStatusUpdate: checked })}
               />
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -250,7 +245,7 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.emailJobExpiring}
-                onCheckedChange={(checked) => setSettings({...settings, emailJobExpiring: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, emailJobExpiring: checked })}
               />
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -260,7 +255,7 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.emailPasswordChange}
-                onCheckedChange={(checked) => setSettings({...settings, emailPasswordChange: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, emailPasswordChange: checked })}
               />
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -270,7 +265,7 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.emailLoginAlert}
-                onCheckedChange={(checked) => setSettings({...settings, emailLoginAlert: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, emailLoginAlert: checked })}
               />
             </div>
           </CardContent>
@@ -293,7 +288,7 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.pushEnabled}
-                onCheckedChange={(checked) => setSettings({...settings, pushEnabled: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, pushEnabled: checked })}
               />
             </div>
             {settings.pushEnabled && (
@@ -306,7 +301,7 @@ const NotificationSettings: React.FC = () => {
                   </div>
                   <Switch
                     checked={settings.pushNewJob}
-                    onCheckedChange={(checked) => setSettings({...settings, pushNewJob: checked})}
+                    onCheckedChange={(checked) => setSettings({ ...settings, pushNewJob: checked })}
                   />
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -316,7 +311,7 @@ const NotificationSettings: React.FC = () => {
                   </div>
                   <Switch
                     checked={settings.pushApplicationReceived}
-                    onCheckedChange={(checked) => setSettings({...settings, pushApplicationReceived: checked})}
+                    onCheckedChange={(checked) => setSettings({ ...settings, pushApplicationReceived: checked })}
                   />
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -326,7 +321,7 @@ const NotificationSettings: React.FC = () => {
                   </div>
                   <Switch
                     checked={settings.pushApplicationStatusUpdate}
-                    onCheckedChange={(checked) => setSettings({...settings, pushApplicationStatusUpdate: checked})}
+                    onCheckedChange={(checked) => setSettings({ ...settings, pushApplicationStatusUpdate: checked })}
                   />
                 </div>
               </>
@@ -351,14 +346,14 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.emailWeeklyDigest}
-                onCheckedChange={(checked) => setSettings({...settings, emailWeeklyDigest: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, emailWeeklyDigest: checked })}
               />
             </div>
             {settings.emailWeeklyDigest && (
               <div className="grid grid-cols-2 gap-4 pl-4">
                 <div>
                   <Label>Day of Week</Label>
-                  <Select value={settings.weeklyDigestDay} onValueChange={(value) => setSettings({...settings, weeklyDigestDay: value})}>
+                  <Select value={settings.weeklyDigestDay} onValueChange={(value) => setSettings({ ...settings, weeklyDigestDay: value })}>
                     <SelectTrigger className="mt-1.5 rounded-lg">
                       <SelectValue />
                     </SelectTrigger>
@@ -378,7 +373,7 @@ const NotificationSettings: React.FC = () => {
                   <Input
                     type="time"
                     value={settings.weeklyDigestTime}
-                    onChange={(e) => setSettings({...settings, weeklyDigestTime: e.target.value})}
+                    onChange={(e) => setSettings({ ...settings, weeklyDigestTime: e.target.value })}
                     className="mt-1.5 rounded-lg"
                   />
                 </div>
@@ -391,7 +386,7 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.dailyDigest}
-                onCheckedChange={(checked) => setSettings({...settings, dailyDigest: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, dailyDigest: checked })}
               />
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -401,7 +396,7 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.emailMonthlyReport}
-                onCheckedChange={(checked) => setSettings({...settings, emailMonthlyReport: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, emailMonthlyReport: checked })}
               />
             </div>
           </CardContent>
@@ -424,7 +419,7 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.alertOnNewUser}
-                onCheckedChange={(checked) => setSettings({...settings, alertOnNewUser: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, alertOnNewUser: checked })}
               />
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -434,7 +429,7 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.alertOnNewEmployer}
-                onCheckedChange={(checked) => setSettings({...settings, alertOnNewEmployer: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, alertOnNewEmployer: checked })}
               />
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -444,7 +439,7 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.alertOnFlaggedContent}
-                onCheckedChange={(checked) => setSettings({...settings, alertOnFlaggedContent: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, alertOnFlaggedContent: checked })}
               />
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -454,7 +449,7 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.alertOnSystemError}
-                onCheckedChange={(checked) => setSettings({...settings, alertOnSystemError: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, alertOnSystemError: checked })}
               />
             </div>
             <Separator />
@@ -465,14 +460,14 @@ const NotificationSettings: React.FC = () => {
               </div>
               <Switch
                 checked={settings.adminEmailAlerts}
-                onCheckedChange={(checked) => setSettings({...settings, adminEmailAlerts: checked})}
+                onCheckedChange={(checked) => setSettings({ ...settings, adminEmailAlerts: checked })}
               />
             </div>
             <div>
               <Label>Slack Webhook (Optional)</Label>
               <Input
                 value={settings.adminSlackWebhook}
-                onChange={(e) => setSettings({...settings, adminSlackWebhook: e.target.value})}
+                onChange={(e) => setSettings({ ...settings, adminSlackWebhook: e.target.value })}
                 placeholder="https://hooks.slack.com/services/..."
                 className="mt-1.5 rounded-lg"
               />

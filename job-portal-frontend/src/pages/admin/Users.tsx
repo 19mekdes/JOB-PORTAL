@@ -60,19 +60,18 @@ const UserManagement: React.FC = () => {
     total: 0, active: 0, suspended: 0, jobSeekers: 0, employers: 0, admins: 0, superAdmins: 0
   })
 
-  // Get current user role for permission checks
+  
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
   const currentUserRole = currentUser.user_type?.type_name
   const isSuperAdmin = currentUserRole === 'Super Admin'
   const isAdmin = currentUserRole === 'Admin'
 
-  // ✅ FORCE DELETE BUTTON FOR TESTING - REMOVE THIS LINE AFTER TESTING
-  const showDeleteForAll = true // TEMPORARY - DELETE THIS AFTER TESTING
+  
+  const showDeleteForAll = true 
 
-  // ✅ Check if user can be deleted
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const canDeleteUser = (user: User) => {
-    // TEMPORARY: Show delete for all users during testing
+  
     if (showDeleteForAll) return true
     
     const targetRole = user.user_type?.type_name
@@ -86,7 +85,7 @@ const UserManagement: React.FC = () => {
     return false
   }
 
-  // ✅ Check if user can be suspended/activated
+  
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const canModifyUser = (user: User) => {
     const targetRole = user.user_type?.type_name
@@ -125,7 +124,7 @@ const UserManagement: React.FC = () => {
       
       setUsers(usersData)
       
-      // Calculate stats
+
       let jobSeekersCount = 0, employersCount = 0, adminsCount = 0, superAdminsCount = 0, activeCount = 0, suspendedCount = 0
       
       for (const user of usersData) {

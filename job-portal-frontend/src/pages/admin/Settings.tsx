@@ -8,13 +8,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  Globe, 
-  Mail, 
-  Shield, 
-  Save, 
-  RefreshCw, 
-  AlertCircle, 
+import {
+  Globe,
+  Mail,
+  Shield,
+  Save,
+  RefreshCw,
+  AlertCircle,
   CheckCircle,
   Users,
   Briefcase,
@@ -116,14 +116,12 @@ const AdminSettings: React.FC = () => {
   }
 
   // ========== TEST FUNCTIONS ==========
-
-  // Test Registration
   const testRegistration = async () => {
     setTesting('registration')
     setTestResult(null)
-    
+
     const testEmail = `test-register-${Date.now()}@test.com`
-    
+
     try {
       const response = await api.post('/auth/register', {
         email: testEmail,
@@ -131,7 +129,7 @@ const AdminSettings: React.FC = () => {
         full_name: 'Test User',
         user_type: 'Job Seeker'
       })
-      
+
       if (response.data.success) {
         setTestResult({
           setting: 'registration',
@@ -155,14 +153,12 @@ const AdminSettings: React.FC = () => {
       setTesting(null)
     }
   }
-
-  // Test Employer Registration
   const testEmployerRegistration = async () => {
     setTesting('employer')
     setTestResult(null)
-    
+
     const testEmail = `test-employer-${Date.now()}@test.com`
-    
+
     try {
       const response = await api.post('/auth/register', {
         email: testEmail,
@@ -170,10 +166,10 @@ const AdminSettings: React.FC = () => {
         full_name: 'Test Company',
         user_type: 'Employer'
       })
-      
+
       // Check if auto-approve is working
       const isAutoApproved = settings.auto_approve_employers
-      
+
       setTestResult({
         setting: 'employer',
         success: true,
@@ -190,30 +186,29 @@ const AdminSettings: React.FC = () => {
     }
   }
 
-  // Test Login with unverified email
   const testEmailVerification = async () => {
     setTesting('email_verification')
     setTestResult(null)
-    
+
     const testEmail = `test-verify-${Date.now()}@test.com`
-    
+
     try {
-      // Register user first
+
       await api.post('/auth/register', {
         email: testEmail,
         password: 'Test123!',
         full_name: 'Test User',
         user_type: 'Job Seeker'
       })
-      
-      // Try to login
+
+
       const loginResponse = await api.post('/auth/login', {
         email: testEmail,
         password: 'Test123!'
       })
-      
+
       const emailVerificationRequired = settings.email_verification
-      
+
       setTestResult({
         setting: 'email_verification',
         success: true,
@@ -230,7 +225,7 @@ const AdminSettings: React.FC = () => {
     }
   }
 
-  // Clear test result
+
   const clearTestResult = () => {
     setTestResult(null)
   }
@@ -289,10 +284,10 @@ const AdminSettings: React.FC = () => {
             <AlertCircle className="h-5 w-5" />
             <span>Maintenance mode is ON. Only admins can access the site.</span>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => updateSetting('maintenance_mode', false)} 
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => updateSetting('maintenance_mode', false)}
             className="bg-white"
           >
             Turn Off
@@ -345,7 +340,7 @@ const AdminSettings: React.FC = () => {
                       onCheckedChange={(checked) => updateSetting('enable_registration', checked)}
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-gray-700 font-medium">Email Verification</Label>
@@ -356,7 +351,7 @@ const AdminSettings: React.FC = () => {
                       onCheckedChange={(checked) => updateSetting('email_verification', checked)}
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-gray-700 font-medium">Auto Approve Employers</Label>
@@ -506,8 +501,8 @@ const AdminSettings: React.FC = () => {
                     <h3 className="font-semibold text-gray-900">Allow Registration</h3>
                     <p className="text-sm text-gray-500">Current: <strong>{settings.enable_registration ? 'ON' : 'OFF'}</strong></p>
                   </div>
-                  <Button 
-                    onClick={testRegistration} 
+                  <Button
+                    onClick={testRegistration}
                     disabled={testing === 'registration'}
                     variant="outline"
                     className="bg-blue-50 hover:bg-blue-100"
@@ -529,8 +524,8 @@ const AdminSettings: React.FC = () => {
                     <h3 className="font-semibold text-gray-900">Email Verification</h3>
                     <p className="text-sm text-gray-500">Current: <strong>{settings.email_verification ? 'ON' : 'OFF'}</strong></p>
                   </div>
-                  <Button 
-                    onClick={testEmailVerification} 
+                  <Button
+                    onClick={testEmailVerification}
                     disabled={testing === 'email_verification'}
                     variant="outline"
                     className="bg-blue-50 hover:bg-blue-100"
@@ -552,8 +547,8 @@ const AdminSettings: React.FC = () => {
                     <h3 className="font-semibold text-gray-900">Auto Approve Employers</h3>
                     <p className="text-sm text-gray-500">Current: <strong>{settings.auto_approve_employers ? 'ON' : 'OFF'}</strong></p>
                   </div>
-                  <Button 
-                    onClick={testEmployerRegistration} 
+                  <Button
+                    onClick={testEmployerRegistration}
                     disabled={testing === 'employer'}
                     variant="outline"
                     className="bg-blue-50 hover:bg-blue-100"
