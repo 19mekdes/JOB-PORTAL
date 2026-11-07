@@ -87,40 +87,37 @@ const Analytics: React.FC = () => {
 
   useEffect(() => {
     fetchAnalytics()
-  
+
   }, [period])
 
   const fetchAnalytics = async () => {
     setLoading(true)
     try {
-      // Fetch employer dashboard data
+
       const dashboardRes = await api.get('/employer/dashboard')
       const dashboardData = dashboardRes.data.data
-      
-      // Fetch all jobs to calculate monthly stats
+
       const jobsRes = await api.get('/employer/jobs')
       const jobs: any[] = jobsRes.data.data || []
-      
-      // Fetch all applications
+
+
       const appsRes = await api.get('/employer/applications')
       const applications: any[] = appsRes.data.data || []
-      
-      // Calculate real statistics
+
       const now = new Date()
       const currentMonth = now.getMonth()
       const currentYear = now.getFullYear()
-      
-      // Filter jobs and applications for this month
+
       const thisMonthJobs = jobs.filter(job => {
         const jobDate = new Date(job.created_at)
         return jobDate.getMonth() === currentMonth && jobDate.getFullYear() === currentYear
       }).length
-      
+
       const thisMonthApplications = applications.filter(app => {
         const appDate = new Date(app.applied_at)
         return appDate.getMonth() === currentMonth && appDate.getFullYear() === currentYear
       }).length
-      
+
       const thisMonthViews = jobs.reduce((sum, job) => {
         const jobDate = new Date(job.created_at)
         if (jobDate.getMonth() === currentMonth && jobDate.getFullYear() === currentYear) {
@@ -128,16 +125,14 @@ const Analytics: React.FC = () => {
         }
         return sum
       }, 0)
-      
-      // Calculate status counts
+
       const pendingApps = applications.filter(app => app.status?.status_name === 'Pending').length
       const reviewedApps = applications.filter(app => app.status?.status_name === 'Reviewed').length
       const shortlistedApps = applications.filter(app => app.status?.status_name === 'Shortlisted').length
       const interviewApps = applications.filter(app => app.status?.status_name === 'Interview').length
       const acceptedApps = applications.filter(app => app.status?.status_name === 'Accepted').length
       const rejectedApps = applications.filter(app => app.status?.status_name === 'Rejected').length
-      
-      // Calculate monthly trends (last 6 months)
+
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
       const last6Months = []
       for (let i = 5; i >= 0; i--) {
@@ -149,7 +144,7 @@ const Analytics: React.FC = () => {
           index: i
         })
       }
-      
+
       const jobsByMonth = last6Months.map(m => {
         const count = jobs.filter(job => {
           const jobDate = new Date(job.created_at)
@@ -157,7 +152,7 @@ const Analytics: React.FC = () => {
         }).length
         return { month: m.month, count }
       })
-      
+
       const applicationsByMonth = last6Months.map(m => {
         const count = applications.filter(app => {
           const appDate = new Date(app.applied_at)
@@ -165,7 +160,7 @@ const Analytics: React.FC = () => {
         }).length
         return { month: m.month, count }
       })
-      
+
       const viewsByMonth = last6Months.map(m => {
         const count = jobs.reduce((sum, job) => {
           const jobDate = new Date(job.created_at)
@@ -176,8 +171,7 @@ const Analytics: React.FC = () => {
         }, 0)
         return { month: m.month, count }
       })
-      
-      // Calculate top jobs by applications
+
       const topJobs = jobs
         .map(job => ({
           id: job.id,
@@ -188,7 +182,7 @@ const Analytics: React.FC = () => {
         }))
         .sort((a, b) => b.applications - a.applications)
         .slice(0, 5)
-      
+
       setData({
         totalJobs: dashboardData.totalJobs || jobs.length,
         activeJobs: dashboardData.activeJobs || jobs.filter(j => j.status?.status_name === 'Open').length,
@@ -208,7 +202,7 @@ const Analytics: React.FC = () => {
         viewsByMonth,
         topJobs
       })
-      
+
     } catch (error) {
       console.error('Error fetching analytics:', error)
       toast({
@@ -266,7 +260,7 @@ const Analytics: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
           <p className="text-sm text-gray-500 mt-1">Track your job posting performance</p>
         </div>
-        
+
       </div>
 
       {/* Stats Cards */}
@@ -385,13 +379,13 @@ const Analytics: React.FC = () => {
               <>
                 <ResponsiveContainer width="100%" height={250}>
                   <RePieChart>
-                    <Pie 
-                      data={statusData} 
-                      cx="50%" 
-                      cy="50%" 
-                      innerRadius={60} 
-                      outerRadius={90} 
-                      dataKey="value" 
+                    <Pie
+                      data={statusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      dataKey="value"
                       label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                     >
                       {statusData.map((entry, index) => (
@@ -426,8 +420,8 @@ const Analytics: React.FC = () => {
               <div className="text-center py-12">
                 <Briefcase className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500">No job data available</p>
-                <Button 
-                  variant="link" 
+                <Button
+                  variant="link"
                   onClick={() => navigate('/employer/post-job')}
                   className="mt-2"
                 >
@@ -437,8 +431,8 @@ const Analytics: React.FC = () => {
             ) : (
               <div className="space-y-3">
                 {data.topJobs.map((job, index) => (
-                  <div 
-                    key={job.id} 
+                  <div
+                    key={job.id}
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition"
                     onClick={() => navigate(`/employer/jobs/${job.id}/applications`)}
                   >
