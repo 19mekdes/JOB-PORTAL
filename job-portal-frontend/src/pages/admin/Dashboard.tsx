@@ -3,28 +3,28 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
-import { 
-  Users, 
-  Briefcase, 
-  FileText, 
-  Clock, 
-  TrendingUp, 
+import {
+  Users,
+  Briefcase,
+  FileText,
+  Clock,
+  TrendingUp,
   CheckCircle,
   Settings,
   RefreshCw
 } from 'lucide-react'
-import { 
-  LineChart, 
-  Line, 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Pie, 
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
   Cell,
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   Legend
 } from 'recharts'
@@ -102,35 +102,35 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period])
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
-      
-      // Fetch analytics data
+
+
       const response = await api.get(`/admin/analytics?period=${period}`)
-      
+
       console.log('Dashboard API Response:', response.data)
-      
-    
+
+
       const backendData = response.data?.data || response.data || {}
-      
-      // Calculate totals from backend data
+
+
       const dailyJobs = backendData.dailyJobs || []
       const totalJobs = dailyJobs.reduce((sum: number, job: any) => sum + (job.count || 0), 0)
-      
+
       const applicationStats = backendData.applicationStats || []
       const pendingApps = applicationStats.find((s: any) => s.status === 'Pending')?.count || 0
       const interviewApps = applicationStats.find((s: any) => s.status === 'Interview')?.count || 0
       const acceptedApps = applicationStats.find((s: any) => s.status === 'Accepted')?.count || 0
       const totalApplications = pendingApps + interviewApps + acceptedApps
-      
-      // Get top employers
+
+
       const topEmployers = backendData.topEmployers || []
-      
-      // Create monthly chart data
+
+
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
       const jobsByMonth: ChartData[] = months.map(month => ({
         month,
@@ -138,23 +138,23 @@ const AdminDashboard: React.FC = () => {
         jobs: 0,
         applications: 0
       }))
-      
-      // Distribute job counts across months (simplified - put most in current month)
+
+
       if (totalJobs > 0) {
-        jobsByMonth[5].jobs = totalJobs // Put all jobs in June for demo
+        jobsByMonth[5].jobs = totalJobs
       }
       if (totalApplications > 0) {
         jobsByMonth[5].applications = totalApplications
       }
-      
-      // Create status data for pie chart
+
+
       const newStatusData: StatusData[] = []
       const statusColors: Record<string, string> = {
         'Pending': '#f59e0b',
         'Interview': '#06b6d4',
         'Accepted': '#10b981'
       }
-      
+
       if (pendingApps > 0) {
         newStatusData.push({ name: 'Pending', value: pendingApps, color: statusColors['Pending'] })
       }
@@ -164,7 +164,7 @@ const AdminDashboard: React.FC = () => {
       if (acceptedApps > 0) {
         newStatusData.push({ name: 'Accepted', value: acceptedApps, color: statusColors['Accepted'] })
       }
-      
+
       // Update stats with calculated values
       setStats({
         totalUsers: 0, // Your backend doesn't provide this yet
@@ -189,11 +189,11 @@ const AdminDashboard: React.FC = () => {
         averageApplicationsPerJob: totalJobs > 0 ? parseFloat((totalApplications / totalJobs).toFixed(1)) : 0,
         conversionRate: totalApplications > 0 ? Math.round((acceptedApps / totalApplications) * 100) : 0
       })
-      
+
       setGrowthData(jobsByMonth)
       setStatusData(newStatusData)
-      
-      // Set top jobs from topEmployers data
+
+
       const formattedTopJobs = topEmployers.map((employer: any, index: number) => ({
         id: index,
         title: employer.name,
@@ -202,13 +202,13 @@ const AdminDashboard: React.FC = () => {
         applications_count: employer.jobCount || 0
       }))
       setTopJobs(formattedTopJobs.slice(0, 5))
-      
+
     } catch (error: any) {
       console.error('Error fetching dashboard data:', error)
-      toast({ 
-        variant: "destructive", 
-        title: "Error", 
-        description: error.response?.data?.message || "Failed to load dashboard data" 
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.response?.data?.message || "Failed to load dashboard data"
       })
     } finally {
       setLoading(false)
@@ -216,41 +216,41 @@ const AdminDashboard: React.FC = () => {
   }
 
   const statsCards = [
-    { 
-      title: 'Total Jobs', 
-      value: stats.totalJobs.toLocaleString(), 
-      icon: Briefcase, 
+    {
+      title: 'Total Jobs',
+      value: stats.totalJobs.toLocaleString(),
+      icon: Briefcase,
       subValue: `✅ ${stats.activeJobs.toLocaleString()} Active | ❌ ${stats.closedJobs.toLocaleString()} Closed`,
-      change: `+${stats.newJobsThisMonth.toLocaleString()} new this month`, 
-      color: 'text-green-600', 
-      bg: 'bg-green-50' 
+      change: `+${stats.newJobsThisMonth.toLocaleString()} new this month`,
+      color: 'text-green-600',
+      bg: 'bg-green-50'
     },
-    { 
-      title: 'Applications', 
-      value: stats.totalApplications.toLocaleString(), 
-      icon: FileText, 
+    {
+      title: 'Applications',
+      value: stats.totalApplications.toLocaleString(),
+      icon: FileText,
       subValue: `📊 Avg ${stats.averageApplicationsPerJob} per job`,
-      change: `+${stats.newApplicationsThisMonth.toLocaleString()} this month`, 
-      color: 'text-purple-600', 
-      bg: 'bg-purple-50' 
+      change: `+${stats.newApplicationsThisMonth.toLocaleString()} this month`,
+      color: 'text-purple-600',
+      bg: 'bg-purple-50'
     },
-    { 
-      title: 'Pending Review', 
-      value: stats.pendingApplications.toLocaleString(), 
-      icon: Clock, 
+    {
+      title: 'Pending Review',
+      value: stats.pendingApplications.toLocaleString(),
+      icon: Clock,
       subValue: `⏳ Needs attention`,
-      change: `${stats.pendingApplications} waiting`, 
-      color: 'text-yellow-600', 
-      bg: 'bg-yellow-50' 
+      change: `${stats.pendingApplications} waiting`,
+      color: 'text-yellow-600',
+      bg: 'bg-yellow-50'
     },
-    { 
-      title: 'Accepted', 
-      value: stats.acceptedApplications.toLocaleString(), 
-      icon: CheckCircle, 
+    {
+      title: 'Accepted',
+      value: stats.acceptedApplications.toLocaleString(),
+      icon: CheckCircle,
       subValue: `🎉 Successful placements`,
-      change: `${stats.conversionRate}% conversion rate`, 
-      color: 'text-green-600', 
-      bg: 'bg-green-50' 
+      change: `${stats.conversionRate}% conversion rate`,
+      color: 'text-green-600',
+      bg: 'bg-green-50'
     },
   ]
 
@@ -274,7 +274,7 @@ const AdminDashboard: React.FC = () => {
           <p className="text-gray-500 mt-1">Overview of platform activity and metrics</p>
         </div>
         <div className="flex gap-2">
-          <select 
+          <select
             value={period}
             onChange={(e) => setPeriod(e.target.value as any)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
@@ -284,9 +284,9 @@ const AdminDashboard: React.FC = () => {
             <option value="90d">Last 90 days</option>
             <option value="1y">Last year</option>
           </select>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={fetchDashboardData}
             className="border-gray-300 bg-white"
           >
@@ -330,12 +330,12 @@ const AdminDashboard: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="month" stroke="#6b7280" />
                 <YAxis stroke="#6b7280" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
-                    borderRadius: '8px', 
-                    border: '1px solid #e5e7eb' 
-                  }} 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    borderRadius: '8px',
+                    border: '1px solid #e5e7eb'
+                  }}
                 />
                 <Legend />
                 <Line type="monotone" dataKey="jobs" stroke="#10b981" strokeWidth={2} name="Jobs" />
@@ -397,7 +397,7 @@ const AdminDashboard: React.FC = () => {
         <CardContent className="p-5">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold text-gray-900">Top Performing Employers</h3>
-            <button 
+            <button
               onClick={() => navigate('/admin/jobs')}
               className="text-sm text-blue-600 hover:text-blue-700"
             >
@@ -438,28 +438,28 @@ const AdminDashboard: React.FC = () => {
         <CardContent className="p-5">
           <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <button 
+            <button
               onClick={() => navigate('/admin/jobs?status=pending')}
               className="p-3 bg-yellow-50 rounded-lg text-yellow-700 hover:bg-yellow-100 transition text-sm font-medium"
             >
               <Clock className="h-4 w-4 mx-auto mb-1" />
               Review Pending Jobs
             </button>
-            <button 
+            <button
               onClick={() => navigate('/admin/users')}
               className="p-3 bg-blue-50 rounded-lg text-blue-700 hover:bg-blue-100 transition text-sm font-medium"
             >
               <Users className="h-4 w-4 mx-auto mb-1" />
               Manage Users
             </button>
-            <button 
+            <button
               onClick={() => navigate('/admin/analytics')}
               className="p-3 bg-purple-50 rounded-lg text-purple-700 hover:bg-purple-100 transition text-sm font-medium"
             >
               <TrendingUp className="h-4 w-4 mx-auto mb-1" />
               View Reports
             </button>
-            <button 
+            <button
               onClick={() => navigate('/admin/settings')}
               className="p-3 bg-gray-50 rounded-lg text-gray-700 hover:bg-gray-100 transition text-sm font-medium"
             >

@@ -42,8 +42,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
-
-// Custom Dropdown Component
 interface DropdownOption {
   value: string
   label: string
@@ -193,12 +191,11 @@ const AdminJobs: React.FC = () => {
     try {
       setLoading(true)
       
-      // Build params for backend filtering
       const params: any = {}
       
       if (searchTerm) params.search = searchTerm
       
-      // Map status filter for backend
+     
       if (statusFilter !== 'all') {
         const statusMap: Record<string, string> = {
           'pending': 'Pending',
@@ -209,7 +206,6 @@ const AdminJobs: React.FC = () => {
         params.status = statusMap[statusFilter]
       }
       
-      // Map employment type for backend
       if (employmentTypeFilter !== 'all') {
         const typeMap: Record<string, string> = {
           'full-time': 'Full-time',
@@ -233,7 +229,6 @@ const AdminJobs: React.FC = () => {
       
       setJobs(jobsData)
       
-      // Calculate stats from jobs data
       const calculated = jobsData.reduce((acc: any, job: Job) => {
         acc.total++
         const statusName = job.status?.status_name?.toLowerCase()
@@ -261,9 +256,8 @@ const AdminJobs: React.FC = () => {
     fetchJobs()
   }, [fetchJobs])
 
-  // Client-side filtering as backup
   const filteredJobs = jobs.filter(job => {
-    // Status filter
+
     let matchesStatus = true
     if (statusFilter !== 'all') {
       const jobStatus = job.status?.status_name?.toLowerCase()
@@ -273,7 +267,6 @@ const AdminJobs: React.FC = () => {
       else if (statusFilter === 'closed' && jobStatus !== 'closed') matchesStatus = false
     }
     
-    // Employment type filter
     let matchesEmploymentType = true
     if (employmentTypeFilter !== 'all') {
       const jobType = job.employment_type?.type_name?.toLowerCase()
@@ -284,8 +277,7 @@ const AdminJobs: React.FC = () => {
       else if (employmentTypeFilter === 'hybrid' && jobType !== 'hybrid') matchesEmploymentType = false
       else if (employmentTypeFilter === 'internship' && jobType !== 'internship') matchesEmploymentType = false
     }
-    
-    // Search filter
+  
     const matchesSearch = searchTerm === '' || 
       job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.employer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
