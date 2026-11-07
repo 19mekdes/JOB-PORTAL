@@ -84,7 +84,7 @@ const CompanyProfile: React.FC = () => {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [isSavingLogo, setIsSavingLogo] = useState(false)
 
-  // Native Reference Upload Links
+
   const coverInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
 

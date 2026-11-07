@@ -90,7 +90,6 @@ const EditJob: React.FC = () => {
         requirements: job.requirements || '',
         benefits: job.benefits || '',
         location: job.location || '',
-        // Convert numbers to strings for select inputs
         employment_type_id: job.employment_type_id ? String(job.employment_type_id) : '',
         industry_id: job.industry_id ? String(job.industry_id) : '',
         salary_min: job.salary_min ? String(job.salary_min) : '',
