@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { 
+import {
   Search, Trash2, MoreVertical, Shield,
   CheckCircle, XCircle, RefreshCw, AlertCircle,
   Building, Briefcase, Eye, MapPin, Phone, Globe, Calendar, Users
@@ -41,7 +41,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { toast } from '@/hooks/use-toast'
 
-// API Configuration
+
 const API_BASE_URL = 'http://localhost:5000/api'
 
 interface Company {
@@ -99,13 +99,13 @@ const getDemoCompanies = (): Company[] => [
   }
 ]
 
-// Helper function to get token
+
 const getAuthToken = (): string | null => {
-  const token = localStorage.getItem('token') || 
-                localStorage.getItem('admin_token') || 
-                localStorage.getItem('accessToken') ||
-                sessionStorage.getItem('token')
-  
+  const token = localStorage.getItem('token') ||
+    localStorage.getItem('admin_token') ||
+    localStorage.getItem('accessToken') ||
+    sessionStorage.getItem('token')
+
   if (!token) {
     const userStr = localStorage.getItem('user')
     if (userStr) {
@@ -117,7 +117,7 @@ const getAuthToken = (): string | null => {
       }
     }
   }
-  
+
   return token
 }
 
@@ -136,14 +136,13 @@ const CompanyManagement: React.FC = () => {
   const [submitting, setSubmitting] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
-  // API helper function
   const apiRequest = async (method: string, url: string, data?: any) => {
     const token = getAuthToken()
-    
+
     if (!token) {
       throw new Error('No authentication token found. Please login again.')
     }
-    
+
     const options: RequestInit = {
       method,
       headers: {
@@ -154,7 +153,7 @@ const CompanyManagement: React.FC = () => {
     if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
       options.body = JSON.stringify(data)
     }
-    
+
     console.log(`Making ${method} request to: ${url}`)
     const response = await fetch(`${API_BASE_URL}${url}`, options)
     const result = await response.json()
@@ -164,9 +163,6 @@ const CompanyManagement: React.FC = () => {
     return result
   }
 
-
-
-  // Fetch companies from backend
   const fetchCompanies = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -177,10 +173,10 @@ const CompanyManagement: React.FC = () => {
       }
 
       console.log('Fetching companies from /super-admin/companies...')
-      
+
       const response = await apiRequest('GET', '/super-admin/companies')
       console.log('API Response:', response)
-      
+
       let allCompanies: any[] = []
       if (response.data && Array.isArray(response.data)) {
         allCompanies = response.data
@@ -189,14 +185,14 @@ const CompanyManagement: React.FC = () => {
       } else if (Array.isArray(response)) {
         allCompanies = response
       }
-      
+
       if (allCompanies.length > 0) {
         setCompanies(allCompanies)
       } else {
         setCompanies(getDemoCompanies())
         setError('Using demo data - Backend not fully configured')
       }
-      
+
     } catch (err: any) {
       console.error('Failed to fetch companies:', err)
       setCompanies(getDemoCompanies())
@@ -206,7 +202,6 @@ const CompanyManagement: React.FC = () => {
     }
   }, [])
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = () => {
       setOpenMenuId(null)
@@ -235,7 +230,7 @@ const CompanyManagement: React.FC = () => {
       setIsVerifyDialogOpen(false)
       setOpenMenuId(null)
       fetchCompanies()
-    
+
     } catch (err: any) {
       setCompanies(prev => prev.map(c => c.id === selectedCompany.id ? { ...c, is_verified: true } : c))
       toast({ title: "Success (Demo)", description: `${selectedCompany.company_name} has been verified!` })
@@ -265,8 +260,6 @@ const CompanyManagement: React.FC = () => {
       setSubmitting(false)
     }
   }
-
-  // Activate company
   const handleActivateCompany = async (company: Company) => {
     setSubmitting(true)
     try {
@@ -283,7 +276,7 @@ const CompanyManagement: React.FC = () => {
     }
   }
 
-  // Delete company
+
   const handleDeleteCompany = async () => {
     if (!selectedCompany) return
     setSubmitting(true)
@@ -353,13 +346,13 @@ const CompanyManagement: React.FC = () => {
 
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         company.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      company.email?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = filterStatus === 'all' ||
-                         (filterStatus === 'active' && company.is_active) ||
-                         (filterStatus === 'inactive' && !company.is_active)
+      (filterStatus === 'active' && company.is_active) ||
+      (filterStatus === 'inactive' && !company.is_active)
     const matchesVerification = filterVerification === 'all' ||
-                               (filterVerification === 'verified' && company.is_verified) ||
-                               (filterVerification === 'unverified' && !company.is_verified)
+      (filterVerification === 'verified' && company.is_verified) ||
+      (filterVerification === 'unverified' && !company.is_verified)
     return matchesSearch && matchesStatus && matchesVerification
   })
 
@@ -438,11 +431,11 @@ const CompanyManagement: React.FC = () => {
             <div className="flex gap-2 flex-wrap">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input 
-                  placeholder="Search companies..." 
-                  value={searchTerm} 
-                  onChange={(e) => setSearchTerm(e.target.value)} 
-                  className="pl-9 w-64 border-gray-300" 
+                <Input
+                  placeholder="Search companies..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 w-64 border-gray-300"
                 />
               </div>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -475,7 +468,7 @@ const CompanyManagement: React.FC = () => {
               <AlertDescription className="text-yellow-800">{error}</AlertDescription>
             </Alert>
           )}
-          
+
           {loading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -532,7 +525,7 @@ const CompanyManagement: React.FC = () => {
                           >
                             <MoreVertical className="h-4 w-4 text-gray-600" />
                           </button>
-                          
+
                           {openMenuId === company.id && (
                             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50 py-1">
                               <button
@@ -541,7 +534,7 @@ const CompanyManagement: React.FC = () => {
                               >
                                 <Eye className="h-4 w-4" /> View Details
                               </button>
-                              
+
                               {!company.is_verified && (
                                 <button
                                   onClick={() => openVerifyDialog(company)}
@@ -550,9 +543,9 @@ const CompanyManagement: React.FC = () => {
                                   <Shield className="h-4 w-4" /> Verify Company
                                 </button>
                               )}
-                              
+
                               <div className="border-t border-gray-100 my-1"></div>
-                              
+
                               {company.is_active ? (
                                 <button
                                   onClick={() => openSuspendDialog(company)}
@@ -568,9 +561,9 @@ const CompanyManagement: React.FC = () => {
                                   <CheckCircle className="h-4 w-4" /> Activate
                                 </button>
                               )}
-                              
+
                               <div className="border-t border-gray-100 my-1"></div>
-                              
+
                               <button
                                 onClick={() => openDeleteDialog(company)}
                                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"

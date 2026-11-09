@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { 
-  Database, Download, Upload, Clock, CheckCircle, 
+import {
+  Database, Download, Upload, Clock, CheckCircle,
   XCircle, AlertCircle, RefreshCw, HardDrive, Trash2
 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -47,11 +47,7 @@ const BackupRestore: React.FC = () => {
     backup_count: 0
   })
 
-  // Use the same token check as the API service
-  // The token is automatically handled by the api service
-  // So we don't need to manually check for token
 
-  // Fetch backups from backend
   const fetchBackups = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -59,29 +55,29 @@ const BackupRestore: React.FC = () => {
       console.log('Fetching backups from /admin/backups...')
       const response = await api.get('/admin/backups')
       console.log('Backups response:', response.data)
-      
+
       let backupList: Backup[] = []
       if (response.data?.data && Array.isArray(response.data.data)) {
         backupList = response.data.data
       }
-      
+
       setBackups(backupList)
-      
+
     } catch (err: any) {
       console.error('Failed to fetch backups:', err)
-      // Don't show error for missing table, just use empty list
+
       setBackups([])
     } finally {
       setLoading(false)
     }
   }, [])
 
-  // Fetch storage stats
+
   const fetchStorageStats = useCallback(async () => {
     try {
       const response = await api.get('/admin/backups/stats')
       console.log('Storage stats:', response.data)
-      
+
       if (response.data?.data) {
         setStorageStats(response.data.data)
       }
@@ -95,14 +91,13 @@ const BackupRestore: React.FC = () => {
     fetchStorageStats()
   }, [fetchBackups, fetchStorageStats])
 
-  // Create new backup
   const startBackup = async () => {
     setIsBackingUp(true)
     setBackupProgress(0)
     setError(null)
-    
+
     try {
-      // Simulate progress
+
       const interval = setInterval(() => {
         setBackupProgress(prev => {
           if (prev >= 90) {
@@ -112,31 +107,31 @@ const BackupRestore: React.FC = () => {
           return prev + 10
         })
       }, 500)
-      
-      const response = await api.post('/admin/backups/create', { 
-        backupType: 'full' 
+
+      const response = await api.post('/admin/backups/create', {
+        backupType: 'full'
       })
-      
+
       clearInterval(interval)
       setBackupProgress(100)
-      
+
       if (response.data?.success) {
-        toast({ 
-          title: "Success", 
-          description: "Backup created successfully!" 
+        toast({
+          title: "Success",
+          description: "Backup created successfully!"
         })
         await fetchBackups()
         await fetchStorageStats()
       } else {
         throw new Error(response.data?.message || 'Backup failed')
       }
-      
+
     } catch (err: any) {
       console.error('Backup error:', err)
-      toast({ 
-        variant: "destructive", 
-        title: "Error", 
-        description: err.message || "Failed to create backup" 
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to create backup"
       })
     } finally {
       setIsBackingUp(false)
@@ -144,13 +139,12 @@ const BackupRestore: React.FC = () => {
     }
   }
 
-  // Download backup
   const downloadBackup = async (backup: Backup) => {
     try {
       const response = await api.get(`/admin/backups/${backup.id}/download`, {
         responseType: 'blob'
       })
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]))
       const a = document.createElement('a')
       a.href = url
@@ -159,69 +153,68 @@ const BackupRestore: React.FC = () => {
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-      
-      toast({ 
-        title: "Success", 
-        description: "Download started!" 
+
+      toast({
+        title: "Success",
+        description: "Download started!"
       })
-      
+
     } catch (err: any) {
       console.error('Download error:', err)
-      toast({ 
-        variant: "destructive", 
-        title: "Error", 
-        description: "Failed to download backup" 
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to download backup"
       })
     }
   }
 
-  // Delete backup
+
   const deleteBackup = async (backupId: string, backupName: string) => {
     if (!confirm(`Are you sure you want to delete ${backupName}? This action cannot be undone.`)) return
-    
+
     try {
       await api.delete(`/admin/backups/${backupId}`)
-      
-      toast({ 
-        title: "Success", 
-        description: "Backup deleted successfully" 
+
+      toast({
+        title: "Success",
+        description: "Backup deleted successfully"
       })
       await fetchBackups()
       await fetchStorageStats()
-      
+
     } catch (err: any) {
       console.error('Delete error:', err)
-      toast({ 
-        variant: "destructive", 
-        title: "Error", 
-        description: "Failed to delete backup" 
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete backup"
       })
     }
   }
 
-  // Restore backup
   const restoreBackup = async (backupId: string, backupName: string) => {
     if (!confirm(`WARNING: Restoring ${backupName} will overwrite current data. This action cannot be undone. Continue?`)) return
-    
+
     try {
       const response = await api.post(`/admin/backups/${backupId}/restore`)
-      
+
       if (response.data?.success) {
-        toast({ 
-          title: "Success", 
-          description: "Restore initiated successfully! The system will restart." 
+        toast({
+          title: "Success",
+          description: "Restore initiated successfully! The system will restart."
         })
       } else {
         throw new Error(response.data?.message || 'Restore failed')
       }
-      
-  
+
+
     } catch (err: any) {
       console.error('Restore error:', err)
-      toast({ 
-        variant: "destructive", 
-        title: "Error", 
-        description: err.message || "Failed to restore backup" 
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to restore backup"
       })
     }
   }
@@ -236,27 +229,27 @@ const BackupRestore: React.FC = () => {
   }
 
   const getStatusIcon = (status: string) => {
-    switch(status) {
-      case 'completed': 
+    switch (status) {
+      case 'completed':
         return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'pending': 
+      case 'pending':
         return <RefreshCw className="h-4 w-4 text-yellow-600 animate-spin" />
-      case 'failed': 
+      case 'failed':
         return <XCircle className="h-4 w-4 text-red-600" />
-      default: 
+      default:
         return <AlertCircle className="h-4 w-4 text-gray-600" />
     }
   }
 
   const getStatusBadge = (status: string) => {
-    switch(status) {
-      case 'completed': 
+    switch (status) {
+      case 'completed':
         return <Badge className="bg-green-100 text-green-800">Completed</Badge>
-      case 'pending': 
+      case 'pending':
         return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
-      case 'failed': 
+      case 'failed':
         return <Badge className="bg-red-100 text-red-800">Failed</Badge>
-      default: 
+      default:
         return <Badge>{status}</Badge>
     }
   }
@@ -375,9 +368,9 @@ const BackupRestore: React.FC = () => {
             <p className="text-sm text-gray-600">
               Restore system from a previous backup. This will overwrite current data.
             </p>
-            <Button 
-              variant="outline" 
-              className="w-full" 
+            <Button
+              variant="outline"
+              className="w-full"
               disabled={backups.filter(b => b.status === 'completed').length === 0}
               onClick={() => {
                 const latestBackup = backups.find(b => b.status === 'completed')
@@ -434,16 +427,16 @@ const BackupRestore: React.FC = () => {
                   <div className="flex gap-2 ml-11 sm:ml-0">
                     {backup.status === 'completed' && (
                       <>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={() => downloadBackup(backup)}
                           title="Download backup"
                         >
                           <Download className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={() => restoreBackup(backup.id, backup.name)}
                           title="Restore from backup"
@@ -453,8 +446,8 @@ const BackupRestore: React.FC = () => {
                         </Button>
                       </>
                     )}
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       className="text-red-600 hover:text-red-700"
                       onClick={() => deleteBackup(backup.id, backup.name)}
