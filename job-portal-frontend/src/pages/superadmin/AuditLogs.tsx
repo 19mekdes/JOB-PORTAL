@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Search, RefreshCw, Download, Eye, 
+import {
+  Search, RefreshCw, Download, Eye,
   UserPlus, UserMinus, Edit, Trash2, Settings,
   Clock, Shield, Activity, AlertCircle, LogIn,
   Building, Briefcase, FileText, CheckCircle, XCircle
@@ -99,15 +99,15 @@ const AuditLogs: React.FC = () => {
       }
 
       const response = await api.get('/admin/audit-logs')
-      
+
       let auditLogs: AuditLog[] = []
       if (response.data?.data && Array.isArray(response.data.data)) {
         auditLogs = response.data.data
       }
-      
+
       setLogs(auditLogs)
       setFilteredLogs(auditLogs)
-      
+
     } catch (err: any) {
       console.error('Failed to fetch:', err)
       setError(err.message || 'Failed to fetch audit logs')
@@ -116,31 +116,31 @@ const AuditLogs: React.FC = () => {
     }
   }, [])
 
-  // Apply filters
+
   useEffect(() => {
     let filtered = [...logs]
-    
+
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
-      filtered = filtered.filter(log => 
+      filtered = filtered.filter(log =>
         log.action?.toLowerCase().includes(term) ||
         log.performed_by?.toLowerCase().includes(term) ||
         log.target_type?.toLowerCase().includes(term)
       )
     }
-    
+
     if (filterAction !== 'all') {
       filtered = filtered.filter(log => log.action === filterAction)
     }
-    
+
     if (startDate) {
       filtered = filtered.filter(log => new Date(log.created_at) >= new Date(startDate))
     }
-    
+
     if (endDate) {
       filtered = filtered.filter(log => new Date(log.created_at) <= new Date(endDate + 'T23:59:59'))
     }
-    
+
     setFilteredLogs(filtered)
   }, [logs, searchTerm, filterAction, startDate, endDate])
 
@@ -217,14 +217,14 @@ const AuditLogs: React.FC = () => {
               password: 'admin123'
             })
           })
-          .then(res => res.json())
-          .then(data => {
-            if (data.token) {
-              localStorage.setItem('token', data.token);
-              localStorage.setItem('user', JSON.stringify(data.user));
-              window.location.reload();
-            }
-          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.token) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                window.location.reload();
+              }
+            })
         }}>Login Now</Button>
       </div>
     )
@@ -346,9 +346,9 @@ const AuditLogs: React.FC = () => {
                       <td className="py-3 px-4 text-sm text-gray-600">{formatDate(log.created_at)}</td>
                       <td className="py-3 px-4 text-sm text-gray-600">{log.ip_address}</td>
                       <td className="py-3 px-4">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           className="h-8 w-8 p-0 bg-white hover:bg-gray-100"
                           onClick={() => openDetailsDialog(log)}
                         >
@@ -403,13 +403,13 @@ const AuditLogs: React.FC = () => {
                   <p className="mt-1 text-sm text-gray-700">{selectedLog.ip_address}</p>
                 </div>
               </div>
-              
+
               {selectedLog.details && (
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <Label className="text-xs text-gray-500 mb-2 block">Additional Details</Label>
                   <pre className="text-xs bg-white p-3 rounded border border-gray-200 overflow-auto max-h-48 font-mono">
-                    {typeof selectedLog.details === 'string' 
-                      ? selectedLog.details 
+                    {typeof selectedLog.details === 'string'
+                      ? selectedLog.details
                       : JSON.stringify(selectedLog.details, null, 2)}
                   </pre>
                 </div>

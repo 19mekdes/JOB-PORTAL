@@ -28,8 +28,8 @@ interface AnalyticsData {
   activeUsers: number
   newUsersThisMonth: number
   userGrowth: number
-  
-  
+
+
   totalJobs: number
   activeJobs: number
   closedJobs: number
@@ -39,7 +39,7 @@ interface AnalyticsData {
   averageViewsPerJob: number
   averageApplicationsPerJob: number
   conversionRate: number
-  
+
   // Application Statistics
   totalApplications: number
   pendingApplications: number
@@ -48,18 +48,18 @@ interface AnalyticsData {
   interviewApplications: number
   acceptedApplications: number
   rejectedApplications: number
-  
+
   // Views
   totalViews: number
-  
+
   // Monthly Trends
   jobsByMonth: Array<{ month: string; jobs: number }>
   applicationsByMonth: Array<{ month: string; applications: number }>
-  
+
   // Distribution
   applicationsByStatus: Array<{ status: string; count: number }>
   jobsByIndustry: Array<{ name: string; count: number }>
-  
+
   // Top Lists
   topSkills: Array<{ skill: string; count: number }>
   topEmployers: Array<{ name: string; jobCount: number; views: number }>
@@ -75,16 +75,16 @@ const Analytics: React.FC = () => {
     setLoading(true)
     setError(null)
     try {
-    
+
       const response = await api.get('/super-admin/analytics')
       console.log('Analytics response:', response.data)
-      
+
       if (response.data?.success && response.data?.data) {
         const apiData = response.data.data
-        
-        // Map the backend data to our frontend structure
+
+
         setData({
-          // User Statistics
+
           totalUsers: apiData.totalUsers || 0,
           totalJobSeekers: apiData.totalJobSeekers || 0,
           totalEmployers: apiData.totalEmployers || 0,
@@ -92,7 +92,7 @@ const Analytics: React.FC = () => {
           activeUsers: apiData.activeUsers || apiData.totalUsers || 0,
           newUsersThisMonth: apiData.newUsersThisMonth || 0,
           userGrowth: apiData.userGrowth || 0,
-          
+
           // Job Statistics
           totalJobs: apiData.totalJobs || 0,
           activeJobs: apiData.activeJobs || 0,
@@ -103,7 +103,7 @@ const Analytics: React.FC = () => {
           averageViewsPerJob: apiData.averageViewsPerJob || 0,
           averageApplicationsPerJob: apiData.averageApplicationsPerJob || 0,
           conversionRate: apiData.conversionRate || 0,
-          
+
           // Application Statistics
           totalApplications: apiData.totalApplications || 0,
           pendingApplications: apiData.pendingApplications || 0,
@@ -112,14 +112,13 @@ const Analytics: React.FC = () => {
           interviewApplications: apiData.interviewApplications || 0,
           acceptedApplications: apiData.acceptedApplications || 0,
           rejectedApplications: apiData.rejectedApplications || 0,
-          
+
           // Views
           totalViews: apiData.totalViews || 0,
-          
-          // Monthly Trends - backend has separate arrays
+
           jobsByMonth: apiData.jobsByMonth || [],
           applicationsByMonth: apiData.applicationsByMonth || [],
-          
+
           // Distribution
           applicationsByStatus: (apiData.applicationsByStatus || []).map((status: any) => ({
             status: status.status,
@@ -129,7 +128,7 @@ const Analytics: React.FC = () => {
             name: item.name,
             count: item.count || 0
           })),
-          
+
           // Top Lists
           topSkills: (apiData.topSkills || []).map((skill: any) => ({
             skill: skill.skill,
@@ -216,7 +215,6 @@ const Analytics: React.FC = () => {
     toast({ title: "Export Complete", description: "Analytics data has been exported" })
   }
 
-  // Prepare combined monthly data for line chart
   const getMonthlyTrendData = () => {
     if (!data?.jobsByMonth) return []
     return data.jobsByMonth.map((item, index) => ({
@@ -226,12 +224,11 @@ const Analytics: React.FC = () => {
     }))
   }
 
-  // Calculate max skill count safely
-  const maxSkillCount = data?.topSkills && data.topSkills.length > 0 
-    ? Math.max(...data.topSkills.map(s => s.count)) 
+
+  const maxSkillCount = data?.topSkills && data.topSkills.length > 0
+    ? Math.max(...data.topSkills.map(s => s.count))
     : 1
 
-  // Prepare application status data for pie chart
   const applicationStatusData = data?.applicationsByStatus || []
 
   const statusColors = ['#f59e0b', '#3b82f6', '#8b5cf6', '#06b6d4', '#10b981', '#ef4444']
@@ -420,14 +417,14 @@ const Analytics: React.FC = () => {
                   <>
                     <ResponsiveContainer width="100%" height={250}>
                       <PieChart>
-                        <Pie 
-                          data={applicationStatusData} 
-                          cx="50%" 
-                          cy="50%" 
-                          labelLine={false} 
-                          outerRadius={80} 
-                          dataKey="count" 
-                          nameKey="status" 
+                        <Pie
+                          data={applicationStatusData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          dataKey="count"
+                          nameKey="status"
                           label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                         >
                           {applicationStatusData.map((entry, index) => (
@@ -593,7 +590,7 @@ const Analytics: React.FC = () => {
               </CardContent>
             </Card>
           </div>
-          
+
           {/* Jobs by Month Bar Chart */}
           <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
             <CardHeader><CardTitle className="text-lg">Jobs Posted by Month</CardTitle></CardHeader>
@@ -625,7 +622,7 @@ const Analytics: React.FC = () => {
             <Card className="border-cyan-200 bg-cyan-50"><CardContent className="p-3 text-center"><p className="text-xl font-bold text-cyan-600">{formatNumber(data.interviewApplications)}</p><p className="text-xs text-gray-500">Interview</p></CardContent></Card>
             <Card className="border-green-200 bg-green-50"><CardContent className="p-3 text-center"><p className="text-xl font-bold text-green-600">{formatNumber(data.acceptedApplications)}</p><p className="text-xs text-gray-500">Accepted</p></CardContent></Card>
           </div>
-          
+
           {/* Applications by Month */}
           <Card className="border border-gray-200 shadow-sm rounded-xl bg-white">
             <CardHeader><CardTitle className="text-lg">Applications by Month</CardTitle></CardHeader>
@@ -645,7 +642,7 @@ const Analytics: React.FC = () => {
               )}
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6">
               <div className="text-center">

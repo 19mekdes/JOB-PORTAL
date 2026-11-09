@@ -5,11 +5,12 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { 
-  Search, Eye, RefreshCw, AlertCircle, FileText, 
+import {
+  Search, Eye, RefreshCw, AlertCircle, FileText,
   CheckCircle, XCircle, Clock, UserCheck, Users,
   Mail, Download,
-  MoreVertical, Send} from 'lucide-react'
+  MoreVertical, Send
+} from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -30,7 +31,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
-// Types
 interface Application {
   id: string
   job_id: string
@@ -109,7 +109,6 @@ const Applications: React.FC = () => {
     rejected: 0
   })
 
-  // Fetch applications from backend
   const fetchApplications = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -117,17 +116,16 @@ const Applications: React.FC = () => {
       console.log('Fetching applications from /admin/applications...')
       const response = await api.get('/admin/applications')
       console.log('Applications response:', response.data)
-      
+
       let allApplications: Application[] = []
       if (response.data?.data && Array.isArray(response.data.data)) {
         allApplications = response.data.data
       } else if (response.data && Array.isArray(response.data)) {
         allApplications = response.data
       }
-      
+
       setApplications(allApplications)
-      
-      // Calculate stats
+
       const appStats: ApplicationStats = {
         total: allApplications.length,
         pending: allApplications.filter(a => a.status?.status_name === 'Pending').length,
@@ -138,7 +136,7 @@ const Applications: React.FC = () => {
         rejected: allApplications.filter(a => a.status?.status_name === 'Rejected').length
       }
       setStats(appStats)
-      
+
     } catch (err: any) {
       console.error('Failed to fetch applications:', err)
       setError(err.message || 'Failed to fetch applications')
@@ -153,7 +151,6 @@ const Applications: React.FC = () => {
     fetchApplications()
   }, [fetchApplications])
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = () => {
       setOpenMenuId(null)
@@ -162,16 +159,15 @@ const Applications: React.FC = () => {
     return () => document.removeEventListener('click', handleClickOutside)
   }, [])
 
-  // Toggle menu
+
   const toggleMenu = (appId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     setOpenMenuId(openMenuId === appId ? null : appId)
   }
 
-  // Update application status
   const handleUpdateStatus = async () => {
     if (!selectedApplication || !newStatus) return
-    
+
     setSubmitting(true)
     try {
       // Find status ID
@@ -183,14 +179,14 @@ const Applications: React.FC = () => {
         'Accepted': 5,
         'Rejected': 6
       }
-      
+
       const statusId = statusMap[newStatus] || 1
-      
-      await api.put(`/admin/applications/${selectedApplication.id}/status`, { 
+
+      await api.put(`/admin/applications/${selectedApplication.id}/status`, {
         status: newStatus,
         status_id: statusId
       })
-      
+
       toast({ title: "Success", description: `Application status updated to ${newStatus}` })
       setIsStatusDialogOpen(false)
       setOpenMenuId(null)
@@ -257,15 +253,15 @@ const Applications: React.FC = () => {
   }
 
   const filteredApplications = applications.filter(app => {
-    const matchesSearch = 
+    const matchesSearch =
       app.seeker?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       app.seeker?.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       app.job?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       app.job?.employer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesStatus = filterStatus === 'all' || 
+
+    const matchesStatus = filterStatus === 'all' ||
       app.status?.status_name?.toLowerCase() === filterStatus.toLowerCase()
-    
+
     return matchesSearch && matchesStatus
   })
 
@@ -411,7 +407,7 @@ const Applications: React.FC = () => {
               <AlertDescription className="text-red-800">{error}</AlertDescription>
             </Alert>
           )}
-          
+
           {loading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -479,7 +475,7 @@ const Applications: React.FC = () => {
                           >
                             <MoreVertical className="h-4 w-4 text-gray-600" />
                           </button>
-                          
+
                           {openMenuId === app.id && (
                             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50 py-1">
                               <button
@@ -586,9 +582,9 @@ const Applications: React.FC = () => {
               {selectedApplication.resume_url && (
                 <div className="p-4 border border-gray-200 rounded-lg">
                   <h4 className="font-semibold text-gray-900 mb-2">Resume</h4>
-                  <a 
-                    href={selectedApplication.resume_url} 
-                    target="_blank" 
+                  <a
+                    href={selectedApplication.resume_url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline flex items-center gap-2"
                   >
