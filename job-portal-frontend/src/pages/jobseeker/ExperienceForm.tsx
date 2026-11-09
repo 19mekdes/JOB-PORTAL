@@ -57,40 +57,40 @@ const ExperienceForm: React.FC<ExperienceFormProps> = ({ experience, onUpdate })
 
   const handleSubmit = async () => {
     if (!formData.title || !formData.company) {
-      toast({ 
-        variant: "destructive", 
-        title: "Error", 
-        description: "Please fill in job title and company" 
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please fill in job title and company"
       })
       return
     }
 
     setSaving(true)
-    
+
     let updatedExperience: Experience[]
     if (editingId) {
-      updatedExperience = experience.map(item => 
+      updatedExperience = experience.map(item =>
         item.id === editingId ? { ...formData, id: editingId } : item
       )
     } else {
       updatedExperience = [...experience, { ...formData, id: Date.now().toString() }]
     }
-    
+
     onUpdate(updatedExperience)
-    
+
     try {
       await api.put('/auth/profile', { experience: updatedExperience })
-      toast({ 
-        title: "Success", 
-        description: editingId ? "Experience updated successfully" : "Experience added successfully" 
+      toast({
+        title: "Success",
+        description: editingId ? "Experience updated successfully" : "Experience added successfully"
       })
       resetForm()
     } catch (error) {
       console.error('Error saving experience:', error)
-      toast({ 
-        variant: "destructive", 
-        title: "Error", 
-        description: "Failed to save experience" 
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save experience"
       })
     } finally {
       setSaving(false)
@@ -103,7 +103,7 @@ const ExperienceForm: React.FC<ExperienceFormProps> = ({ experience, onUpdate })
     try {
       await api.put('/auth/profile', { experience: updatedExperience })
       toast({ title: "Success", description: "Experience deleted successfully" })
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "Failed to delete experience" })
     }
@@ -132,27 +132,27 @@ const ExperienceForm: React.FC<ExperienceFormProps> = ({ experience, onUpdate })
             <div className="space-y-3">
               <div>
                 <Label>Job Title *</Label>
-                <Input 
-                  value={formData.title} 
-                  onChange={(e) => setFormData({...formData, title: e.target.value})} 
+                <Input
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g., Senior Software Engineer"
                   className="mt-1 rounded-lg"
                 />
               </div>
               <div>
                 <Label>Company *</Label>
-                <Input 
-                  value={formData.company} 
-                  onChange={(e) => setFormData({...formData, company: e.target.value})} 
+                <Input
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                   placeholder="Company name"
                   className="mt-1 rounded-lg"
                 />
               </div>
               <div>
                 <Label>Location</Label>
-                <Input 
-                  value={formData.location} 
-                  onChange={(e) => setFormData({...formData, location: e.target.value})} 
+                <Input
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   placeholder="City, Country or Remote"
                   className="mt-1 rounded-lg"
                 />
@@ -160,36 +160,36 @@ const ExperienceForm: React.FC<ExperienceFormProps> = ({ experience, onUpdate })
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Start Date</Label>
-                  <Input 
-                    type="month" 
-                    value={formData.start_date} 
-                    onChange={(e) => setFormData({...formData, start_date: e.target.value})} 
+                  <Input
+                    type="month"
+                    value={formData.start_date}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
                     className="mt-1 rounded-lg"
                   />
                 </div>
                 <div>
                   <Label>End Date</Label>
-                  <Input 
-                    type="month" 
-                    value={formData.end_date} 
-                    onChange={(e) => setFormData({...formData, end_date: e.target.value})} 
+                  <Input
+                    type="month"
+                    value={formData.end_date}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
                     disabled={formData.current}
                     className="mt-1 rounded-lg"
                   />
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Switch 
-                  checked={formData.current} 
-                  onCheckedChange={(checked) => setFormData({...formData, current: checked, end_date: checked ? '' : formData.end_date})} 
+                <Switch
+                  checked={formData.current}
+                  onCheckedChange={(checked) => setFormData({ ...formData, current: checked, end_date: checked ? '' : formData.end_date })}
                 />
                 <Label>I currently work here</Label>
               </div>
               <div>
                 <Label>Description</Label>
-                <Textarea 
-                  value={formData.description} 
-                  onChange={(e) => setFormData({...formData, description: e.target.value})} 
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Describe your responsibilities and achievements..."
                   rows={3}
                   className="mt-1 rounded-lg"

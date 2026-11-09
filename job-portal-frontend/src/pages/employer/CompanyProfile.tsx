@@ -75,7 +75,6 @@ const CompanyProfile: React.FC = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [industries, setIndustries] = useState<any[]>([])
 
-  // Local File States
   const [coverImage, setCoverImage] = useState<File | null>(null)
   const [coverPreview, setCoverPreview] = useState<string | null>(null)
   const [isSavingCover, setIsSavingCover] = useState(false)
@@ -292,7 +291,6 @@ const CompanyProfile: React.FC = () => {
     "1000+ employees"
   ]
 
-  // Helper function to get industry name
   const getIndustryName = (industryId?: number) => {
     if (!industryId) return 'Not specified'
     const industry = industries.find(i => i.id === industryId)

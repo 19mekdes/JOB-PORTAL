@@ -20,7 +20,7 @@ import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
 interface AnalyticsData {
-  // User Statistics
+
   totalUsers: number
   totalJobSeekers: number
   totalEmployers: number
@@ -29,7 +29,7 @@ interface AnalyticsData {
   newUsersThisMonth: number
   userGrowth: number
   
-  // Job Statistics
+  
   totalJobs: number
   activeJobs: number
   closedJobs: number
@@ -75,7 +75,7 @@ const Analytics: React.FC = () => {
     setLoading(true)
     setError(null)
     try {
-      // Fixed endpoint URL - matching your backend
+    
       const response = await api.get('/super-admin/analytics')
       console.log('Analytics response:', response.data)
       

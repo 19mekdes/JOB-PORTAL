@@ -169,7 +169,7 @@ const JobSeekerPreferences: React.FC = () => {
   const testPushNotification = async () => {
     setTestingPush(true)
     try {
-      // Request permission if not granted
+     
       if (notificationPermission !== 'granted') {
         const granted = await requestNotificationPermission()
         if (!granted) {
@@ -178,7 +178,6 @@ const JobSeekerPreferences: React.FC = () => {
         }
       }
 
-      // Show test notification
       const notificationOptions: NotificationOptions & { vibrate?: number[] } = {
         body: 'Your push notification settings are working correctly!',
         icon: '/logo192.png',
