@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { 
-  Users, Shield, TrendingUp, 
+import {
+  Users, Shield, TrendingUp,
   Briefcase, FileCheck, AlertCircle,
-  RefreshCw, Building, Eye, CheckCircle} from 'lucide-react'
+  RefreshCw, Building, Eye, CheckCircle
+} from 'lucide-react'
 import {
   BarChart, Bar, PieChart as RePieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -53,46 +54,46 @@ const SuperAdminDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
-      // Use the correct endpoint that matches your backend
+     
       const response = await api.get(`/super-admin/analytics`)
-      
+
       console.log('Dashboard API Response:', response.data)
-      
+
       if (response.data?.success && response.data?.data) {
         const data = response.data.data
-        
+
         setStats({
-          // User Stats
+          
           totalUsers: data.totalUsers || 0,
           totalJobSeekers: data.totalJobSeekers || 0,
           totalEmployers: data.totalEmployers || 0,
           totalAdmins: data.totalAdmins || 0,
-          
+
           // Job Stats
           totalJobs: data.totalJobs || 0,
           activeJobs: data.activeJobs || 0,
           closedJobs: data.closedJobs || 0,
           pendingJobs: data.pendingJobs || 0,
-          
+
           // Application Stats
           totalApplications: data.totalApplications || 0,
           pendingApplications: data.pendingApplications || 0,
           acceptedApplications: data.acceptedApplications || 0,
           rejectedApplications: data.rejectedApplications || 0,
           interviewApplications: data.interviewApplications || 0,
-          
+
           // Views & Metrics
           totalViews: data.totalViews || 0,
           averageViewsPerJob: data.averageViewsPerJob || 0,
           averageApplicationsPerJob: data.averageApplicationsPerJob || 0,
           conversionRate: data.conversionRate || 0,
-          
+
           // Chart Data
           jobsByIndustry: data.jobsByIndustry || [],
           jobsByMonth: data.jobsByMonth || [],
           applicationsByMonth: data.applicationsByMonth || [],
           applicationsByStatus: data.applicationsByStatus || [],
-          
+
           // Top Lists
           topSkills: data.topSkills || [],
           topEmployers: data.topEmployers || []
@@ -117,8 +118,8 @@ const SuperAdminDashboard: React.FC = () => {
 
   const applicationStatusData = stats?.applicationsByStatus || []
 
-  const maxSkillCount = stats?.topSkills && stats.topSkills.length > 0 
-    ? Math.max(...stats.topSkills.map(s => s.count)) 
+  const maxSkillCount = stats?.topSkills && stats.topSkills.length > 0
+    ? Math.max(...stats.topSkills.map(s => s.count))
     : 1
 
   if (loading) {

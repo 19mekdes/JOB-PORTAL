@@ -8,16 +8,17 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Save, RefreshCw, Globe, Users, Briefcase, FileText, 
-  AlertTriangle, Loader2, 
-  Mail, Lock, Database, Bell, 
-  Key, Send} from 'lucide-react'
+import {
+  Save, RefreshCw, Globe, Users, Briefcase, FileText,
+  AlertTriangle, Loader2,
+  Mail, Lock, Database, Bell,
+  Key, Send
+} from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
 interface SystemSettings {
-  // General Settings
+
   siteName: string
   siteDescription: string
   siteLogo: string
@@ -28,15 +29,14 @@ interface SystemSettings {
   dateFormat: string
   maintenanceMode: boolean
   maintenanceMessage: string
-  
-  // User Settings
+
   enableRegistration: boolean
   emailVerification: boolean
   defaultUserRole: string
   maxUsers: number
   autoApproveEmployers: boolean
   allowSocialLogin: boolean
-  
+
   // Job Settings
   requireJobApproval: boolean
   maxJobsPerEmployer: number
@@ -45,7 +45,7 @@ interface SystemSettings {
   featuredJobPrice: number
   allowFreeJobs: boolean
   maxJobTags: number
-  
+
   // Application Settings
   maxApplicationsPerSeeker: number
   requireCoverLetter: boolean
@@ -53,7 +53,7 @@ interface SystemSettings {
   applicationCooldown: number
   allowWithdrawApplication: boolean
   notifyEmployerOnApplication: boolean
-  
+
   // Security Settings
   passwordMinLength: number
   requireUppercase: boolean
@@ -63,7 +63,7 @@ interface SystemSettings {
   maxLoginAttempts: number
   twoFactorAuth: boolean
   lockoutDuration: number
-  
+
   // Notification Settings
   emailNotifications: boolean
   pushNotifications: boolean
@@ -72,7 +72,7 @@ interface SystemSettings {
   notifyOnStatusChange: boolean
   weeklyDigest: boolean
   adminAlertEmails: string
-  
+
   // Email Settings
   smtpHost: string
   smtpPort: number
@@ -81,19 +81,19 @@ interface SystemSettings {
   fromEmail: string
   fromName: string
   emailConfigured: boolean
-  
+
   // API Settings
   recaptchaSiteKey: string
   recaptchaConfigured: boolean
   googleLoginConfigured: boolean
   linkedinLoginConfigured: boolean
-  
+
   // Backup Settings
   autoBackup: boolean
   backupFrequency: string
   backupRetention: number
   logRetentionDays: number
-  
+
   // File Settings
   allowedFileTypes: string[]
   maxFileSizeMb: number
@@ -134,7 +134,7 @@ const SuperAdminSettings: React.FC = () => {
       if (googleSecret) saveData.googleClientSecret = googleSecret
       if (linkedinSecret) saveData.linkedinClientSecret = linkedinSecret
       if (recaptchaSecret) saveData.recaptchaSecretKey = recaptchaSecret
-      
+
       const response = await api.put('/super-admin/settings', saveData)
       if (response.data?.success) {
         toast({ title: "Success", description: "Settings saved successfully!" })
@@ -238,14 +238,14 @@ const SuperAdminSettings: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><Label className="text-gray-700">Site Name</Label><Input value={settings.siteName} onChange={(e) => setSettings({...settings, siteName: e.target.value})} className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">Site Description</Label><Input value={settings.siteDescription} onChange={(e) => setSettings({...settings, siteDescription: e.target.value})} className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">Site Logo URL</Label><Input value={settings.siteLogo} onChange={(e) => setSettings({...settings, siteLogo: e.target.value})} placeholder="https://..." className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">Site Favicon URL</Label><Input value={settings.siteFavicon} onChange={(e) => setSettings({...settings, siteFavicon: e.target.value})} placeholder="https://..." className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">Contact Email</Label><Input type="email" value={settings.contactEmail} onChange={(e) => setSettings({...settings, contactEmail: e.target.value})} className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">Support Email</Label><Input type="email" value={settings.supportEmail} onChange={(e) => setSettings({...settings, supportEmail: e.target.value})} className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">Timezone</Label><Input value={settings.timezone} onChange={(e) => setSettings({...settings, timezone: e.target.value})} className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">Date Format</Label><Input value={settings.dateFormat} onChange={(e) => setSettings({...settings, dateFormat: e.target.value})} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Site Name</Label><Input value={settings.siteName} onChange={(e) => setSettings({ ...settings, siteName: e.target.value })} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Site Description</Label><Input value={settings.siteDescription} onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Site Logo URL</Label><Input value={settings.siteLogo} onChange={(e) => setSettings({ ...settings, siteLogo: e.target.value })} placeholder="https://..." className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Site Favicon URL</Label><Input value={settings.siteFavicon} onChange={(e) => setSettings({ ...settings, siteFavicon: e.target.value })} placeholder="https://..." className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Contact Email</Label><Input type="email" value={settings.contactEmail} onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Support Email</Label><Input type="email" value={settings.supportEmail} onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Timezone</Label><Input value={settings.timezone} onChange={(e) => setSettings({ ...settings, timezone: e.target.value })} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Date Format</Label><Input value={settings.dateFormat} onChange={(e) => setSettings({ ...settings, dateFormat: e.target.value })} className="mt-1 border-gray-300" /></div>
               </div>
             </CardContent>
           </Card>
@@ -262,12 +262,12 @@ const SuperAdminSettings: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Enable Registration</Label><Switch checked={settings.enableRegistration} onCheckedChange={(c) => setSettings({...settings, enableRegistration: c})} /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Require Email Verification</Label><Switch checked={settings.emailVerification} onCheckedChange={(c) => setSettings({...settings, emailVerification: c})} /></div>
-                <div><Label className="text-gray-700">Default User Role</Label><Input value={settings.defaultUserRole} onChange={(e) => setSettings({...settings, defaultUserRole: e.target.value})} className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">Max Users</Label><Input type="number" value={settings.maxUsers} onChange={(e) => setSettings({...settings, maxUsers: parseInt(e.target.value)})} className="mt-1 border-gray-300" /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Auto Approve Employers</Label><Switch checked={settings.autoApproveEmployers} onCheckedChange={(c) => setSettings({...settings, autoApproveEmployers: c})} /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Allow Social Login</Label><Switch checked={settings.allowSocialLogin} onCheckedChange={(c) => setSettings({...settings, allowSocialLogin: c})} /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Enable Registration</Label><Switch checked={settings.enableRegistration} onCheckedChange={(c) => setSettings({ ...settings, enableRegistration: c })} /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Require Email Verification</Label><Switch checked={settings.emailVerification} onCheckedChange={(c) => setSettings({ ...settings, emailVerification: c })} /></div>
+                <div><Label className="text-gray-700">Default User Role</Label><Input value={settings.defaultUserRole} onChange={(e) => setSettings({ ...settings, defaultUserRole: e.target.value })} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Max Users</Label><Input type="number" value={settings.maxUsers} onChange={(e) => setSettings({ ...settings, maxUsers: parseInt(e.target.value) })} className="mt-1 border-gray-300" /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Auto Approve Employers</Label><Switch checked={settings.autoApproveEmployers} onCheckedChange={(c) => setSettings({ ...settings, autoApproveEmployers: c })} /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Allow Social Login</Label><Switch checked={settings.allowSocialLogin} onCheckedChange={(c) => setSettings({ ...settings, allowSocialLogin: c })} /></div>
               </div>
             </CardContent>
           </Card>
@@ -284,13 +284,13 @@ const SuperAdminSettings: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Require Job Approval</Label><Switch checked={settings.requireJobApproval} onCheckedChange={(c) => setSettings({...settings, requireJobApproval: c})} /></div>
-                <div><Label className="text-gray-700">Max Jobs Per Employer</Label><Input type="number" value={settings.maxJobsPerEmployer} onChange={(e) => setSettings({...settings, maxJobsPerEmployer: parseInt(e.target.value)})} className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">Job Expiry Days</Label><Input type="number" value={settings.jobExpiryDays} onChange={(e) => setSettings({...settings, jobExpiryDays: parseInt(e.target.value)})} className="mt-1 border-gray-300" /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Allow Job Editing</Label><Switch checked={settings.allowJobEditing} onCheckedChange={(c) => setSettings({...settings, allowJobEditing: c})} /></div>
-                <div><Label className="text-gray-700">Featured Job Price ($)</Label><Input type="number" step="0.01" value={settings.featuredJobPrice} onChange={(e) => setSettings({...settings, featuredJobPrice: parseFloat(e.target.value)})} className="mt-1 border-gray-300" /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Allow Free Jobs</Label><Switch checked={settings.allowFreeJobs} onCheckedChange={(c) => setSettings({...settings, allowFreeJobs: c})} /></div>
-                <div><Label className="text-gray-700">Max Job Tags</Label><Input type="number" value={settings.maxJobTags} onChange={(e) => setSettings({...settings, maxJobTags: parseInt(e.target.value)})} className="mt-1 border-gray-300" /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Require Job Approval</Label><Switch checked={settings.requireJobApproval} onCheckedChange={(c) => setSettings({ ...settings, requireJobApproval: c })} /></div>
+                <div><Label className="text-gray-700">Max Jobs Per Employer</Label><Input type="number" value={settings.maxJobsPerEmployer} onChange={(e) => setSettings({ ...settings, maxJobsPerEmployer: parseInt(e.target.value) })} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Job Expiry Days</Label><Input type="number" value={settings.jobExpiryDays} onChange={(e) => setSettings({ ...settings, jobExpiryDays: parseInt(e.target.value) })} className="mt-1 border-gray-300" /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Allow Job Editing</Label><Switch checked={settings.allowJobEditing} onCheckedChange={(c) => setSettings({ ...settings, allowJobEditing: c })} /></div>
+                <div><Label className="text-gray-700">Featured Job Price ($)</Label><Input type="number" step="0.01" value={settings.featuredJobPrice} onChange={(e) => setSettings({ ...settings, featuredJobPrice: parseFloat(e.target.value) })} className="mt-1 border-gray-300" /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Allow Free Jobs</Label><Switch checked={settings.allowFreeJobs} onCheckedChange={(c) => setSettings({ ...settings, allowFreeJobs: c })} /></div>
+                <div><Label className="text-gray-700">Max Job Tags</Label><Input type="number" value={settings.maxJobTags} onChange={(e) => setSettings({ ...settings, maxJobTags: parseInt(e.target.value) })} className="mt-1 border-gray-300" /></div>
               </div>
             </CardContent>
           </Card>
@@ -307,12 +307,12 @@ const SuperAdminSettings: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><Label className="text-gray-700">Max Applications Per Seeker</Label><Input type="number" value={settings.maxApplicationsPerSeeker} onChange={(e) => setSettings({...settings, maxApplicationsPerSeeker: parseInt(e.target.value)})} className="mt-1 border-gray-300" /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Require Cover Letter</Label><Switch checked={settings.requireCoverLetter} onCheckedChange={(c) => setSettings({...settings, requireCoverLetter: c})} /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Require Resume Upload</Label><Switch checked={settings.requireResumeUpload} onCheckedChange={(c) => setSettings({...settings, requireResumeUpload: c})} /></div>
-                <div><Label className="text-gray-700">Application Cooldown (days)</Label><Input type="number" value={settings.applicationCooldown} onChange={(e) => setSettings({...settings, applicationCooldown: parseInt(e.target.value)})} className="mt-1 border-gray-300" /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Allow Withdraw Application</Label><Switch checked={settings.allowWithdrawApplication} onCheckedChange={(c) => setSettings({...settings, allowWithdrawApplication: c})} /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Notify Employer on Application</Label><Switch checked={settings.notifyEmployerOnApplication} onCheckedChange={(c) => setSettings({...settings, notifyEmployerOnApplication: c})} /></div>
+                <div><Label className="text-gray-700">Max Applications Per Seeker</Label><Input type="number" value={settings.maxApplicationsPerSeeker} onChange={(e) => setSettings({ ...settings, maxApplicationsPerSeeker: parseInt(e.target.value) })} className="mt-1 border-gray-300" /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Require Cover Letter</Label><Switch checked={settings.requireCoverLetter} onCheckedChange={(c) => setSettings({ ...settings, requireCoverLetter: c })} /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Require Resume Upload</Label><Switch checked={settings.requireResumeUpload} onCheckedChange={(c) => setSettings({ ...settings, requireResumeUpload: c })} /></div>
+                <div><Label className="text-gray-700">Application Cooldown (days)</Label><Input type="number" value={settings.applicationCooldown} onChange={(e) => setSettings({ ...settings, applicationCooldown: parseInt(e.target.value) })} className="mt-1 border-gray-300" /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Allow Withdraw Application</Label><Switch checked={settings.allowWithdrawApplication} onCheckedChange={(c) => setSettings({ ...settings, allowWithdrawApplication: c })} /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Notify Employer on Application</Label><Switch checked={settings.notifyEmployerOnApplication} onCheckedChange={(c) => setSettings({ ...settings, notifyEmployerOnApplication: c })} /></div>
               </div>
             </CardContent>
           </Card>
@@ -329,14 +329,14 @@ const SuperAdminSettings: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><Label className="text-gray-700">Password Min Length</Label><Input type="number" value={settings.passwordMinLength} onChange={(e) => setSettings({...settings, passwordMinLength: parseInt(e.target.value)})} className="mt-1 border-gray-300" /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Require Uppercase</Label><Switch checked={settings.requireUppercase} onCheckedChange={(c) => setSettings({...settings, requireUppercase: c})} /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Require Numbers</Label><Switch checked={settings.requireNumbers} onCheckedChange={(c) => setSettings({...settings, requireNumbers: c})} /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Require Special Characters</Label><Switch checked={settings.requireSpecialChars} onCheckedChange={(c) => setSettings({...settings, requireSpecialChars: c})} /></div>
-                <div><Label className="text-gray-700">Session Timeout (minutes)</Label><Input type="number" value={settings.sessionTimeout} onChange={(e) => setSettings({...settings, sessionTimeout: parseInt(e.target.value)})} className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">Max Login Attempts</Label><Input type="number" value={settings.maxLoginAttempts} onChange={(e) => setSettings({...settings, maxLoginAttempts: parseInt(e.target.value)})} className="mt-1 border-gray-300" /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Two Factor Authentication</Label><Switch checked={settings.twoFactorAuth} onCheckedChange={(c) => setSettings({...settings, twoFactorAuth: c})} /></div>
-                <div><Label className="text-gray-700">Lockout Duration (minutes)</Label><Input type="number" value={settings.lockoutDuration} onChange={(e) => setSettings({...settings, lockoutDuration: parseInt(e.target.value)})} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Password Min Length</Label><Input type="number" value={settings.passwordMinLength} onChange={(e) => setSettings({ ...settings, passwordMinLength: parseInt(e.target.value) })} className="mt-1 border-gray-300" /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Require Uppercase</Label><Switch checked={settings.requireUppercase} onCheckedChange={(c) => setSettings({ ...settings, requireUppercase: c })} /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Require Numbers</Label><Switch checked={settings.requireNumbers} onCheckedChange={(c) => setSettings({ ...settings, requireNumbers: c })} /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Require Special Characters</Label><Switch checked={settings.requireSpecialChars} onCheckedChange={(c) => setSettings({ ...settings, requireSpecialChars: c })} /></div>
+                <div><Label className="text-gray-700">Session Timeout (minutes)</Label><Input type="number" value={settings.sessionTimeout} onChange={(e) => setSettings({ ...settings, sessionTimeout: parseInt(e.target.value) })} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Max Login Attempts</Label><Input type="number" value={settings.maxLoginAttempts} onChange={(e) => setSettings({ ...settings, maxLoginAttempts: parseInt(e.target.value) })} className="mt-1 border-gray-300" /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Two Factor Authentication</Label><Switch checked={settings.twoFactorAuth} onCheckedChange={(c) => setSettings({ ...settings, twoFactorAuth: c })} /></div>
+                <div><Label className="text-gray-700">Lockout Duration (minutes)</Label><Input type="number" value={settings.lockoutDuration} onChange={(e) => setSettings({ ...settings, lockoutDuration: parseInt(e.target.value) })} className="mt-1 border-gray-300" /></div>
               </div>
             </CardContent>
           </Card>
@@ -353,13 +353,13 @@ const SuperAdminSettings: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Email Notifications</Label><Switch checked={settings.emailNotifications} onCheckedChange={(c) => setSettings({...settings, emailNotifications: c})} /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Push Notifications</Label><Switch checked={settings.pushNotifications} onCheckedChange={(c) => setSettings({...settings, pushNotifications: c})} /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Notify on New Job</Label><Switch checked={settings.notifyOnNewJob} onCheckedChange={(c) => setSettings({...settings, notifyOnNewJob: c})} /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Notify on Application</Label><Switch checked={settings.notifyOnApplication} onCheckedChange={(c) => setSettings({...settings, notifyOnApplication: c})} /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Notify on Status Change</Label><Switch checked={settings.notifyOnStatusChange} onCheckedChange={(c) => setSettings({...settings, notifyOnStatusChange: c})} /></div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Weekly Digest</Label><Switch checked={settings.weeklyDigest} onCheckedChange={(c) => setSettings({...settings, weeklyDigest: c})} /></div>
-                <div className="col-span-2"><Label className="text-gray-700">Admin Alert Emails (comma separated)</Label><Input value={settings.adminAlertEmails} onChange={(e) => setSettings({...settings, adminAlertEmails: e.target.value})} placeholder="admin1@example.com, admin2@example.com" className="mt-1 border-gray-300" /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Email Notifications</Label><Switch checked={settings.emailNotifications} onCheckedChange={(c) => setSettings({ ...settings, emailNotifications: c })} /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Push Notifications</Label><Switch checked={settings.pushNotifications} onCheckedChange={(c) => setSettings({ ...settings, pushNotifications: c })} /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Notify on New Job</Label><Switch checked={settings.notifyOnNewJob} onCheckedChange={(c) => setSettings({ ...settings, notifyOnNewJob: c })} /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Notify on Application</Label><Switch checked={settings.notifyOnApplication} onCheckedChange={(c) => setSettings({ ...settings, notifyOnApplication: c })} /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Notify on Status Change</Label><Switch checked={settings.notifyOnStatusChange} onCheckedChange={(c) => setSettings({ ...settings, notifyOnStatusChange: c })} /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Weekly Digest</Label><Switch checked={settings.weeklyDigest} onCheckedChange={(c) => setSettings({ ...settings, weeklyDigest: c })} /></div>
+                <div className="col-span-2"><Label className="text-gray-700">Admin Alert Emails (comma separated)</Label><Input value={settings.adminAlertEmails} onChange={(e) => setSettings({ ...settings, adminAlertEmails: e.target.value })} placeholder="admin1@example.com, admin2@example.com" className="mt-1 border-gray-300" /></div>
               </div>
             </CardContent>
           </Card>
@@ -376,15 +376,15 @@ const SuperAdminSettings: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><Label className="text-gray-700">SMTP Host</Label><Input value={settings.smtpHost} onChange={(e) => setSettings({...settings, smtpHost: e.target.value})} className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">SMTP Port</Label><Input type="number" value={settings.smtpPort} onChange={(e) => setSettings({...settings, smtpPort: parseInt(e.target.value)})} className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">SMTP Username</Label><Input value={settings.smtpUser} onChange={(e) => setSettings({...settings, smtpUser: e.target.value})} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">SMTP Host</Label><Input value={settings.smtpHost} onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">SMTP Port</Label><Input type="number" value={settings.smtpPort} onChange={(e) => setSettings({ ...settings, smtpPort: parseInt(e.target.value) })} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">SMTP Username</Label><Input value={settings.smtpUser} onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })} className="mt-1 border-gray-300" /></div>
                 <div><Label className="text-gray-700">SMTP Password</Label><Input type="password" value={smtpPassword} onChange={(e) => setSmtpPassword(e.target.value)} placeholder="Leave blank to keep current" className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">SMTP Encryption</Label><Input value={settings.smtpEncryption} onChange={(e) => setSettings({...settings, smtpEncryption: e.target.value})} className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">From Email</Label><Input value={settings.fromEmail} onChange={(e) => setSettings({...settings, fromEmail: e.target.value})} className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">From Name</Label><Input value={settings.fromName} onChange={(e) => setSettings({...settings, fromName: e.target.value})} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">SMTP Encryption</Label><Input value={settings.smtpEncryption} onChange={(e) => setSettings({ ...settings, smtpEncryption: e.target.value })} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">From Email</Label><Input value={settings.fromEmail} onChange={(e) => setSettings({ ...settings, fromEmail: e.target.value })} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">From Name</Label><Input value={settings.fromName} onChange={(e) => setSettings({ ...settings, fromName: e.target.value })} className="mt-1 border-gray-300" /></div>
               </div>
-              
+
               <div className="border-t border-gray-100 pt-4 mt-2">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -396,8 +396,8 @@ const SuperAdminSettings: React.FC = () => {
                   </Badge>
                 </div>
                 <div className="flex gap-2">
-                  <Input 
-                    placeholder="Email address (optional)" 
+                  <Input
+                    placeholder="Email address (optional)"
                     value={testEmailAddress}
                     onChange={(e) => setTestEmailAddress(e.target.value)}
                     className="flex-1 border-gray-300"
@@ -423,14 +423,14 @@ const SuperAdminSettings: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><Label className="text-gray-700">Google Client ID</Label><Input value={settings.recaptchaSiteKey} onChange={(e) => setSettings({...settings, recaptchaSiteKey: e.target.value})} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Google Client ID</Label><Input value={settings.recaptchaSiteKey} onChange={(e) => setSettings({ ...settings, recaptchaSiteKey: e.target.value })} className="mt-1 border-gray-300" /></div>
                 <div><Label className="text-gray-700">Google Client Secret</Label><Input type="password" value={googleSecret} onChange={(e) => setGoogleSecret(e.target.value)} placeholder="Leave blank to keep current" className="mt-1 border-gray-300" /></div>
                 <div className="col-span-2"><Badge className={settings.googleLoginConfigured ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>{settings.googleLoginConfigured ? "Google Login Configured" : "Google Login Not Configured"}</Badge></div>
-                
-                <div><Label className="text-gray-700">LinkedIn Client ID</Label><Input value={settings.linkedinLoginConfigured ? "configured" : ""} onChange={(e) => setSettings({...settings, linkedinLoginConfigured: !!e.target.value})} className="mt-1 border-gray-300" /></div>
+
+                <div><Label className="text-gray-700">LinkedIn Client ID</Label><Input value={settings.linkedinLoginConfigured ? "configured" : ""} onChange={(e) => setSettings({ ...settings, linkedinLoginConfigured: !!e.target.value })} className="mt-1 border-gray-300" /></div>
                 <div><Label className="text-gray-700">LinkedIn Client Secret</Label><Input type="password" value={linkedinSecret} onChange={(e) => setLinkedinSecret(e.target.value)} placeholder="Leave blank to keep current" className="mt-1 border-gray-300" /></div>
-                
-                <div><Label className="text-gray-700">reCAPTCHA Site Key</Label><Input value={settings.recaptchaSiteKey} onChange={(e) => setSettings({...settings, recaptchaSiteKey: e.target.value})} className="mt-1 border-gray-300" /></div>
+
+                <div><Label className="text-gray-700">reCAPTCHA Site Key</Label><Input value={settings.recaptchaSiteKey} onChange={(e) => setSettings({ ...settings, recaptchaSiteKey: e.target.value })} className="mt-1 border-gray-300" /></div>
                 <div><Label className="text-gray-700">reCAPTCHA Secret Key</Label><Input type="password" value={recaptchaSecret} onChange={(e) => setRecaptchaSecret(e.target.value)} placeholder="Leave blank to keep current" className="mt-1 border-gray-300" /></div>
                 <div className="col-span-2"><Badge className={settings.recaptchaConfigured ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>{settings.recaptchaConfigured ? "reCAPTCHA Configured" : "reCAPTCHA Not Configured"}</Badge></div>
               </div>
@@ -449,10 +449,10 @@ const SuperAdminSettings: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Auto Backup</Label><Switch checked={settings.autoBackup} onCheckedChange={(c) => setSettings({...settings, autoBackup: c})} /></div>
-                <div><Label className="text-gray-700">Backup Frequency</Label><Input value={settings.backupFrequency} onChange={(e) => setSettings({...settings, backupFrequency: e.target.value})} className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">Backup Retention (days)</Label><Input type="number" value={settings.backupRetention} onChange={(e) => setSettings({...settings, backupRetention: parseInt(e.target.value)})} className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">Log Retention Days</Label><Input type="number" value={settings.logRetentionDays} onChange={(e) => setSettings({...settings, logRetentionDays: parseInt(e.target.value)})} className="mt-1 border-gray-300" /></div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><Label className="text-gray-700">Auto Backup</Label><Switch checked={settings.autoBackup} onCheckedChange={(c) => setSettings({ ...settings, autoBackup: c })} /></div>
+                <div><Label className="text-gray-700">Backup Frequency</Label><Input value={settings.backupFrequency} onChange={(e) => setSettings({ ...settings, backupFrequency: e.target.value })} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Backup Retention (days)</Label><Input type="number" value={settings.backupRetention} onChange={(e) => setSettings({ ...settings, backupRetention: parseInt(e.target.value) })} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Log Retention Days</Label><Input type="number" value={settings.logRetentionDays} onChange={(e) => setSettings({ ...settings, logRetentionDays: parseInt(e.target.value) })} className="mt-1 border-gray-300" /></div>
               </div>
             </CardContent>
           </Card>
@@ -469,8 +469,8 @@ const SuperAdminSettings: React.FC = () => {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 gap-4">
-                <div><Label className="text-gray-700">Allowed File Types (comma separated)</Label><Input value={settings.allowedFileTypes.join(', ')} onChange={(e) => setSettings({...settings, allowedFileTypes: e.target.value.split(',').map(s => s.trim())})} placeholder="pdf, doc, docx, txt" className="mt-1 border-gray-300" /></div>
-                <div><Label className="text-gray-700">Max File Size (MB)</Label><Input type="number" value={settings.maxFileSizeMb} onChange={(e) => setSettings({...settings, maxFileSizeMb: parseInt(e.target.value)})} className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Allowed File Types (comma separated)</Label><Input value={settings.allowedFileTypes.join(', ')} onChange={(e) => setSettings({ ...settings, allowedFileTypes: e.target.value.split(',').map(s => s.trim()) })} placeholder="pdf, doc, docx, txt" className="mt-1 border-gray-300" /></div>
+                <div><Label className="text-gray-700">Max File Size (MB)</Label><Input type="number" value={settings.maxFileSizeMb} onChange={(e) => setSettings({ ...settings, maxFileSizeMb: parseInt(e.target.value) })} className="mt-1 border-gray-300" /></div>
               </div>
             </CardContent>
           </Card>

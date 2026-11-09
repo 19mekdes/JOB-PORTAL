@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { 
+import {
   Search, Trash2, MoreVertical, RefreshCw, AlertCircle,
   Briefcase, Eye, Clock, ThumbsUp, ThumbsDown, CheckCircle, XCircle,
   MapPin, DollarSign, Calendar, Building, Users
@@ -115,23 +115,22 @@ const JobModeration: React.FC = () => {
   const [rejectionReason, setRejectionReason] = useState('')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
-  // Fetch jobs from backend
   const fetchJobs = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
       const response = await api.get('/admin/jobs')
       console.log('Jobs response:', response.data)
-      
+
       let allJobs: Job[] = []
       if (response.data?.data && Array.isArray(response.data.data)) {
         allJobs = response.data.data
       } else if (response.data && Array.isArray(response.data)) {
         allJobs = response.data
       }
-      
+
       setJobs(allJobs)
-      
+
       const jobStats: JobStats = {
         total: allJobs.length,
         pending: allJobs.filter(j => j.status?.status_name === 'Pending').length,
@@ -142,7 +141,7 @@ const JobModeration: React.FC = () => {
         archived: allJobs.filter(j => j.status?.status_name === 'Archived').length
       }
       setStats(jobStats)
-      
+
     } catch (err: any) {
       console.error('Failed to fetch jobs:', err)
       setError(err.message || 'Failed to fetch jobs')
@@ -157,7 +156,7 @@ const JobModeration: React.FC = () => {
     fetchJobs()
   }, [fetchJobs])
 
-  // Close menu when clicking outside
+
   useEffect(() => {
     const handleClickOutside = () => {
       setOpenMenuId(null)
@@ -166,7 +165,6 @@ const JobModeration: React.FC = () => {
     return () => document.removeEventListener('click', handleClickOutside)
   }, [])
 
-  // Approve job
   const handleApproveJob = async () => {
     if (!selectedJob) return
     setSubmitting(true)
@@ -182,7 +180,6 @@ const JobModeration: React.FC = () => {
     }
   }
 
-  // Reject job
   const handleRejectJob = async () => {
     if (!selectedJob) return
     setSubmitting(true)
@@ -199,7 +196,6 @@ const JobModeration: React.FC = () => {
     }
   }
 
-  // Delete job
   const handleDeleteJob = async () => {
     if (!selectedJob) return
     setSubmitting(true)
@@ -281,13 +277,13 @@ const JobModeration: React.FC = () => {
 
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         job.employer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         job.location?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === 'all' || 
-                         (filterStatus === 'pending' && job.status?.status_name === 'Pending') ||
-                         (filterStatus === 'approved' && job.status?.status_name === 'Open') ||
-                         (filterStatus === 'rejected' && job.status?.status_name === 'Rejected') ||
-                         (filterStatus === 'closed' && job.status?.status_name === 'Closed')
+      job.employer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.location?.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = filterStatus === 'all' ||
+      (filterStatus === 'pending' && job.status?.status_name === 'Pending') ||
+      (filterStatus === 'approved' && job.status?.status_name === 'Open') ||
+      (filterStatus === 'rejected' && job.status?.status_name === 'Rejected') ||
+      (filterStatus === 'closed' && job.status?.status_name === 'Closed')
     return matchesSearch && matchesStatus
   })
 
@@ -366,7 +362,7 @@ const JobModeration: React.FC = () => {
         </CardHeader>
         <CardContent className="p-0">
           {error && <Alert className="m-4 bg-red-50"><AlertCircle className="h-4 w-4 text-red-600" /><AlertDescription>{error}</AlertDescription></Alert>}
-          
+
           {loading ? (
             <div className="text-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div><p className="mt-2 text-gray-500">Loading jobs...</p></div>
           ) : filteredJobs.length === 0 ? (
@@ -410,7 +406,7 @@ const JobModeration: React.FC = () => {
                           >
                             <MoreVertical className="h-4 w-4 text-gray-600" />
                           </button>
-                          
+
                           {openMenuId === job.id && (
                             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50 py-1">
                               <button
@@ -419,7 +415,7 @@ const JobModeration: React.FC = () => {
                               >
                                 <Eye className="h-4 w-4" /> View Details
                               </button>
-                              
+
                               {job.status?.status_name === 'Pending' && (
                                 <>
                                   <button
@@ -436,7 +432,7 @@ const JobModeration: React.FC = () => {
                                   </button>
                                 </>
                               )}
-                              
+
                               {(job.status?.status_name === 'Open' || job.status?.status_name === 'Rejected' || job.status?.status_name === 'Closed') && (
                                 <button
                                   onClick={() => openDeleteDialog(job)}

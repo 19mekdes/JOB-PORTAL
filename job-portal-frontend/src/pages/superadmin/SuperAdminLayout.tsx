@@ -31,7 +31,6 @@ import {
 import { toast } from '@/hooks/use-toast'
 import api from '@/services/api'
 
-// Import all super admin components
 import SuperAdminDashboard from './Dashboard'
 import AdminsManagement from './AdminsManagement'
 import CompanyManagement from './CompanyManagement'
@@ -189,34 +188,33 @@ const SuperAdminLayout: React.FC = () => {
     return 'Super Admin'
   }
 
-  // FIXED: Complete logout function that works immediately
   const handleLogout = () => {
-    // Clear all localStorage items
+ 
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('admin_token')
     localStorage.removeItem('accessToken')
     
-    // Clear sessionStorage
+    
     sessionStorage.clear()
     
-    // Dispatch Redux logout action to clear state
+    
     dispatch(logout())
     
-    // Clear axios default headers
+    
     delete api.defaults.headers.common['Authorization']
     
-    // Navigate to login page
+    
     navigate('/login', { replace: true })
     
-    // Show toast message
+    
     toast({ 
       title: "Logged out", 
       description: "You have been logged out successfully" 
     })
     
-    // Force reload to clear any cached state
+   
     setTimeout(() => {
       window.location.href = '/login'
     }, 50)
