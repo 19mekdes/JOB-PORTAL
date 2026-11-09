@@ -62,7 +62,7 @@ export default function ApplyPage() {
     setSubmitting(true)
     setError('')
     
-    // Check if already applied - show alert immediately
+   
     if (alreadyApplied) {
       alert('⚠️ You have already applied for this position!\n\nPlease check "My Applications" for status.')
       setSubmitting(false)
@@ -89,17 +89,16 @@ export default function ApplyPage() {
     } catch (error: any) {
       console.error('Error applying:', error)
       
-      // Get the error message from backend
+   
       const backendMessage = error.response?.data?.message || error.message
       console.log('Backend error message:', backendMessage)
       
-      // Check if it's a duplicate application error
       if (backendMessage === 'You have already applied for this job' || 
           backendMessage.includes('already applied')) {
         setAlreadyApplied(true)
         alert('⚠️ You have already applied for this position!\n\nPlease check "My Applications" for status.')
       } else {
-        // Other errors
+       
         alert('❌ Failed to submit application: ' + backendMessage)
         setError(backendMessage)
       }
@@ -120,7 +119,7 @@ export default function ApplyPage() {
     )
   }
   
-  // Show Already Applied page
+  
   if (alreadyApplied) {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4">

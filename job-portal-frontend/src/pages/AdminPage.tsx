@@ -25,7 +25,6 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-// Import all admin components - FIXED to match your actual file names
 import Dashboard from './admin/Dashboard'
 import UsersManagement from './admin/Users'
 import JobsManagement from './admin/Jobs'
@@ -40,7 +39,6 @@ const AdminPage: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Navigation items with components 
   const navItems = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, component: Dashboard },
     { path: '/admin/users', label: 'User Management', icon: Users, component: UsersManagement },
@@ -60,7 +58,7 @@ const AdminPage: React.FC = () => {
     navigate('/login')
   }
 
-  // Mock data for dashboard stats
+  
   const stats = [
     { title: 'Total Users', value: '12,847', icon: Users, change: '+12%', color: 'text-blue-600', bg: 'bg-blue-50' },
     { title: 'Total Jobs', value: '3,421', icon: Briefcase, change: '+8%', color: 'text-green-600', bg: 'bg-green-50' },
@@ -68,7 +66,7 @@ const AdminPage: React.FC = () => {
     { title: 'Pending Reports', value: '23', icon: AlertCircle, change: '-5%', color: 'text-orange-600', bg: 'bg-orange-50' },
   ]
 
-  // Mock data for recent users
+
   const recentUsers = [
     { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Employer', status: 'active' },
     { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'Job Seeker', status: 'active' },
@@ -76,7 +74,7 @@ const AdminPage: React.FC = () => {
     { id: 4, name: 'Alice Brown', email: 'alice@example.com', role: 'Employer', status: 'active' },
   ]
 
-  // Mock data for pending jobs
+  
   const pendingJobs = [
     { id: 1, title: 'Senior React Developer', company: 'TechCorp', posted: '2024-01-15' },
     { id: 2, title: 'Product Manager', company: 'Innovate Inc', posted: '2024-01-14' },
@@ -101,10 +99,9 @@ const AdminPage: React.FC = () => {
     )
   }
 
-  // Find current component to render
   const CurrentComponent = navItems.find(item => item.path === location.pathname)?.component || Dashboard
 
-  // Dashboard content
+
   if (location.pathname === '/admin/dashboard') {
     return (
       <div className="min-h-screen bg-white">

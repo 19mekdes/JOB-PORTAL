@@ -94,7 +94,6 @@ const ApplicationsPage: React.FC = () => {
     });
   };
 
-  // Filter applications based on search and status
   const filteredApplications = applications.filter((app) => {
     const matchesSearch =
       searchTerm === "" ||
