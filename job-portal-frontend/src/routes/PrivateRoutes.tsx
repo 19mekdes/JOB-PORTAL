@@ -19,22 +19,19 @@ const PrivateRoutes: React.FC<PrivateRoutesProps> = ({
   const location = useLocation()
   const { user, isLoading } = useSelector((state: RootState) => state.auth)
 
-  // Show loading spinner while checking authentication
   if (isLoading) {
     return <LoadingSpinner fullScreen text="Checking authentication..." />
   }
 
-  // Not authenticated
   if (!user) {
     return <Navigate to={redirectTo} state={{ from: location }} replace />
   }
 
-  // Check email verification if required
   if (requireEmailVerification && !user.email_verified) {
     return <Navigate to="/verify-email-pending" state={{ from: location }} replace />
   }
 
-  // Check role authorization
+
   if (allowedRoles && allowedRoles.length > 0) {
     if (!allowedRoles.includes(user.user_type)) {
       return <Navigate to="/unauthorized" replace />
@@ -60,8 +57,6 @@ export const AdminRoutes: React.FC = () => (
 export const SuperAdminRoutes: React.FC = () => (
   <PrivateRoutes allowedRoles={['Super Admin']} />
 )
-
-// Route guard for authenticated users only (any role)
 export const AuthenticatedRoutes: React.FC = () => (
   <PrivateRoutes />
 )
