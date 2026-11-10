@@ -62,17 +62,16 @@ const CompanyDetailsPage: React.FC = () => {
       setError(null)
       console.log('Fetching company with ID:', id)
       
-      // Try multiple endpoints
+   
       let response
       
-      // Try 1: Direct companies endpoint
+     
       try {
         response = await api.get(`/companies/${id}`)
         console.log('Response from /companies/:id:', response.data)
       } catch (err) {
         console.log('First endpoint failed, trying /employer/company/:id')
-        
-        // Try 2: Employer company endpoint
+       
         try {
           response = await api.get(`/employer/company/${id}`)
           console.log('Response from /employer/company/:id:', response.data)

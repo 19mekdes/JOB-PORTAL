@@ -60,12 +60,12 @@ const BookmarksPage: React.FC = () => {
       const response = await api.get('/bookmarks')
       console.log('Bookmarks response:', response.data)
       
-      // Handle different response structures
+      
       let bookmarksData = response.data.data || []
       
-      // If bookmarksData is an array of job IDs, we need to fetch actual job data
+      
       if (bookmarksData.length > 0 && typeof bookmarksData[0] === 'string') {
-        // Fetch full job details for each bookmark ID
+       
         const jobPromises = bookmarksData.map(async (jobId: string) => {
           try {
             const jobResponse = await api.get(`/jobs/${jobId}`)

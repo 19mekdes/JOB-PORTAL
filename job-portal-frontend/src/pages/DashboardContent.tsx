@@ -74,7 +74,7 @@ const DashboardContent: React.FC = () => {
       try {
   const jobsRes = await api.get('/jobs?limit=3')
   const allJobs = jobsRes.data.data || []
-  // Get first 3 jobs as recommendations
+ 
   setRecommendedJobs(allJobs.slice(0, 3))
 } catch (error) {
   console.error('Error fetching recommended jobs:', error)

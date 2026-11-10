@@ -175,7 +175,7 @@ const JobDetailsPage: React.FC = () => {
     if (!text) return []
     if (text.trim() === '') return []
     
-    // Split by new lines (how data is stored from PostJobPage)
+    
     if (text.includes('\n')) {
       return text.split('\n')
         .map(item => item.trim())

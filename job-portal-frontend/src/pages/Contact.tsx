@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { toast } from '@/hooks/use-toast'
-import api from '@/services/api'  // Add this import
+import api from '@/services/api'
 
 const Contact: React.FC = () => {
   const navigate = useNavigate()
@@ -75,7 +75,7 @@ const Contact: React.FC = () => {
 
     setIsSubmitting(true)
     try {
-      // Send to backend API
+     
       const response = await api.post('/contact', formData)
 
       if (response.data?.success) {
