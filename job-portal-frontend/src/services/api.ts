@@ -30,7 +30,6 @@ const api: AxiosInstance = axios.create({
   },
 })
 
-// ========== PUBLIC ENDPOINTS (No redirect on 401) ==========
 const PUBLIC_ENDPOINTS = [
   '/jobs',
   '/jobs/',
@@ -195,9 +194,6 @@ api.interceptors.response.use(
     return Promise.reject(apiError)
   }
 )
-
-// ========== HELPER FUNCTIONS ==========
-
 
 export const get = async <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {
   const response = await api.get<T>(url, config)

@@ -83,8 +83,6 @@ export interface ApplicationNote {
   }
 }
 
-// ========== JOB SEEKER APPLICATION SERVICES ==========
-
 export const getMyApplications = async (filters: ApplicationFilters = {}) => {
   const params = new URLSearchParams()
   if (filters.status && filters.status !== 'all') params.append('status', filters.status)
