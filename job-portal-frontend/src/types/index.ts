@@ -5,8 +5,6 @@ export * from './user'
 export * from './job'
 export * from './application'
 export type { BookmarkedJob } from './api'
-
-// ========== CORE TYPES ==========
 export interface User {
   id: string
   email: string
@@ -224,8 +222,6 @@ export interface PaginatedResponse<T = any> {
     pages: number
   }
 }
-
-// ========== FILTER TYPES ==========
 export interface JobFilters {
   search?: string
   location?: string
@@ -296,8 +292,6 @@ export interface ApplicationFormData {
   availability?: string
   expected_salary?: string
 }
-
-// ========== COMPONENT PROPS TYPES ==========
 export interface JobCardProps {
   job: JobPost
   variant?: 'default' | 'compact' | 'featured'

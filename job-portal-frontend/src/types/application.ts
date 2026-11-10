@@ -40,7 +40,6 @@ export interface CreateApplicationNoteRequest {
   note_text: string
 }
 
-// ========== APPLICATION ==========
 export interface Application {
   id: string
   job_id: string
@@ -92,8 +91,6 @@ export interface BulkUpdateApplicationStatusRequest {
   application_ids: string[]
   status: ApplicationStatus
 }
-
-// ========== APPLICATION FILTERS ==========
 export interface ApplicationFilters {
   status?: ApplicationStatus | 'all'
   job_id?: string
