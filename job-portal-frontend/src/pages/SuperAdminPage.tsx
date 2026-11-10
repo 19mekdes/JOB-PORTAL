@@ -138,7 +138,7 @@ const AdminManagement: React.FC = () => {
     }
   }
 
-  const filteredAdmins = admins.filter(admin => 
+  const filteredAdmins = admins.filter(admin =>
     admin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     admin.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -185,7 +185,7 @@ const AdminManagement: React.FC = () => {
                     <th className="pb-3">Last Active</th>
                     <th className="pb-3">Joined</th>
                     <th className="pb-3">Actions</th>
-                   </tr>
+                  </tr>
                 </thead>
                 <tbody className="divide-y">
                   {filteredAdmins.map((admin) => (
@@ -214,9 +214,9 @@ const AdminManagement: React.FC = () => {
                           <Button variant="ghost" size="sm">
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="text-red-600"
                             onClick={() => handleDeleteAdmin(admin.id, admin.name)}
                           >

@@ -10,7 +10,8 @@ import {
   LogIn,
   UserPlus,
   AlertTriangle,
-  Lock} from 'lucide-react'
+  Lock
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { RootState } from '@/redux/store'
@@ -81,7 +82,7 @@ const Unauthorized: React.FC = () => {
           You don't have permission to access this page.
         </p>
         <p className="text-sm text-gray-500 mb-8">
-          {user 
+          {user
             ? `Your role (${user.user_type}) does not have the required permissions.`
             : 'Please login with an account that has the necessary permissions.'}
         </p>
@@ -126,8 +127,8 @@ const Unauthorized: React.FC = () => {
         <div className="border-t pt-6">
           <p className="text-sm text-gray-500">
             Need access?{' '}
-            <button 
-              onClick={() => navigate('/contact')} 
+            <button
+              onClick={() => navigate('/contact')}
               className="text-blue-600 hover:underline font-medium"
             >
               Contact Administrator

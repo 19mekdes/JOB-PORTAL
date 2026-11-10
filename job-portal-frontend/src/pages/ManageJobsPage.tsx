@@ -122,7 +122,6 @@ const ManageJobsPage: React.FC = () => {
       const jobsData = await getEmployerJobs()
       setJobs(jobsData)
 
-      // Calculate stats
       const open = jobsData.filter((j: Job) => j.status.status_name === 'Open').length
       const closed = jobsData.filter((j: Job) => j.status.status_name === 'Closed').length
       const draft = jobsData.filter((j: Job) => j.status.status_name === 'Draft').length

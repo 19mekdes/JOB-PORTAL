@@ -61,7 +61,6 @@ interface ManagedCompany {
   is_verified: boolean
 }
 
-// Fallback data
 const FALLBACK_INDUSTRIES: Industry[] = [
   { id: 1, industry_name: 'Technology / IT' },
   { id: 2, industry_name: 'Healthcare / Medical' },
@@ -225,8 +224,6 @@ const PostJobPage: React.FC = () => {
     setIsLoading(true)
 
     const finalStatusId = publishStatus === 'draft' ? '3' : formData.status_id
-
-    // Build submit data
     const submitData: any = {
       title: formData.title,
       description: formData.description,
@@ -241,7 +238,6 @@ const PostJobPage: React.FC = () => {
       is_remote: formData.is_remote
     }
 
-    // Add company selection
     if (useCustomCompany && customCompanyName.trim()) {
       submitData.custom_company_name = customCompanyName.trim()
     } else if (selectedCompanyId) {
