@@ -17,8 +17,6 @@ export interface BreadcrumbItem {
   icon?: ReactNode
   active?: boolean
 }
-
-// ========== ROUTE PARAMS ==========
 export interface JobRouteParams {
   id: string
 }
@@ -104,7 +102,7 @@ export interface NavGroup {
 
 // ========== ROUTE CONSTANTS ==========
 export const ROUTES = {
-  // Public Routes
+  
   HOME: '/',
   ABOUT: '/about',
   CONTACT: '/contact',

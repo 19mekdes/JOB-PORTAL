@@ -2,7 +2,6 @@ import { JobPost, JobApplication, Notification, SearchLog, JobIndustry, JobAppli
 import { USER_ROLES } from './auth'
 
 export type UserRole = 'Job Seeker' | 'Employer' | 'Admin' | 'Super Admin'
-
 export interface User {
   id: string
   email: string
@@ -76,8 +75,6 @@ export interface EmployerProfile {
   created_at?: string
   updated_at?: string
 }
-
-// ========== USER PREFERENCES ==========
 export interface NotificationPreference {
   id: number
   user_id: string
@@ -105,8 +102,6 @@ export interface UserPreferences {
   email_notifications: boolean
   push_notifications: boolean
 }
-
-// ========== USER STATISTICS ==========
 export interface UserStatistics {
   total_applications: number
   total_saved_jobs: number
@@ -139,8 +134,6 @@ export interface EmployerStatistics {
     views: number
   }[]
 }
-
-// ========== USER ACTIVITY ==========
 export interface UserActivity {
   id: string
   user_id: string
