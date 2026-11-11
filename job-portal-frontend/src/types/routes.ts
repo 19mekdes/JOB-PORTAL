@@ -145,7 +145,6 @@ export const ROUTES = {
   ADMIN_REPORTS: '/admin/reports',
   ADMIN_SETTINGS: '/admin/settings',
 
-  // Super Admin Routes
   SUPER_ADMIN: '/super-admin',
   SUPER_ADMIN_DASHBOARD: '/super-admin/dashboard',
   SUPER_ADMIN_ADMINS: '/super-admin/admins',

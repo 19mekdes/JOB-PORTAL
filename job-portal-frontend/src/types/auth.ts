@@ -41,7 +41,6 @@ export interface UserProfile {
   updated_at: string
 }
 
-// ========== AUTH REQUEST TYPES ==========
 export interface LoginRequest {
   email: string
   password: string
@@ -135,8 +134,6 @@ export interface RefreshTokenResponse {
   success: boolean
   token: string
 }
-
-// ========== PROFILE UPDATE TYPES ==========
 export interface UpdateProfileRequest {
   full_name?: string
   phone?: string
@@ -158,8 +155,6 @@ export interface UpdateProfileResponse {
   data: UserProfile
   message: string
 }
-
-// ========== AUTH VALIDATION TYPES ==========
 export interface ValidationError {
   field: string
   message: string
@@ -176,8 +171,6 @@ export interface AuthValidationErrors {
   current_password?: string
   new_password?: string
 }
-
-// ========== TOKEN TYPES ==========
 export interface JwtPayload {
   id: string
   email: string
@@ -191,8 +184,6 @@ export interface TokenData {
   refreshToken: string
   expiresAt: number
 }
-
-// ========== SESSION TYPES ==========
 export interface SessionData {
   user: User
   token: string
@@ -200,8 +191,6 @@ export interface SessionData {
   expiresAt: number
   rememberMe: boolean
 }
-
-// ========== PERMISSION TYPES ==========
 export interface Permission {
   resource: string
   actions: string[]

@@ -74,7 +74,6 @@ export const JOB_SORT_OPTIONS: JobSortOption[] = [
   { value: 'relevance', label: 'Most Relevant', icon: 'Star' }
 ]
 
-// ========== DATE POSTED OPTIONS ==========
 export interface DatePostedOption {
   value: string
   label: string
@@ -89,7 +88,6 @@ export const DATE_POSTED_OPTIONS: DatePostedOption[] = [
   { value: 'quarter', label: 'Last 90 days', days: 90 }
 ]
 
-// ========== EXPERIENCE LEVEL OPTIONS ==========
 export interface ExperienceLevelOption {
   value: string
   label: string
@@ -129,7 +127,6 @@ export interface BulkJobActionRequest {
   action: 'delete' | 'archive' | 'close' | 'open'
 }
 
-// ========== JOB RESPONSE TYPES ==========
 export interface JobResponse {
   data: Job[]
   pagination: {
@@ -146,7 +143,6 @@ export interface SingleJobResponse {
   related_jobs?: Job[]
 }
 
-// ========== JOB STATISTICS ==========
 export interface JobStatistics {
   total: number
   byStatus: {
@@ -185,7 +181,6 @@ export interface EmployerJobStats {
   }[]
 }
 
-// ========== JOB MATCHING ==========
 export interface JobMatch {
   job: Job
   match_score: number
@@ -238,7 +233,6 @@ export interface CreateSavedSearchRequest {
   filters: JobFilters
 }
 
-// ========== HELPER FUNCTIONS ==========
 export const getJobStatusInfo = (status: JobStatusType): JobStatusInfo => {
   const statusMap: Record<JobStatusType, JobStatusInfo> = {
     Open: {

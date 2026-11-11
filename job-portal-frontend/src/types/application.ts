@@ -101,8 +101,6 @@ export interface ApplicationFilters {
   limit?: number
   sort?: 'recent' | 'oldest' | 'status'
 }
-
-// ========== APPLICATION RESPONSE TYPES ==========
 export interface ApplicationResponse {
   data: Application[]
   statistics?: ApplicationStatistics
@@ -118,7 +116,6 @@ export interface SingleApplicationResponse {
   data: Application
 }
 
-// ========== APPLICATION STATISTICS ==========
 export interface ApplicationStatistics {
   total: number
   byStatus: {
