@@ -332,7 +332,6 @@ export const updateBackupSettings = async (settings: {
   return response.data.data
 }
 
-// ========== DATA CLEANUP ==========
 export const cleanupOldData = async (days: number = 90) => {
   const response = await api.post(`/admin/cleanup?days=${days}`)
   return response.data.data
@@ -352,24 +351,20 @@ const adminService = {
   suspendUser,
   activateUser,
   deleteUser,
-  
-  // Job Management
+
   getJobsForAdmin,
   getJobByIdForAdmin,
   moderateJob,
   deleteJobAsAdmin,
-  
-  // Application Management
+
   getAllApplications,
   getApplicationByIdForAdmin,
   
-  // Industry Management
   getIndustries,
   createIndustry,
   updateIndustry,
   deleteIndustry,
   
-  // Reporting
   generateReport,
   exportUsers,
   exportJobs,

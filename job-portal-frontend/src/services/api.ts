@@ -170,7 +170,6 @@ api.interceptors.response.use(
       }
     }
 
-    // ========== HANDLE 403 FORBIDDEN ==========
     if (error.response?.status === 403) {
       console.error('Access forbidden:', error.response?.data)
       if (!isPublic && window.location.pathname !== '/unauthorized') {

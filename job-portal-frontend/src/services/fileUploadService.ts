@@ -35,7 +35,6 @@ export interface FileValidationRules {
   maxHeight?: number
 }
 
-// ========== FILE VALIDATION ==========
 
 export const validateFileSize = (file: File, maxSizeMB: number = 5): FileValidationResult => {
   const maxSizeBytes = maxSizeMB * 1024 * 1024

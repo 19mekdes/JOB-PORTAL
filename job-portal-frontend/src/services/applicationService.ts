@@ -171,7 +171,7 @@ export const bulkUpdateApplicationStatus = async (ids: string[], status: string)
   return response.data.data
 }
 
-// ========== ADMIN APPLICATION SERVICES ==========
+
 export const getAllApplicationsForAdmin = async (filters: {
   status?: string
   job_id?: string
@@ -192,7 +192,6 @@ export const getApplicationByIdForAdmin = async (id: string): Promise<Applicatio
   return response.data.data
 }
 
-// ========== HELPER FUNCTIONS ==========
 export const getStatusColor = (status: string): string => {
   switch (status) {
     case 'Pending':
@@ -254,7 +253,6 @@ export const calculateSuccessRate = (applications: Application[]): number => {
   return Math.round((accepted / applications.length) * 100)
 }
 
-// Calculate average response time (in days)
 export const calculateAverageResponseTime = (applications: Application[]): number => {
   const withResponseDate = applications.filter(app => 
     app.updated_at && app.applied_at && app.status.status_name !== 'Pending'
