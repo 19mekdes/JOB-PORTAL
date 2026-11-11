@@ -6,7 +6,6 @@ export interface ApiError {
   errors?: Record<string, string[]>
 }
 
-// ========== CONFIGURATION ==========
 const getApiUrl = () => {
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -19,8 +18,7 @@ const getApiUrl = () => {
 const API_URL = getApiUrl();
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000', 10);
 
-console.log('[API] Base URL:', API_URL); // Debug log
-
+console.log('[API] Base URL:', API_URL); 
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   timeout: API_TIMEOUT,
@@ -50,7 +48,6 @@ const isPublicEndpoint = (url: string | undefined): boolean => {
   return PUBLIC_ENDPOINTS.some(endpoint => url.includes(endpoint))
 }
 
-// ========== REQUEST INTERCEPTOR ==========
 
 api.interceptors.request.use(
   (config) => {
@@ -96,8 +93,6 @@ api.interceptors.request.use(
   }
 )
 
-// ========== RESPONSE INTERCEPTOR ==========
-
 api.interceptors.response.use(
   (response: AxiosResponse) => {
 
@@ -115,7 +110,6 @@ api.interceptors.response.use(
       console.error('[API Error]', error.response?.status, error.response?.data, 'Public endpoint:', isPublic)
     }
 
-    // ========== HANDLE 401 UNAUTHORIZED ==========
     if (error.response?.status === 401) {
 
       if (isPublic) {

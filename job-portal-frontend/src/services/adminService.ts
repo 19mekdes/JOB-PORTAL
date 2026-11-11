@@ -177,7 +177,6 @@ export const deleteJobAsAdmin = async (jobId: string): Promise<void> => {
   await api.delete(`/admin/jobs/${jobId}`)
 }
 
-// ========== APPLICATION MANAGEMENT ==========
 export const getAllApplications = async (filters: {
   status?: string
   job_id?: string
@@ -199,7 +198,7 @@ export const getApplicationByIdForAdmin = async (applicationId: string) => {
   return response.data.data
 }
 
-// ========== INDUSTRY MANAGEMENT ==========
+
 export const getIndustries = async (): Promise<Industry[]> => {
   const response = await api.get('/admin/industries')
   return response.data.data
@@ -250,7 +249,7 @@ export const exportJobs = async (format: 'json' | 'csv' = 'json') => {
   return response.data
 }
 
-// ========== SYSTEM SETTINGS ==========
+
 export const getSystemSettings = async () => {
   const response = await api.get('/admin/settings')
   return response.data.data
@@ -267,13 +266,13 @@ export const toggleMaintenanceMode = async (enabled: boolean) => {
   return response.data.data
 }
 
-// ========== SYSTEM HEALTH ==========
+
 export const getSystemHealth = async () => {
   const response = await api.get('/admin/health')
   return response.data.data
 }
 
-// ========== AUDIT LOGS ==========
+
 export const getAuditLogs = async (filters: {
   admin_id?: string
   action?: string
@@ -294,7 +293,6 @@ export const getAuditLogs = async (filters: {
   return response.data
 }
 
-// ========== BACKUP & RESTORE ==========
 export const getBackups = async () => {
   const response = await api.get('/admin/backups')
   return response.data.data
@@ -340,7 +338,7 @@ export const cleanupOldData = async (days: number = 90) => {
   return response.data.data
 }
 
-// ========== SYSTEM STATISTICS ==========
+
 export const getSystemStats = async () => {
   const response = await api.get('/admin/stats/system')
   return response.data.data
