@@ -106,7 +106,6 @@ export interface UpdateJobData extends Partial<CreateJobData> {
   status?: 'Open' | 'Closed' | 'Draft' | 'Archived'
 }
 
-// ========== JOB SEEKER SERVICES ==========
 export const getJobs = async (filters: JobFilters = {}): Promise<JobResponse> => {
   const params = new URLSearchParams()
   if (filters.search) params.append('search', filters.search)
@@ -160,8 +159,6 @@ export const getJobFilters = async (): Promise<{
   const response = await api.get('/jobs/filters/options')
   return response.data.data
 }
-
-// ========== EMPLOYER SERVICES ==========
 export const createJob = async (jobData: CreateJobData): Promise<Job> => {
   const response = await api.post('/jobs', jobData)
   return response.data.data

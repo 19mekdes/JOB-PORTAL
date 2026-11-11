@@ -65,10 +65,10 @@ export const validateImageDimensions = (
   return new Promise((resolve) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
-    
+
     img.onload = () => {
       URL.revokeObjectURL(url)
-      
+
       if (minWidth && img.width < minWidth) {
         resolve({ isValid: false, error: `Image width must be at least ${minWidth}px` })
         return
@@ -85,15 +85,15 @@ export const validateImageDimensions = (
         resolve({ isValid: false, error: `Image height must be less than ${maxHeight}px` })
         return
       }
-      
+
       resolve({ isValid: true })
     }
-    
+
     img.onerror = () => {
       URL.revokeObjectURL(url)
       resolve({ isValid: false, error: 'Unable to validate image dimensions' })
     }
-    
+
     img.src = url
   })
 }
@@ -105,12 +105,12 @@ export const validateFile = async (
     const sizeValidation = validateFileSize(file, rules.maxSizeMB)
     if (!sizeValidation.isValid) return sizeValidation
   }
-  
+
   if (rules.allowedTypes && rules.allowedTypes.length > 0) {
     const typeValidation = validateFileType(file, rules.allowedTypes)
     if (!typeValidation.isValid) return typeValidation
   }
-  
+
   if (file.type.startsWith('image/') && (rules.minWidth || rules.maxWidth || rules.minHeight || rules.maxHeight)) {
     const dimensionValidation = await validateImageDimensions(
       file,
@@ -121,11 +121,10 @@ export const validateFile = async (
     )
     if (!dimensionValidation.isValid) return dimensionValidation
   }
-  
+
   return { isValid: true }
 }
 
-// ========== SINGLE FILE UPLOAD ==========
 export const uploadResume = async (
   file: File,
   options?: UploadOptions
@@ -134,14 +133,14 @@ export const uploadResume = async (
     maxSizeMB: 5,
     allowedTypes: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']
   })
-  
+
   if (!validation.isValid) {
     throw new Error(validation.error)
   }
-  
+
   const formData = new FormData()
   formData.append('resume', file)
-  
+
   const response = await api.post('/upload/resume', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -153,7 +152,7 @@ export const uploadResume = async (
       }
     },
   })
-  
+
   options?.onSuccess?.(response.data)
   return response.data.data
 }
@@ -170,14 +169,14 @@ export const uploadCompanyLogo = async (
     minHeight: 100,
     maxHeight: 500
   })
-  
+
   if (!validation.isValid) {
     throw new Error(validation.error)
   }
-  
+
   const formData = new FormData()
   formData.append('logo', file)
-  
+
   const response = await api.post('/upload/logo', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -189,7 +188,7 @@ export const uploadCompanyLogo = async (
       }
     },
   })
-  
+
   options?.onSuccess?.(response.data)
   return response.data.data
 }
@@ -207,14 +206,14 @@ export const uploadProfilePicture = async (
     minHeight: 200,
     maxHeight: 1000
   })
-  
+
   if (!validation.isValid) {
     throw new Error(validation.error)
   }
-  
+
   const formData = new FormData()
   formData.append('avatar', file)
-  
+
   const response = await api.post('/upload/avatar', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -226,7 +225,7 @@ export const uploadProfilePicture = async (
       }
     },
   })
-  
+
   options?.onSuccess?.(response.data)
   return response.data.data
 }
@@ -243,14 +242,14 @@ export const uploadCoverImage = async (
     minHeight: 300,
     maxHeight: 1000
   })
-  
+
   if (!validation.isValid) {
     throw new Error(validation.error)
   }
-  
+
   const formData = new FormData()
   formData.append('cover', file)
-  
+
   const response = await api.post('/upload/cover', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -262,7 +261,7 @@ export const uploadCoverImage = async (
       }
     },
   })
-  
+
   options?.onSuccess?.(response.data)
   return response.data.data
 }
@@ -285,15 +284,15 @@ export const uploadJobAttachment = async (
       'image/png'
     ]
   })
-  
+
   if (!validation.isValid) {
     throw new Error(validation.error)
   }
-  
+
   const formData = new FormData()
   formData.append('attachment', file)
   formData.append('job_id', jobId)
-  
+
   const response = await api.post('/upload/job-attachment', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -305,7 +304,7 @@ export const uploadJobAttachment = async (
       }
     },
   })
-  
+
   options?.onSuccess?.(response.data)
   return response.data.data
 }
@@ -321,7 +320,7 @@ export const uploadMultipleFiles = async (
   files.forEach((file, index) => {
     formData.append(`files[${index}]`, file)
   })
-  
+
   const response = await api.post(endpoint, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -333,7 +332,7 @@ export const uploadMultipleFiles = async (
       }
     },
   })
-  
+
   options?.onSuccess?.(response.data)
   return response.data.data
 }
@@ -348,7 +347,7 @@ export const uploadMultipleJobAttachments = async (
     formData.append(`attachments[${index}]`, file)
   })
   formData.append('job_id', jobId)
-  
+
   const response = await api.post('/upload/job-attachments', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -360,7 +359,7 @@ export const uploadMultipleJobAttachments = async (
       }
     },
   })
-  
+
   options?.onSuccess?.(response.data)
   return response.data.data
 }
@@ -427,7 +426,7 @@ const fileUploadService = {
   uploadJobAttachment,
   uploadMultipleFiles,
   uploadMultipleJobAttachments,
-  
+
   deleteFile,
   getFileInfo,
 
@@ -435,7 +434,7 @@ const fileUploadService = {
   validateFileSize,
   validateFileType,
   validateImageDimensions,
-  
+
   formatFileSize,
   getFileExtension,
   getFileIcon,
