@@ -96,7 +96,6 @@ export interface UserProfile {
   updated_at: string
 }
 
-// ========== JOB TYPES ==========
 export interface Job {
   id: string
   title: string
@@ -170,8 +169,6 @@ export interface JobFilters {
   limit?: number
   sort?: 'recent' | 'oldest' | 'salary_high' | 'salary_low' | 'relevance'
 }
-
-// ========== APPLICATION TYPES ==========
 export interface Application {
   id: string
   job_id: string
@@ -340,8 +337,6 @@ export interface NotificationFilters {
   page?: number
   limit?: number
 }
-
-// ========== BOOKMARK TYPES ==========
 export interface BookmarkedJob {
   id: number
   job: Job
@@ -353,8 +348,6 @@ export interface BookmarkFilters {
   limit?: number
   sort?: 'recent' | 'oldest' | 'title' | 'company'
 }
-
-// ========== ADMIN TYPES ==========
 export interface AdminUser {
   id: string
   email: string
@@ -414,7 +407,6 @@ export interface SystemSettings {
   max_file_size_mb: number
 }
 
-// ========== INDUSTRY TYPES ==========
 export interface Industry {
   id: number
   industry_name: string
@@ -442,7 +434,6 @@ export interface MultipleUploadResponse {
   failed: number
 }
 
-// ========== DASHBOARD TYPES ==========
 export interface DashboardStats {
   users: {
     total: number
@@ -473,8 +464,6 @@ export interface DashboardStats {
     usersLast30Days: number
   }
 }
-
-// ========== REPORT TYPES ==========
 export interface ReportFilters {
   type: 'users' | 'jobs' | 'applications' | 'analytics'
   format: 'pdf' | 'csv' | 'excel'
@@ -486,7 +475,6 @@ export interface ReportFilters {
   includeTables?: boolean
 }
 
-// ========== SEARCH TYPES ==========
 export interface SearchFilters {
   keyword: string
   location: string

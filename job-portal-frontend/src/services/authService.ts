@@ -76,8 +76,6 @@ export interface UserProfile {
     logo_url?: string
   }
 }
-
-// ========== AUTH SERVICE ==========
 export const register = async (data: RegisterData): Promise<AuthResponse> => {
   const response = await api.post('/auth/register', data)
   return response.data
@@ -154,7 +152,7 @@ export const refreshToken = async (refreshToken: string): Promise<{ token: strin
   return response.data
 }
 
-// ========== HELPER FUNCTIONS ==========
+
 export const storeUserData = (user: any, token: string, refreshToken?: string): void => {
   const userData = {
     ...user,

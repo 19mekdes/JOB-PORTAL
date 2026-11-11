@@ -39,8 +39,6 @@ export interface BookmarkResponse {
     pages: number
   }
 }
-
-// ========== BOOKMARK SERVICES ==========
 export const getBookmarks = async (filters: BookmarkFilters = {}): Promise<BookmarkResponse> => {
   const params = new URLSearchParams()
   if (filters.page) params.append('page', filters.page.toString())

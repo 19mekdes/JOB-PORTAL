@@ -18,7 +18,6 @@ export interface ApplicationStatusInfo {
   order: number
 }
 
-// ========== APPLICATION NOTE ==========
 export interface ApplicationNote {
   id: number
   application_id: string
@@ -67,7 +66,6 @@ export interface Application {
   notes?: ApplicationNote[]
 }
 
-// ========== APPLICATION REQUEST TYPES ==========
 export interface CreateApplicationRequest {
   job_id: string
   cover_letter: string
@@ -134,7 +132,6 @@ export interface ApplicationStatistics {
   offerRate: number
 }
 
-// ========== APPLICATION TIMELINE ==========
 export interface ApplicationTimelineEvent {
   id: string
   application_id: string
@@ -203,7 +200,6 @@ export interface ApplicationExportData {
   resume_url: string | null
 }
 
-// ========== HELPER TYPES ==========
 export interface ApplicationStatusCount {
   status: ApplicationStatus
   count: number
@@ -219,7 +215,6 @@ export interface ApplicationActivity {
   rejections: number
 }
 
-// ========== CONSTANTS ==========
 export const APPLICATION_STATUSES: Record<ApplicationStatus, ApplicationStatusInfo> = {
   Pending: {
     id: 1,
@@ -271,7 +266,6 @@ export const APPLICATION_STATUSES: Record<ApplicationStatus, ApplicationStatusIn
   }
 }
 
-// ========== HELPER FUNCTIONS ==========
 export const getStatusInfo = (status: ApplicationStatus): ApplicationStatusInfo => {
   return APPLICATION_STATUSES[status]
 }
