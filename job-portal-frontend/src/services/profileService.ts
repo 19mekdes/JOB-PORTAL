@@ -184,7 +184,6 @@ export const getProfileCompletion = async (): Promise<{
   return response.data.data
 }
 
-// ========== HELPER FUNCTIONS ==========
 export const calculateCompletionPercentage = (profile: SeekerProfile | EmployerProfile, userType: string): number => {
   if (userType === 'Job Seeker') {
     const seekerProfile = profile as SeekerProfile

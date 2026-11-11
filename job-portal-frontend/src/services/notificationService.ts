@@ -59,7 +59,6 @@ export interface NotificationResponse {
   }
 }
 
-// ========== NOTIFICATION SERVICES ==========
 export const getNotifications = async (filters: NotificationFilters = {}): Promise<NotificationResponse> => {
   const params = new URLSearchParams()
   if (filters.type) params.append('type', filters.type)
@@ -118,8 +117,6 @@ export const sendTestNotification = async (): Promise<Notification> => {
   const response = await api.post('/notifications/test/send')
   return response.data.data
 }
-
-// ========== HELPER FUNCTIONS ==========
 export const getNotificationIcon = (type: string): string => {
   switch (type) {
     case 'application_submitted':
@@ -276,7 +273,7 @@ export const getNotificationNavigationPath = (notification: Notification): strin
 }
 
 const notificationService = {
-  // API methods
+
   getNotifications,
   getUnreadCount,
   getNotificationById,

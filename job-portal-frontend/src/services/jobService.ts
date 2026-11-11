@@ -214,7 +214,6 @@ export const duplicateJob = async (id: string): Promise<Job> => {
   return response.data.data
 }
 
-// ========== ADMIN SERVICES ==========
 export const getAllJobsForAdmin = async (filters: {
   search?: string
   status?: string
@@ -238,7 +237,6 @@ export const moderateJob = async (jobId: string, status: string, moderationNote?
   return response.data.data
 }
 
-// ========== HELPER FUNCTIONS ==========
 export const formatSalaryRange = (min: number | null, max: number | null): string => {
   if (min && max) {
     return `$${min.toLocaleString()} - $${max.toLocaleString()}`
@@ -313,7 +311,7 @@ export const getUniqueJobTypes = (jobs: Job[]): string[] => {
 }
 
 const jobService = {
-  // Job Seeker
+
   getJobs,
   getJobById,
   searchJobs,
@@ -322,7 +320,6 @@ const jobService = {
   getRecommendedJobs,
   getJobFilters,
   
-  // Employer
   createJob,
   updateJob,
   deleteJob,
@@ -333,7 +330,6 @@ const jobService = {
   archiveJob,
   duplicateJob,
   
-  // Admin
   getAllJobsForAdmin,
   moderateJob,
   formatSalaryRange,
