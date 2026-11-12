@@ -40,48 +40,25 @@ export interface LoadingState {
 }
 
 interface UIState {
-  // Theme
-  theme: ThemeMode
 
-  // Sidebar
+  theme: ThemeMode
   sidebarOpen: boolean
   sidebarCollapsed: boolean
-
-  // Loading states
   loading: LoadingState
-
-  // Notifications
   toasts: Toast[]
-
-  // Modals
   modals: Modal[]
-
-  // Drawers
   drawer: DrawerConfig
-
-  // Mobile menu
   mobileMenuOpen: boolean
-
-  // Search
   searchOpen: boolean
   searchQuery: string
-
-  // Filters
   filtersOpen: boolean
   filtersApplied: number
-
-  // Page specific
   currentPage: string
   previousPage: string | null
-
-  // Scroll position
   scrollPosition: Record<string, number>
-
-  // Errors
   globalError: string | null
 }
 
-// ========== INITIAL STATE ==========
 const initialState: UIState = {
   theme: 'light',
   sidebarOpen: true,
@@ -109,7 +86,6 @@ const initialState: UIState = {
   globalError: null
 }
 
-// ========== HELPER FUNCTIONS ==========
 const generateId = () => Math.random().toString(36).substring(2, 11)
 
 
@@ -206,7 +182,7 @@ const uiSlice = createSlice({
       state.toasts = []
     },
 
-    // Modals
+  
     showModal: (state, action: PayloadAction<Omit<Modal, 'id'>>) => {
       const id = generateId()
       state.modals.push({ ...action.payload, id })
@@ -221,7 +197,6 @@ const uiSlice = createSlice({
       state.modals = []
     },
 
-    // Drawer
     openDrawer: (state, action: PayloadAction<Partial<DrawerConfig>>) => {
       state.drawer = {
         ...state.drawer,
@@ -241,7 +216,6 @@ const uiSlice = createSlice({
       }
     },
 
-    // Mobile menu
     openMobileMenu: (state) => {
       state.mobileMenuOpen = true
     },
@@ -291,7 +265,6 @@ const uiSlice = createSlice({
       state.filtersApplied = 0
     },
 
-    // Page navigation
     setCurrentPage: (state, action: PayloadAction<string>) => {
       state.previousPage = state.currentPage
       state.currentPage = action.payload
@@ -332,47 +305,32 @@ export const {
   setTheme,
   toggleTheme,
 
-  // Sidebar
   toggleSidebar,
   setSidebarOpen,
   toggleSidebarCollapsed,
   setSidebarCollapsed,
-
-  // Loading
   setGlobalLoading,
   setPageLoading,
   setActionLoading,
   clearAllLoading,
-
-  // Toasts
   addToast,
   removeToast,
   clearToasts,
-
-  // Modals
   showModal,
   hideModal,
   hideTopModal,
   clearModals,
-
-  // Drawer
   openDrawer,
   closeDrawer,
   setDrawerContent,
-
-  // Mobile menu
   openMobileMenu,
   closeMobileMenu,
   toggleMobileMenu,
-
-  // Search
   openSearch,
   closeSearch,
   toggleSearch,
   setSearchQuery,
   clearSearchQuery,
-
-  // Filters
   openFilters,
   closeFilters,
   toggleFilters,
@@ -380,21 +338,13 @@ export const {
   incrementFiltersApplied,
   decrementFiltersApplied,
   resetFiltersApplied,
-
-  // Page navigation
   setCurrentPage,
   setPreviousPage,
-
-  // Scroll position
   saveScrollPosition,
   clearScrollPosition,
   clearAllScrollPositions,
-
-  // Global error
   setGlobalError,
   clearGlobalError,
-
-  // Reset
   resetUI
 } = uiSlice.actions
 
