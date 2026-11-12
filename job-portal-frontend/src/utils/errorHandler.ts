@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AxiosError } from 'axios'
 import { toast } from '@/hooks/use-toast'
-
-// ========== TYPES ==========
 export interface AppError {
   message: string
   status: number
@@ -13,9 +11,9 @@ export interface AppError {
 
 export type ErrorSeverity = 'info' | 'warning' | 'error' | 'critical'
 
-// ========== ERROR CODES ==========
+
 export const ERROR_CODES = {
-  // Auth Errors
+ 
   UNAUTHORIZED: 'UNAUTHORIZED',
   FORBIDDEN: 'FORBIDDEN',
   TOKEN_EXPIRED: 'TOKEN_EXPIRED',
@@ -159,8 +157,6 @@ export const getValidationErrors = (error: any): Record<string, string[]> => {
 export const hasValidationErrors = (error: any): boolean => {
   return getErrorCode(error) === ERROR_CODES.VALIDATION_ERROR
 }
-
-// ========== TOAST NOTIFICATION ==========
 export const showErrorToast = (error: any, customMessage?: string): void => {
   const message = customMessage || getErrorMessage(error)
   const severity = getErrorSeverity(error)
@@ -204,7 +200,6 @@ export const logError = (error: any, context?: string): void => {
   
   console.error(`[${severity.toUpperCase()}] ${context ? `${context} - ` : ''}${errorCode}: ${errorMessage}`, error)
   
-  // Send to logging service in production
   if (import.meta.env.PROD) {
     // sendToLoggingService({
     //   code: errorCode,

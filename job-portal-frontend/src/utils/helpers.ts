@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// ========== STRING HELPERS ==========
+
 
 /**
  * Generate a random string ID
