@@ -153,7 +153,7 @@ const authSlice = createSlice({
       state.isSuccess = false
       state.message = ''
     },
-    
+
     clearSuccess: (state) => {
       state.isSuccess = false
       state.message = ''
@@ -161,7 +161,7 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Login
+
       .addCase(login.pending, (state) => {
         state.isLoading = true
         state.isError = false
@@ -178,7 +178,7 @@ const authSlice = createSlice({
         state.message = action.payload as string
         state.user = null
       })
-     
+
       .addCase(register.pending, (state) => {
         state.isLoading = true
         state.isError = false
@@ -188,7 +188,7 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false
         state.isSuccess = true
-        
+
         state.message = action.payload.message || 'Registration successful!'
       })
       .addCase(register.rejected, (state, action) => {
@@ -197,14 +197,14 @@ const authSlice = createSlice({
         state.message = action.payload as string
         state.user = null
       })
-      // Logout
+
       .addCase(logout.fulfilled, (state) => {
         state.user = null
         state.isSuccess = false
         state.isError = false
         state.message = ''
       })
-      // Get Me
+
       .addCase(getMe.fulfilled, (state, action) => {
         state.user = action.payload
       })

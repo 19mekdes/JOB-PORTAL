@@ -42,7 +42,6 @@ interface BookmarkState {
   filters: BookmarkFilters
 }
 
-// ========== INITIAL STATE ==========
 const initialState: BookmarkState = {
   bookmarks: [],
   isLoading: false,
@@ -56,9 +55,6 @@ const initialState: BookmarkState = {
     sort: 'recent'
   }
 }
-
-// ========== ASYNC THUNKS ==========
-
 
 export const fetchBookmarks = createAsyncThunk(
   'bookmarks/fetchBookmarks',
@@ -123,8 +119,6 @@ export const bulkRemoveBookmarks = createAsyncThunk(
     return jobIds
   }
 )
-
-// ========== SLICE ==========
 const bookmarkSlice = createSlice({
   name: 'bookmarks',
   initialState,

@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import api from '../../services/api'
-
 export interface Notification {
   id: number
   title: string
@@ -174,8 +173,6 @@ export const sendTestNotification = createAsyncThunk(
     return response.data.data
   }
 )
-
-// ========== SLICE ==========
 const notificationSlice = createSlice({
   name: 'notifications',
   initialState,
