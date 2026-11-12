@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk, } from '@reduxjs/toolkit'
 import api from '../../services/api'
-
 export interface User {
   id: string
   email: string
@@ -438,7 +437,7 @@ const adminSlice = createSlice({
         state.error = action.error.message || 'Failed to fetch job details'
       })
       
-      // Moderate Job
+    
       .addCase(moderateJob.fulfilled, (state, action) => {
         const index = state.jobs.findIndex(job => job.id === action.payload.id)
         if (index !== -1) {

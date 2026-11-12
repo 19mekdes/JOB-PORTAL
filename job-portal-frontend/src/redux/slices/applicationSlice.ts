@@ -81,8 +81,6 @@ interface ApplicationState {
   totalItems: number
   filters: ApplicationFilters
 }
-
-// ========== INITIAL STATE ==========
 const initialState: ApplicationState = {
   applications: [],
   currentApplication: null,
@@ -100,7 +98,6 @@ const initialState: ApplicationState = {
   }
 }
 
-// Fetch all applications for job seeker
 export const fetchMyApplications = createAsyncThunk(
   'applications/fetchMyApplications',
   async (filters: ApplicationFilters = {}) => {
@@ -115,7 +112,6 @@ export const fetchMyApplications = createAsyncThunk(
   }
 )
 
-// Fetch single application by ID
 export const fetchApplicationById = createAsyncThunk(
   'applications/fetchApplicationById',
   async (id: string) => {
@@ -124,7 +120,6 @@ export const fetchApplicationById = createAsyncThunk(
   }
 )
 
-// Apply for a job
 export const applyForJob = createAsyncThunk(
   'applications/applyForJob',
   async ({ jobId, coverLetter, resumeUrl }: { jobId: string; coverLetter: string; resumeUrl: string }) => {
@@ -137,7 +132,6 @@ export const applyForJob = createAsyncThunk(
   }
 )
 
-// Update application status (Employer)
 export const updateApplicationStatus = createAsyncThunk(
   'applications/updateApplicationStatus',
   async ({ id, status, feedback }: { id: string; status: string; feedback?: string }) => {
@@ -146,7 +140,6 @@ export const updateApplicationStatus = createAsyncThunk(
   }
 )
 
-// Add note to application (Employer)
 export const addApplicationNote = createAsyncThunk(
   'applications/addApplicationNote',
   async ({ id, note }: { id: string; note: string }) => {
@@ -155,7 +148,6 @@ export const addApplicationNote = createAsyncThunk(
   }
 )
 
-// Withdraw application (Job Seeker)
 export const withdrawApplication = createAsyncThunk(
   'applications/withdrawApplication',
   async (id: string) => {
@@ -164,7 +156,6 @@ export const withdrawApplication = createAsyncThunk(
   }
 )
 
-// Get applications for a specific job (Employer)
 export const fetchJobApplications = createAsyncThunk(
   'applications/fetchJobApplications',
   async ({ jobId, filters }: { jobId: string; filters?: ApplicationFilters }) => {
@@ -179,7 +170,6 @@ export const fetchJobApplications = createAsyncThunk(
   }
 )
 
-// Export applications to CSV
 export const exportApplications = createAsyncThunk(
   'applications/exportApplications',
   async (jobId?: string) => {
@@ -189,7 +179,6 @@ export const exportApplications = createAsyncThunk(
   }
 )
 
-// ========== SLICE ==========
 const applicationSlice = createSlice({
   name: 'applications',
   initialState,
@@ -227,7 +216,7 @@ const applicationSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch My Applications
+      
       .addCase(fetchMyApplications.pending, (state) => {
         state.isLoading = true
         state.error = null
@@ -244,8 +233,7 @@ const applicationSlice = createSlice({
         state.isLoading = false
         state.error = action.error.message || 'Failed to fetch applications'
       })
-      
-      // Fetch Application By ID
+    
       .addCase(fetchApplicationById.pending, (state) => {
         state.isLoading = true
         state.error = null
@@ -258,8 +246,7 @@ const applicationSlice = createSlice({
         state.isLoading = false
         state.error = action.error.message || 'Failed to fetch application details'
       })
-      
-      // Apply For Job
+  
       .addCase(applyForJob.pending, (state) => {
         state.isLoading = true
         state.error = null
@@ -274,7 +261,7 @@ const applicationSlice = createSlice({
         state.error = action.error.message || 'Failed to submit application'
       })
       
-      // Update Application Status
+      
       .addCase(updateApplicationStatus.fulfilled, (state, action) => {
         const index = state.applications.findIndex(app => app.id === action.payload.id)
         if (index !== -1) {
@@ -283,13 +270,13 @@ const applicationSlice = createSlice({
         if (state.currentApplication?.id === action.payload.id) {
           state.currentApplication = action.payload
         }
-        // Update stats if needed
+        
         if (state.stats) {
           // Refresh stats or update locally
         }
       })
       
-      // Add Application Note
+     
       .addCase(addApplicationNote.fulfilled, (state, action) => {
         if (state.currentApplication) {
           if (!state.currentApplication.notes) {
@@ -307,8 +294,7 @@ const applicationSlice = createSlice({
         }
         state.totalItems -= 1
       })
-      
-      // Fetch Job Applications (Employer)
+    
       .addCase(fetchJobApplications.pending, (state) => {
         state.isLoading = true
         state.error = null
