@@ -119,7 +119,6 @@ interface AdminState {
   }
 }
 
-// ========== INITIAL STATE ==========
 const initialState: AdminState = {
   users: [],
   jobs: [],
@@ -140,8 +139,6 @@ const initialState: AdminState = {
   }
 }
 
-// ========== ASYNC THUNKS ==========
-
 export const fetchDashboardStats = createAsyncThunk(
   'admin/fetchDashboardStats',
   async () => {
@@ -150,7 +147,6 @@ export const fetchDashboardStats = createAsyncThunk(
   }
 )
 
-// User Management
 export const fetchUsers = createAsyncThunk(
   'admin/fetchUsers',
   async (params: {
@@ -250,7 +246,7 @@ export const deleteJobAsAdmin = createAsyncThunk(
   }
 )
 
-// Industry Management
+
 export const fetchIndustries = createAsyncThunk(
   'admin/fetchIndustries',
   async () => {
@@ -283,7 +279,6 @@ export const deleteIndustry = createAsyncThunk(
   }
 )
 
-// ========== SLICE ==========
 const adminSlice = createSlice({
   name: 'admin',
   initialState,
@@ -344,7 +339,7 @@ const adminSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Dashboard Stats
+    
       .addCase(fetchDashboardStats.pending, (state) => {
         state.isLoading = true
         state.error = null
@@ -358,7 +353,7 @@ const adminSlice = createSlice({
         state.error = action.error.message || 'Failed to fetch dashboard stats'
       })
       
-      // Fetch Users
+  
       .addCase(fetchUsers.pending, (state) => {
         state.isLoading = true
         state.error = null
@@ -387,8 +382,7 @@ const adminSlice = createSlice({
         state.isLoading = false
         state.error = action.error.message || 'Failed to fetch user details'
       })
-      
-      // Suspend User
+    
       .addCase(suspendUser.fulfilled, (state, action) => {
         const index = state.users.findIndex(user => user.id === action.payload.id)
         if (index !== -1) {
@@ -398,8 +392,7 @@ const adminSlice = createSlice({
           state.selectedUser = action.payload
         }
       })
-      
-      // Activate User
+    
       .addCase(activateUser.fulfilled, (state, action) => {
         const index = state.users.findIndex(user => user.id === action.payload.id)
         if (index !== -1) {
@@ -409,8 +402,7 @@ const adminSlice = createSlice({
           state.selectedUser = action.payload
         }
       })
-      
-      // Delete User
+    
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.users = state.users.filter(user => user.id !== action.payload)
         if (state.selectedUser?.id === action.payload) {
@@ -418,7 +410,6 @@ const adminSlice = createSlice({
         }
       })
       
-      // Fetch Jobs
       .addCase(fetchJobsForAdmin.pending, (state) => {
         state.isLoading = true
         state.error = null
@@ -433,8 +424,7 @@ const adminSlice = createSlice({
         state.isLoading = false
         state.error = action.error.message || 'Failed to fetch jobs'
       })
-      
-      // Get Job By ID
+   
       .addCase(getJobByIdForAdmin.pending, (state) => {
         state.isLoading = true
         state.error = null
@@ -458,8 +448,7 @@ const adminSlice = createSlice({
           state.selectedJob = action.payload
         }
       })
-      
-      // Delete Job
+   
       .addCase(deleteJobAsAdmin.fulfilled, (state, action) => {
         state.jobs = state.jobs.filter(job => job.id !== action.payload)
         if (state.selectedJob?.id === action.payload) {
@@ -467,7 +456,6 @@ const adminSlice = createSlice({
         }
       })
       
-      // Fetch Industries
       .addCase(fetchIndustries.pending, (state) => {
         state.isLoading = true
         state.error = null
@@ -480,21 +468,18 @@ const adminSlice = createSlice({
         state.isLoading = false
         state.error = action.error.message || 'Failed to fetch industries'
       })
-      
-      // Create Industry
+  
       .addCase(createIndustry.fulfilled, (state, action) => {
         state.industries.push(action.payload)
       })
-      
-      // Update Industry
+     
       .addCase(updateIndustry.fulfilled, (state, action) => {
         const index = state.industries.findIndex(industry => industry.id === action.payload.id)
         if (index !== -1) {
           state.industries[index] = action.payload
         }
       })
-      
-      // Delete Industry
+    
       .addCase(deleteIndustry.fulfilled, (state, action) => {
         state.industries = state.industries.filter(industry => industry.id !== action.payload)
       })
