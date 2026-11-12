@@ -1,14 +1,11 @@
-// ========== APP CONFIGURATION ==========
 export const APP_NAME = 'JobPortal'
 export const APP_VERSION = '1.0.0'
 export const APP_DESCRIPTION = 'Connect job seekers with employers'
 
-// ========== API CONFIGURATION ==========
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 export const API_TIMEOUT = 30000
 export const REFRESH_TOKEN_URL = '/auth/refresh-token'
 
-// ========== STORAGE KEYS ==========
 export const STORAGE_KEYS = {
   USER: 'user',
   TOKEN: 'token',
@@ -143,13 +140,10 @@ export const DATE_FORMATS = {
   MONTH_YEAR: 'MMM yyyy',
   YEAR: 'yyyy'
 } as const
-
-// ========== SALARY CONSTANTS ==========
 export const MIN_SALARY = 0
 export const MAX_SALARY = 200000
 export const SALARY_STEP = 10000
 
-// ========== EXPERIENCE LEVELS ==========
 export const EXPERIENCE_LEVELS = {
   ENTRY: 'entry',
   MID: 'mid',
@@ -167,8 +161,6 @@ export const EXPERIENCE_YEARS: Record<ExperienceLevel, { min: number; max: numbe
   [EXPERIENCE_LEVELS.LEAD]: { min: 10, max: null },
   [EXPERIENCE_LEVELS.EXECUTIVE]: { min: 15, max: null }
 }
-
-// ========== DATE RANGES ==========
 export const DATE_RANGES = {
   TODAY: 'today',
   WEEK: 'week',
@@ -188,8 +180,6 @@ export const DATE_RANGE_DAYS: Record<DateRange, number | null> = {
   [DATE_RANGES.YEAR]: 365,
   [DATE_RANGES.ALL]: null
 }
-
-// ========== SORT OPTIONS ==========
 export const SORT_OPTIONS = {
   RECENT: 'recent',
   OLDEST: 'oldest',
@@ -200,7 +190,6 @@ export const SORT_OPTIONS = {
 
 export type SortOption = typeof SORT_OPTIONS[keyof typeof SORT_OPTIONS]
 
-// ========== THEME ==========
 export const THEMES = {
   LIGHT: 'light',
   DARK: 'dark',
@@ -209,7 +198,7 @@ export const THEMES = {
 
 export type Theme = typeof THEMES[keyof typeof THEMES]
 
-// ========== LANGUAGE ==========
+
 export const LANGUAGES = {
   EN: 'en',
   ES: 'es',
@@ -231,9 +220,8 @@ export const REGEX = {
   ZIP_CODE: /^\d{5}(-\d{4})?$/
 } as const
 
-// ========== ERROR MESSAGES ==========
 export const ERROR_MESSAGES = {
-  // Auth Errors
+ 
   INVALID_EMAIL: 'Please enter a valid email address',
   INVALID_PASSWORD: 'Password must be at least 8 characters with at least one letter, one number, and one special character',
   PASSWORDS_DO_NOT_MATCH: 'Passwords do not match',
@@ -242,25 +230,22 @@ export const ERROR_MESSAGES = {
   ACCOUNT_SUSPENDED: 'Your account has been suspended. Please contact support',
   UNAUTHORIZED: 'You are not authorized to perform this action',
   SESSION_EXPIRED: 'Your session has expired. Please login again',
-  
-  // Job Errors
   JOB_NOT_FOUND: 'Job not found',
   JOB_EXPIRED: 'This job posting has expired',
   ALREADY_APPLIED: 'You have already applied for this position',
   
-  // File Upload Errors
   FILE_TOO_LARGE: 'File size exceeds the maximum limit',
   INVALID_FILE_TYPE: 'File type is not allowed',
   UPLOAD_FAILED: 'Failed to upload file. Please try again',
   
-  // General Errors
+ 
   NETWORK_ERROR: 'Network error. Please check your connection',
   SERVER_ERROR: 'Server error. Please try again later',
   SOMETHING_WRONG: 'Something went wrong. Please try again',
   REQUIRED_FIELD: 'This field is required'
 } as const
 
-// ========== SUCCESS MESSAGES ==========
+
 export const SUCCESS_MESSAGES = {
   LOGIN_SUCCESS: 'Login successful! Redirecting...',
   REGISTER_SUCCESS: 'Registration successful! Please check your email to verify your account',
@@ -280,7 +265,6 @@ export const SUCCESS_MESSAGES = {
   BOOKMARK_REMOVED: 'Job removed from saved'
 } as const
 
-// ========== LOCAL STORAGE DEFAULTS ==========
 export const DEFAULT_SETTINGS = {
   theme: THEMES.LIGHT,
   language: LANGUAGES.EN,
@@ -289,21 +273,18 @@ export const DEFAULT_SETTINGS = {
   pushNotifications: true
 } as const
 
-// ========== ANIMATION DURATIONS ==========
 export const ANIMATION_DURATIONS = {
   FAST: 200,
   NORMAL: 300,
   SLOW: 500
 } as const
 
-// ========== DEBOUNCE DELAYS ==========
 export const DEBOUNCE_DELAYS = {
   SEARCH: 300,
   TYPE: 500,
   SAVE: 1000
 } as const
 
-// ========== TOAST DURATIONS ==========
 export const TOAST_DURATIONS = {
   SHORT: 3000,
   NORMAL: 5000,
