@@ -107,7 +107,6 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     if (user) {
       fetchNotifications()
       fetchUnreadCount()
-      // Poll for new notifications every 30 seconds
       intervalRef.current = setInterval(fetchUnreadCount, 30000)
     }
     return () => {
@@ -119,9 +118,9 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     setIsLoading(true)
     try {
       const response = await api.get('/notifications?limit=20')
-      // FIXED: API response structure
+  
       const data = response.data.data
-      // Check if data is an array or has notifications property
+      
       if (Array.isArray(data)) {
         setNotifications(data)
       } else if (data?.notifications) {
@@ -184,8 +183,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     if (!notification.is_read) {
       await markAsRead(notification.id)
     }
-    
-    // Handle navigation based on notification type
+
     if (notification.metadata?.job_id) {
       navigate(`/jobs/${notification.metadata.job_id}`)
     } else if (notification.metadata?.application_id) {

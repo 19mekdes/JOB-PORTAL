@@ -103,7 +103,6 @@ const CardFooter = React.forwardRef<
 ))
 CardFooter.displayName = "CardFooter"
 
-// Card with image
 interface CardImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   position?: "top" | "bottom"
 }

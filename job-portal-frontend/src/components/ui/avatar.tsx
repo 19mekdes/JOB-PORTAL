@@ -91,7 +91,6 @@ const AvatarFallback = React.forwardRef<
 ))
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
 
-// Group Avatar for multiple users
 interface AvatarGroupProps {
   children: React.ReactNode
   max?: number
