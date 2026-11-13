@@ -149,8 +149,6 @@ const JobModeration: React.FC = () => {
       } else if (response.data && Array.isArray(response.data)) {
         jobsData = response.data
       }
-
-      // Filter out invalid/corrupt jobs
       const validJobs = jobsData.filter((job: { id: any; title: string }) => {
         return job &&
           job.id &&
@@ -191,7 +189,6 @@ const JobModeration: React.FC = () => {
     }
   }
 
-  // ========== CORRECTED: Approve Job ==========
   const handleApprove = async () => {
     if (!selectedJob) return
 
@@ -217,7 +214,6 @@ const JobModeration: React.FC = () => {
     }
   }
 
-  // ========== CORRECTED: Reject Job ==========
   const handleReject = async () => {
     if (!selectedJob) return
 

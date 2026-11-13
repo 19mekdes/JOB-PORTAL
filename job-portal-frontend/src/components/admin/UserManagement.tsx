@@ -265,7 +265,6 @@ const UserManagement: React.FC = () => {
     return `You don't have permission to ${action.toLowerCase()} users.`
   }
 
-  // ========== API CALLS ==========
   const handleSuspend = async () => {
     if (!selectedUser) return
 
