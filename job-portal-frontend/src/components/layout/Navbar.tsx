@@ -98,7 +98,6 @@ const Navbar: React.FC = () => {
     }
   };
 
-  // Get role icon
   const getRoleIcon = () => {
     if (!user) return null;
     switch (user.user_type) {

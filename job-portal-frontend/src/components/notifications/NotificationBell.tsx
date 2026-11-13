@@ -75,13 +75,13 @@ const getNotificationIcon = (type: string) => {
 const getTimeAgo = (date: string) => {
   const now = new Date()
   const diff = now.getTime() - new Date(date).getTime()
-  
+
   const minutes = Math.floor(diff / 60000)
   const hours = Math.floor(diff / 3600000)
   const days = Math.floor(diff / 86400000)
   const weeks = Math.floor(days / 7)
   const months = Math.floor(days / 30)
-  
+
   if (minutes < 1) return 'Just now'
   if (minutes < 60) return `${minutes}m ago`
   if (hours < 24) return `${hours}h ago`
@@ -118,9 +118,9 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     setIsLoading(true)
     try {
       const response = await api.get('/notifications?limit=20')
-  
+
       const data = response.data.data
-      
+
       if (Array.isArray(data)) {
         setNotifications(data)
       } else if (data?.notifications) {
@@ -148,7 +148,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
   const markAsRead = async (notificationId: number) => {
     try {
       await api.put(`/notifications/${notificationId}/read`)
-      setNotifications(notifications.map(n => 
+      setNotifications(notifications.map(n =>
         n.id === notificationId ? { ...n, is_read: true } : n
       ))
       setUnreadCount(prev => Math.max(0, prev - 1))
@@ -191,7 +191,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     } else if (notification.type === 'application_received') {
       navigate('/employer/applications')
     }
-    
+
     onNotificationClick?.(notification)
     setIsOpen(false)
   }
@@ -216,7 +216,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
           )}
         </button>
       </PopoverTrigger>
-      
+
       <PopoverContent className="w-96 p-0" align="end">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold text-lg">Notifications</h3>
@@ -231,7 +231,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
             </button>
           )}
         </div>
-        
+
         <ScrollArea className="h-100">
           {isLoading ? (
             <div className="p-4 space-y-3">
@@ -256,9 +256,8 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 cursor-pointer transition-colors hover:bg-gray-50 ${
-                    !notification.is_read ? 'bg-blue-50' : ''
-                  }`}
+                  className={`p-4 cursor-pointer transition-colors hover:bg-gray-50 ${!notification.is_read ? 'bg-blue-50' : ''
+                    }`}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex gap-3">
@@ -294,7 +293,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
             </div>
           )}
         </ScrollArea>
-        
+
         {notifications.length > 0 && (
           <>
             <Separator />

@@ -44,7 +44,7 @@ const NotificationList: React.FC = () => {
   const markAsRead = async (id: number) => {
     try {
       await api.put(`/notifications/${id}/read`)
-      setNotifications(notifications.map(n => 
+      setNotifications(notifications.map(n =>
         n.id === id ? { ...n, is_read: true } : n
       ))
     } catch (error) {
@@ -65,9 +65,9 @@ const NotificationList: React.FC = () => {
     }
   }
 
-  const filteredNotifications = activeTab === 'all' 
-    ? notifications 
-    : activeTab === 'unread' 
+  const filteredNotifications = activeTab === 'all'
+    ? notifications
+    : activeTab === 'unread'
       ? notifications.filter(n => !n.is_read)
       : notifications.filter(n => n.is_read)
 
@@ -129,9 +129,8 @@ const NotificationList: React.FC = () => {
               {filteredNotifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 rounded-lg border transition ${
-                    !notification.is_read ? 'bg-blue-50 border-blue-200' : 'bg-white'
-                  }`}
+                  className={`p-4 rounded-lg border transition ${!notification.is_read ? 'bg-blue-50 border-blue-200' : 'bg-white'
+                    }`}
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
