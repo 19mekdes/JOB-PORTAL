@@ -8,7 +8,6 @@ import { AuthRequest, RegisterInput, LoginInput } from '../types'
 
 const prisma = new PrismaClient()
 
-// Helper function to generate JWT token
 const generateToken = (userId: string, email: string): string => {
   const payload = { id: userId, email: email }
   const secret = process.env.JWT_SECRET as string
@@ -18,8 +17,6 @@ const generateToken = (userId: string, email: string): string => {
   const token = jwt.sign(payload, secret, { expiresIn: '7d' } as jwt.SignOptions)
   return token
 }
-
-// Helper function to generate refresh token
 const generateRefreshToken = (userId: string): string => {
   const payload = { id: userId }
   const secret = process.env.JWT_REFRESH_SECRET as string
@@ -30,7 +27,7 @@ const generateRefreshToken = (userId: string): string => {
   return token
 }
 
-// Helper function to send email (optional - for password reset only)
+
 const sendEmail = async (to: string, subject: string, html: string) => {
   console.log('📧 sendEmail called with:', { to, subject });
   

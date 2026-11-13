@@ -57,7 +57,7 @@ export const applyForJob = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'You have already applied for this job' });
     }
     
-    // Get pending status
+  
     const pendingStatus = await prisma.jobApplicationStatus.findFirst({
       where: { status_name: 'Pending' }
     });
@@ -151,7 +151,6 @@ export const getMyApplications = async (req: Request, res: Response) => {
   }
 };
 
-// Get applications for employer's jobs
 export const getJobApplications = async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
@@ -192,7 +191,7 @@ export const getJobApplications = async (req: Request, res: Response) => {
   }
 };
 
-// Update application status
+
 export const updateApplicationStatus = async (req: Request, res: Response) => {
   try {
     const { applicationId } = req.params;
@@ -247,7 +246,6 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
   }
 };
 
-// Add note to application
 export const addApplicationNote = async (req: Request, res: Response) => {
   try {
     const { applicationId } = req.params;

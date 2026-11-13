@@ -55,7 +55,6 @@ export const getManagedCompanies = async (req: AuthRequest, res: Response): Prom
   }
 };
 
-// Add a managed company
 export const addManagedCompany = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { company_name, logo_url, website, location, description } = req.body;
@@ -283,7 +282,7 @@ export const getMyJobs = async (req: AuthRequest, res: Response): Promise<void> 
   }
 };
 
-// Update job
+
 export const updateJob = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { jobId } = req.params;
