@@ -191,7 +191,6 @@ export const getUserById = async (req: Request, res: Response) => {
   }
 };
 
-// ========== UPDATE USER STATUS (WITH PROTECTION AGAINST SUSPENDING SUPER ADMIN) ==========
 export const updateUserStatus = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
@@ -207,8 +206,7 @@ export const updateUserStatus = async (req: Request, res: Response) => {
     if (!targetUser) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    
-    // Get the admin user making the request
+  
     const adminUser = await prisma.user.findUnique({
       where: { id: adminId },
       include: { user_type: true }
@@ -217,7 +215,6 @@ export const updateUserStatus = async (req: Request, res: Response) => {
     const adminRole = adminUser?.user_type?.type_name;
     const targetRole = targetUser.user_type?.type_name;
     
-    // ❌ Prevent Admin from suspending or activating a Super Admin
     if (adminRole === 'Admin' && targetRole === 'Super Admin') {
       return res.status(403).json({ 
         success: false, 
@@ -225,15 +222,14 @@ export const updateUserStatus = async (req: Request, res: Response) => {
       });
     }
     
-    // ❌ Prevent anyone from suspending themselves
+    
     if (userId === adminId) {
       return res.status(400).json({ 
         success: false, 
         message: 'You cannot suspend or activate your own account.' 
       });
     }
-    
-    // Update user status
+
     const user = await prisma.user.update({
       where: { id: userId },
       data: { 
