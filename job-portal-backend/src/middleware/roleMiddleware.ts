@@ -10,7 +10,6 @@ export const UserRoles = {
 
 export type UserRole = typeof UserRoles[keyof typeof UserRoles]
 
-// ========== ROLE HIERARCHY ==========
 const roleHierarchy: Record<UserRole, number> = {
   [UserRoles.JOB_SEEKER]: 1,
   [UserRoles.EMPLOYER]: 2,
@@ -45,24 +44,23 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     { resource: 'industries', actions: ['read', 'create', 'update'] }
   ],
   [UserRoles.SUPER_ADMIN]: [
-    { resource: '*', actions: ['*'] } // Full access
+    { resource: '*', actions: ['*'] }
   ]
 }
 
 // ========== CHECK IF USER HAS PERMISSION ==========
 const hasPermission = (userRole: UserRole, resource: string, action: string): boolean => {
   if (userRole === UserRoles.SUPER_ADMIN) return true
-  
+
   const permissions = rolePermissions[userRole]
   if (!permissions) return false
-  
-  return permissions.some(permission => 
+
+  return permissions.some(permission =>
     (permission.resource === resource || permission.resource === '*') &&
     (permission.actions.includes(action) || permission.actions.includes('*'))
   )
 }
 
-// ========== BASIC ROLE AUTHORIZATION ==========
 
 export const authorize = (...roles: UserRole[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
@@ -75,7 +73,7 @@ export const authorize = (...roles: UserRole[]) => {
     }
 
     const userRole = req.user.user_type.type_name as UserRole
-    
+
     if (!roles.includes(userRole)) {
       res.status(403).json({
         success: false,
@@ -103,7 +101,7 @@ export const checkPermission = (resource: string, action: string) => {
     }
 
     const userRole = req.user.user_type.type_name as UserRole
-    
+
     if (!hasPermission(userRole, resource, action)) {
       res.status(403).json({
         success: false,

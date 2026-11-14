@@ -103,13 +103,11 @@ const handleJWTError = (error: any): AppError => {
   return new UnauthorizedError('Authentication error. Please log in again.')
 }
 
-// ========== VALIDATION ERROR HANDLER ==========
 const handleValidationError = (error: any): AppError => {
   const messages = Object.values(error.errors).map((err: any) => err.message).join(', ')
   return new AppError(`Validation error: ${messages}`, 400, 'VALIDATION_ERROR')
 }
 
-// ========== MAIN ERROR HANDLER ==========
 export const errorHandler = (
   err: Error | AppError | any,
   req: AuthRequest,
@@ -118,13 +116,12 @@ export const errorHandler = (
 ): void => {
   let error = err
 
-  // Set default values
+
   let statusCode = 500
   let status = 'error'
   let message = 'Something went wrong!'
   let code = 'INTERNAL_SERVER_ERROR'
 
-  // Log error for debugging (but not in production for operational errors)
   if (process.env.NODE_ENV === 'development') {
     console.error('Error:', {
       name: err.name,
@@ -134,13 +131,12 @@ export const errorHandler = (
       statusCode: err.statusCode
     })
   } else {
-    // In production, only log unexpected errors
+    
     if (!(err instanceof AppError) || !err.isOperational) {
       console.error('Unexpected error:', err)
     }
   }
 
-  // Handle specific error types
   if (error instanceof AppError) {
     statusCode = error.statusCode
     status = error.status
@@ -157,7 +153,7 @@ export const errorHandler = (
     code = handledError.code || 'DATABASE_ERROR'
   }
 
-  // Handle Prisma validation errors
+
   else if (error instanceof Prisma.PrismaClientValidationError) {
     statusCode = 400
     status = 'fail'
@@ -165,7 +161,7 @@ export const errorHandler = (
     code = 'VALIDATION_ERROR'
   }
 
-  // Handle JWT errors
+
   else if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
     const handledError = handleJWTError(error)
     statusCode = handledError.statusCode
