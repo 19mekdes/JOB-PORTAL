@@ -17,7 +17,6 @@ declare global {
   }
 }
 
-// Basic auth middleware
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
@@ -35,7 +34,6 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       full_name: decoded.full_name || ''
     };
 
-    // Get full user data including role
     const fullUser = await prisma.user.findUnique({
       where: { id: decoded.id },
       include: { user_type: true, seeker_profile: true, employer_profile: true }
@@ -48,7 +46,6 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-// Role checking middleware
 export const isEmployer = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = req.fullUser || await prisma.user.findUnique({

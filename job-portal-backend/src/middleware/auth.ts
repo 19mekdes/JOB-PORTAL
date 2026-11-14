@@ -15,7 +15,7 @@ export const authMiddleware = async (
   next: NextFunction
 ) => {
   try {
-    // Get token from header
+  
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
@@ -25,7 +25,6 @@ export const authMiddleware = async (
       });
     }
     
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as {
       id: string;
       email: string;
