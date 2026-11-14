@@ -14,7 +14,7 @@ const getUserId = (req: Request): string => {
 export const getProfile = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
-    
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -28,11 +28,11 @@ export const getProfile = async (req: Request, res: Response) => {
         notification_preference: true
       }
     });
-    
+
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    
+
     const { password, ...userWithoutPassword } = user;
     res.json({ success: true, data: userWithoutPassword });
   } catch (error) {
@@ -45,16 +45,16 @@ export const updateProfile = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const { full_name, phone, location, education, experience } = req.body;
-    
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { user_type: true }
     });
-    
+
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    
+
     if (user.user_type.type_name === 'Job Seeker') {
       await prisma.jobSeekerProfile.update({
         where: { user_id: userId },
@@ -75,7 +75,7 @@ export const updateProfile = async (req: Request, res: Response) => {
         }
       });
     }
-    
+
     res.json({ success: true, message: 'Profile updated successfully' });
   } catch (error) {
     console.error('Update profile error:', error);
@@ -87,26 +87,26 @@ export const updatePassword = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const { currentPassword, newPassword } = req.body;
-    
+
     const user = await prisma.user.findUnique({
       where: { id: userId }
     });
-    
+
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    
+
     const isValid = await bcrypt.compare(currentPassword, user.password);
     if (!isValid) {
       return res.status(401).json({ success: false, message: 'Current password is incorrect' });
     }
-    
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: userId },
       data: { password: hashedPassword, updated_at: new Date() }
     });
-    
+
     res.json({ success: true, message: 'Password updated successfully' });
   } catch (error) {
     console.error('Update password error:', error);
@@ -118,25 +118,25 @@ export const deleteAccount = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const { password } = req.body;
-    
+
     const user = await prisma.user.findUnique({
       where: { id: userId }
     });
-    
+
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    
+
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
       return res.status(401).json({ success: false, message: 'Password is incorrect' });
     }
-    
+
     await prisma.user.update({
       where: { id: userId },
       data: { is_active: false, updated_at: new Date() }
     });
-    
+
     res.json({ success: true, message: 'Account deactivated successfully' });
   } catch (error) {
     console.error('Delete account error:', error);
@@ -144,12 +144,11 @@ export const deleteAccount = async (req: Request, res: Response) => {
   }
 };
 
-// ========== JOB SEEKER SPECIFIC ==========
 
 export const getJobSeekerProfile = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
-    
+
     const profile = await prisma.jobSeekerProfile.findUnique({
       where: { user_id: userId },
       include: {
@@ -186,11 +185,11 @@ export const getJobSeekerProfile = async (req: Request, res: Response) => {
         }
       }
     });
-    
+
     if (!profile) {
       return res.status(404).json({ success: false, message: 'Profile not found' });
     }
-    
+
     res.json({ success: true, data: profile });
   } catch (error) {
     console.error('Get job seeker profile error:', error);
@@ -202,7 +201,7 @@ export const updateJobSeekerProfile = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const { full_name, phone, location, skills, experience, education, resume_url } = req.body;
-    
+
     const profile = await prisma.jobSeekerProfile.update({
       where: { user_id: userId },
       data: {
@@ -215,7 +214,7 @@ export const updateJobSeekerProfile = async (req: Request, res: Response) => {
         resume_url: resume_url || undefined
       }
     });
-    
+
     res.json({ success: true, data: profile, message: 'Profile updated successfully' });
   } catch (error) {
     console.error('Update job seeker profile error:', error);
@@ -223,27 +222,27 @@ export const updateJobSeekerProfile = async (req: Request, res: Response) => {
   }
 };
 
-// Upload resume - fix for file upload
+
 export const uploadResume = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const file = (req as any).file;
-    
+
     if (!file) {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
-    
+
     const resumeUrl = `/uploads/resumes/${file.filename}`;
-    
+
     const profile = await prisma.jobSeekerProfile.update({
       where: { user_id: userId },
       data: { resume_url: resumeUrl }
     });
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       data: { resume_url: resumeUrl },
-      message: 'Resume uploaded successfully' 
+      message: 'Resume uploaded successfully'
     });
   } catch (error) {
     console.error('Upload resume error:', error);
@@ -254,23 +253,23 @@ export const uploadResume = async (req: Request, res: Response) => {
 export const deleteResume = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
-    
+
     const profile = await prisma.jobSeekerProfile.findUnique({
       where: { user_id: userId }
     });
-    
+
     if (profile?.resume_url) {
       const filePath = `.${profile.resume_url}`;
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
     }
-    
+
     await prisma.jobSeekerProfile.update({
       where: { user_id: userId },
       data: { resume_url: null }
     });
-    
+
     res.json({ success: true, message: 'Resume deleted successfully' });
   } catch (error) {
     console.error('Delete resume error:', error);
@@ -281,15 +280,15 @@ export const deleteResume = async (req: Request, res: Response) => {
 export const getSavedJobs = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
-    
+
     const seeker = await prisma.jobSeekerProfile.findFirst({
       where: { user_id: userId }
     });
-    
+
     if (!seeker) {
       return res.status(404).json({ success: false, message: 'Profile not found' });
     }
-    
+
     const bookmarks = await prisma.jobBookmark.findMany({
       where: { seeker_id: seeker.id },
       include: {
@@ -303,7 +302,7 @@ export const getSavedJobs = async (req: Request, res: Response) => {
       },
       orderBy: { created_at: 'desc' }
     });
-    
+
     res.json({ success: true, data: bookmarks });
   } catch (error) {
     console.error('Get saved jobs error:', error);
@@ -314,23 +313,23 @@ export const getSavedJobs = async (req: Request, res: Response) => {
 export const getApplicationStats = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
-    
+
     const seeker = await prisma.jobSeekerProfile.findFirst({
       where: { user_id: userId }
     });
-    
+
     if (!seeker) {
       return res.status(404).json({ success: false, message: 'Profile not found' });
     }
-    
+
     const stats = await prisma.jobApplication.groupBy({
       by: ['status_id'],
       where: { seeker_id: seeker.id },
       _count: true
     });
-    
+
     const statuses = await prisma.jobApplicationStatus.findMany();
-    
+
     const formattedStats = stats.map(stat => {
       const status = statuses.find(s => s.id === stat.status_id);
       return {
@@ -338,14 +337,14 @@ export const getApplicationStats = async (req: Request, res: Response) => {
         count: stat._count
       };
     });
-    
+
     const total = formattedStats.reduce((sum, s) => sum + s.count, 0);
-    
-    res.json({ 
-      success: true, 
-      data: { 
+
+    res.json({
+      success: true,
+      data: {
         total_applications: total,
-        breakdown: formattedStats 
+        breakdown: formattedStats
       }
     });
   } catch (error) {
@@ -354,12 +353,11 @@ export const getApplicationStats = async (req: Request, res: Response) => {
   }
 };
 
-// ========== EMPLOYER SPECIFIC ==========
 
 export const getEmployerProfile = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
-    
+
     const profile = await prisma.employerProfile.findUnique({
       where: { user_id: userId },
       include: {
@@ -384,11 +382,11 @@ export const getEmployerProfile = async (req: Request, res: Response) => {
         }
       }
     });
-    
+
     if (!profile) {
       return res.status(404).json({ success: false, message: 'Profile not found' });
     }
-    
+
     res.json({ success: true, data: profile });
   } catch (error) {
     console.error('Get employer profile error:', error);
@@ -400,7 +398,7 @@ export const updateEmployerProfile = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const { company_name, company_description, website, industry_id, company_size, location } = req.body;
-    
+
     const profile = await prisma.employerProfile.update({
       where: { user_id: userId },
       data: {
@@ -412,7 +410,7 @@ export const updateEmployerProfile = async (req: Request, res: Response) => {
         location: location || undefined
       }
     });
-    
+
     res.json({ success: true, data: profile, message: 'Company profile updated successfully' });
   } catch (error) {
     console.error('Update employer profile error:', error);
@@ -425,22 +423,22 @@ export const uploadCompanyLogo = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
     const file = (req as any).file;
-    
+
     if (!file) {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
-    
+
     const logoUrl = `/uploads/logos/${file.filename}`;
-    
+
     const profile = await prisma.employerProfile.update({
       where: { user_id: userId },
       data: { logo_url: logoUrl }
     });
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       data: { logo_url: logoUrl },
-      message: 'Logo uploaded successfully' 
+      message: 'Logo uploaded successfully'
     });
   } catch (error) {
     console.error('Upload logo error:', error);
@@ -453,20 +451,20 @@ export const getCompanyJobs = async (req: Request, res: Response) => {
     const userId = getUserId(req);
     const { page = 1, limit = 20, status } = req.query;
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-    
+
     const employer = await prisma.employerProfile.findFirst({
       where: { user_id: userId }
     });
-    
+
     if (!employer) {
       return res.status(404).json({ success: false, message: 'Employer profile not found' });
     }
-    
+
     const where: any = { employer_id: employer.id };
     if (status) {
       where.status = { status_name: status as string };
     }
-    
+
     const [jobs, total] = await Promise.all([
       prisma.jobPost.findMany({
         where,
@@ -484,7 +482,7 @@ export const getCompanyJobs = async (req: Request, res: Response) => {
       }),
       prisma.jobPost.count({ where })
     ]);
-    
+
     res.json({
       success: true,
       data: jobs,
@@ -506,23 +504,23 @@ export const getCompanyApplicants = async (req: Request, res: Response) => {
     const userId = getUserId(req);
     const { jobId, page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-    
+
     const employer = await prisma.employerProfile.findFirst({
       where: { user_id: userId }
     });
-    
+
     if (!employer) {
       return res.status(404).json({ success: false, message: 'Employer profile not found' });
     }
-    
+
     const where: any = {
       job: { employer_id: employer.id }
     };
-    
+
     if (jobId) {
       where.job_id = jobId as string;
     }
-    
+
     const [applications, total] = await Promise.all([
       prisma.jobApplication.findMany({
         where,
@@ -540,7 +538,7 @@ export const getCompanyApplicants = async (req: Request, res: Response) => {
       }),
       prisma.jobApplication.count({ where })
     ]);
-    
+
     res.json({
       success: true,
       data: applications,
@@ -560,15 +558,15 @@ export const getCompanyApplicants = async (req: Request, res: Response) => {
 export const getJobStats = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
-    
+
     const employer = await prisma.employerProfile.findFirst({
       where: { user_id: userId }
     });
-    
+
     if (!employer) {
       return res.status(404).json({ success: false, message: 'Employer profile not found' });
     }
-    
+
     const jobs = await prisma.jobPost.findMany({
       where: { employer_id: employer.id },
       include: {
@@ -580,11 +578,11 @@ export const getJobStats = async (req: Request, res: Response) => {
         }
       }
     });
-    
+
     const totalJobs = jobs.length;
     const totalApplications = jobs.reduce((sum, job) => sum + job.applications.length, 0);
     const activeJobs = jobs.filter(job => job.status?.status_name === 'Open').length;
-    
+
     const applicationsByStatus: Record<string, number> = {};
     jobs.forEach(job => {
       job.applications.forEach(app => {
@@ -592,7 +590,7 @@ export const getJobStats = async (req: Request, res: Response) => {
         applicationsByStatus[status] = (applicationsByStatus[status] || 0) + 1;
       });
     });
-    
+
     res.json({
       success: true,
       data: {
@@ -614,16 +612,15 @@ export const getJobStats = async (req: Request, res: Response) => {
   }
 };
 
-// ========== SETTINGS & PREFERENCES ==========
 
 export const getNotificationPreferences = async (req: Request, res: Response) => {
   try {
     const userId = getUserId(req);
-    
+
     let preferences = await prisma.notificationPreference.findUnique({
       where: { user_id: userId }
     });
-    
+
     if (!preferences) {
       preferences = await prisma.notificationPreference.create({
         data: {
@@ -638,7 +635,7 @@ export const getNotificationPreferences = async (req: Request, res: Response) =>
         }
       });
     }
-    
+
     res.json({ success: true, data: preferences });
   } catch (error) {
     console.error('Get notification preferences error:', error);
@@ -650,7 +647,7 @@ export const updateNotificationPreferences = async (req: Request, res: Response)
   try {
     const userId = getUserId(req);
     const updates = req.body;
-    
+
     const preferences = await prisma.notificationPreference.update({
       where: { user_id: userId },
       data: {
@@ -658,7 +655,7 @@ export const updateNotificationPreferences = async (req: Request, res: Response)
         updated_at: new Date()
       }
     });
-    
+
     res.json({ success: true, data: preferences, message: 'Preferences updated successfully' });
   } catch (error) {
     console.error('Update notification preferences error:', error);
@@ -673,14 +670,14 @@ export const getActivityLog = async (req: Request, res: Response) => {
     const userId = getUserId(req);
     const { page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-    
+
     const seeker = await prisma.jobSeekerProfile.findFirst({
       where: { user_id: userId }
     });
-    
+
     let applications: any[] = [];
     let bookmarks: any[] = [];
-    
+
     if (seeker) {
       applications = await prisma.jobApplication.findMany({
         where: { seeker_id: seeker.id },
@@ -689,7 +686,7 @@ export const getActivityLog = async (req: Request, res: Response) => {
         take: parseInt(limit as string),
         orderBy: { applied_at: 'desc' }
       });
-      
+
       bookmarks = await prisma.jobBookmark.findMany({
         where: { seeker_id: seeker.id },
         include: { job: true },
@@ -698,14 +695,14 @@ export const getActivityLog = async (req: Request, res: Response) => {
         orderBy: { created_at: 'desc' }
       });
     }
-    
+
     const notifications = await prisma.notification.findMany({
       where: { user_id: userId },
       skip,
       take: parseInt(limit as string),
       orderBy: { created_at: 'desc' }
     });
-    
+
     const activities = [
       ...applications.map((app: any) => ({
         type: 'application',
@@ -726,7 +723,7 @@ export const getActivityLog = async (req: Request, res: Response) => {
         details: n
       }))
     ].sort((a, b) => b.date.getTime() - a.date.getTime());
-    
+
     res.json({
       success: true,
       data: activities.slice(0, parseInt(limit as string)),
