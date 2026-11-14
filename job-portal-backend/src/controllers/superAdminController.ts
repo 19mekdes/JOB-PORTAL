@@ -65,9 +65,6 @@ export const updateSystemSettings = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-// ========== ADMIN MANAGEMENT ==========
-
 export const getAllAdmins = async (req: Request, res: Response) => {
   try {
     const { page = 1, limit = 20, search } = req.query;

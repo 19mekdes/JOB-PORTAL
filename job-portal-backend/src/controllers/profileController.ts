@@ -72,7 +72,6 @@ export const getProfile = async (req: AuthRequest, res: Response): Promise<void>
   }
 }
 
-// ========== UPDATE JOB SEEKER PROFILE ==========
 export const updateSeekerProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const {

@@ -50,7 +50,7 @@ export const createJob = async (req: AuthRequest, res: Response): Promise<void> 
     const normalizedTitle = title?.trim() ?? ''
     const normalizedLocation = location?.trim() ?? ''
 
-    // Get employer profile
+   
     const employerProfile = await prisma.employerProfile.findUnique({
       where: { user_id: req.user!.id }
     })
