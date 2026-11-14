@@ -58,7 +58,7 @@ const fileFilter = (
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ) => {
-  
+
   if (file.fieldname === 'avatar' || file.fieldname === 'cover_image') {
     const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
     if (allowedImageTypes.includes(file.mimetype)) {
@@ -67,7 +67,7 @@ const fileFilter = (
       cb(new Error('Only JPG, JPEG, PNG, and WEBP images are allowed'))
     }
   }
- 
+
   else if (file.fieldname === 'resume') {
     const allowedResumeTypes = [
       'application/pdf',

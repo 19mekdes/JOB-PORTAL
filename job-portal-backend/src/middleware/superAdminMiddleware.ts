@@ -1,7 +1,6 @@
 import { Response, NextFunction } from 'express'
 import { AuthRequest } from '../types'
 
-// ========== SUPER ADMIN AUTHENTICATION ==========
 
 export const isSuperAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user) {
@@ -61,21 +60,21 @@ export const preventSelfModification = (req: AuthRequest, res: Response, next: N
   next()
 }
 export const ensureLastSuperAdmin = async (
-  req: AuthRequest, 
-  res: Response, 
+  req: AuthRequest,
+  res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
     const { PrismaClient } = await import('@prisma/client')
     const prisma = new PrismaClient()
-    
+
     const targetId = req.params.id
-  
+
     const targetUser = await prisma.user.findUnique({
       where: { id: targetId },
       include: { user_type: true }
     })
-    
+
     if (!targetUser) {
       res.status(404).json({
         success: false,
@@ -83,20 +82,20 @@ export const ensureLastSuperAdmin = async (
       })
       return
     }
-    
-    
+
+
     if (targetUser.user_type.type_name !== 'Super Admin') {
       next()
       return
     }
-    
+
     const superAdminCount = await prisma.user.count({
       where: {
         user_type: { type_name: 'Super Admin' },
         is_active: true
       }
     })
-    
+
     if (superAdminCount <= 1) {
       res.status(400).json({
         success: false,
@@ -104,7 +103,7 @@ export const ensureLastSuperAdmin = async (
       })
       return
     }
-    
+
     next()
   } catch (error) {
     res.status(500).json({
@@ -121,9 +120,9 @@ export const sensitiveOperationRateLimit = (maxRequests: number = 5, windowMs: n
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     const userId = req.user?.id || req.ip || 'unknown'
     const now = Date.now()
-    
+
     const record = operationCounts.get(userId)
-    
+
     if (record) {
       if (now > record.resetTime) {
         operationCounts.set(userId, { count: 1, resetTime: now + windowMs })
@@ -149,18 +148,18 @@ export const sensitiveOperationRateLimit = (maxRequests: number = 5, windowMs: n
 export const logSuperAdminAction = (action: string) => {
   return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     const startTime = Date.now()
-    
+
     const originalJson = res.json
     let responseBody: any = null
-    
-    res.json = function(body: any) {
+
+    res.json = function (body: any) {
       responseBody = body
       return originalJson.call(this, body)
     }
-    
+
     res.on('finish', () => {
       const duration = Date.now() - startTime
-      
+
       console.log(`[SUPER_ADMIN_ACTION]`, {
         action,
         admin_id: req.user?.id,
@@ -174,22 +173,22 @@ export const logSuperAdminAction = (action: string) => {
         user_agent: req.get('user-agent')
       })
     })
-    
+
     next()
   }
 }
 
 export const validateSystemSettings = (req: AuthRequest, res: Response, next: NextFunction): void => {
   const settings = req.body
-  
+
   const validSettings = [
     'site_name', 'site_description', 'contact_email', 'enable_registration',
     'require_email_verification', 'max_job_posts_per_employer', 'max_applications_per_seeker',
     'job_expiry_days', 'maintenance_mode', 'allowed_file_types', 'max_file_size_mb'
   ]
-  
+
   const invalidKeys = Object.keys(settings).filter(key => !validSettings.includes(key))
-  
+
   if (invalidKeys.length > 0) {
     res.status(400).json({
       success: false,
@@ -198,7 +197,7 @@ export const validateSystemSettings = (req: AuthRequest, res: Response, next: Ne
     })
     return
   }
-  
+
   if (settings.max_job_posts_per_employer && settings.max_job_posts_per_employer < 1) {
     res.status(400).json({
       success: false,
@@ -206,7 +205,7 @@ export const validateSystemSettings = (req: AuthRequest, res: Response, next: Ne
     })
     return
   }
-  
+
   if (settings.max_applications_per_seeker && settings.max_applications_per_seeker < 1) {
     res.status(400).json({
       success: false,
@@ -214,7 +213,7 @@ export const validateSystemSettings = (req: AuthRequest, res: Response, next: Ne
     })
     return
   }
-  
+
   if (settings.job_expiry_days && settings.job_expiry_days < 1) {
     res.status(400).json({
       success: false,
@@ -222,7 +221,7 @@ export const validateSystemSettings = (req: AuthRequest, res: Response, next: Ne
     })
     return
   }
-  
+
   if (settings.max_file_size_mb && (settings.max_file_size_mb < 1 || settings.max_file_size_mb > 100)) {
     res.status(400).json({
       success: false,
@@ -230,12 +229,12 @@ export const validateSystemSettings = (req: AuthRequest, res: Response, next: Ne
     })
     return
   }
-  
+
   next()
 }
 export const checkMaintenanceMode = async (
-  req: AuthRequest, 
-  res: Response, 
+  req: AuthRequest,
+  res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
@@ -243,13 +242,13 @@ export const checkMaintenanceMode = async (
       next()
       return
     }
-    
+
     const { PrismaClient } = await import('@prisma/client')
     const prisma = new PrismaClient()
-  
+
     const prismaAny = prisma as any
     const settings = await prismaAny.systemSetting?.findFirst()
-    
+
     if (settings?.maintenance_mode) {
       res.status(503).json({
         success: false,
@@ -258,14 +257,13 @@ export const checkMaintenanceMode = async (
       })
       return
     }
-    
+
     next()
   } catch (error) {
     next()
   }
 }
 
-// ========== EXPORT ALL ==========
 export default {
   isSuperAdmin,
   isSuperAdminOrAdmin,
