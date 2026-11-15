@@ -25,8 +25,6 @@ export interface CreateCompanyDTO {
   is_active?: boolean;
   is_verified?: boolean;
 }
-
-// Company update data (all fields optional)
 export interface UpdateCompanyDTO {
   company_name?: string;
   company_description?: string;
@@ -74,7 +72,6 @@ export interface CompanyStats {
   }[];
 }
 
-// Company search filters
 export interface CompanyFilters {
   industry_id?: number;
   location?: string;
@@ -138,7 +135,7 @@ export interface CompanyExtended extends Company {
   };
 }
 
-// Company documents/attachments
+
 export interface CompanyDocument {
   id: string;
   company_id: string;
@@ -147,8 +144,6 @@ export interface CompanyDocument {
   uploaded_at: Date;
   verified: boolean;
 }
-
-// Company review interface
 export interface CompanyReview {
   id: string;
   company_id: string;
@@ -158,8 +153,6 @@ export interface CompanyReview {
   created_at: Date;
   updated_at: Date;
 }
-
-// Company review with user details
 export interface CompanyReviewWithUser extends CompanyReview {
   user_name: string;
   user_avatar?: string;

@@ -4,7 +4,6 @@ import { AppError, NotFoundError, ValidationError } from '../middleware/errorMid
 
 const prisma = new PrismaClient()
 
-// ========== TYPES ==========
 export interface AdminUserData {
   email: string
   password: string
@@ -35,7 +34,6 @@ export interface AuditLogEntry {
   ip_address: string
 }
 
-// ========== SUPER ADMIN SERVICE ==========
 export class SuperAdminService {
   private prisma: PrismaClient
 
@@ -255,7 +253,6 @@ export class SuperAdminService {
     return { message: 'Admin user deleted successfully' }
   }
 
-  // ========== SYSTEM SETTINGS ==========
   
   async getSystemSettings(): Promise<SystemSettings> {
     const prismaAny = this.prisma as any
@@ -321,7 +318,6 @@ export class SuperAdminService {
     }
   }
 
-  // ========== AUDIT LOGS ==========
   
   async createAuditLog(log: AuditLogEntry) {
     
