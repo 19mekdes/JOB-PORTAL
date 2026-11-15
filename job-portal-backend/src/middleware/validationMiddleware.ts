@@ -1,7 +1,6 @@
 import { body, param, query, validationResult, ValidationChain } from 'express-validator'
 import { Request, Response, NextFunction } from 'express'
 
-// ========== GENERAL VALIDATION MIDDLEWARE ==========
 export const validate = (req: Request, res: Response, next: NextFunction): void => {
   const errors = validationResult(req)
   if (!errors.isEmpty()) {

@@ -400,14 +400,11 @@ export const getUserRole = (req: AuthRequest): UserRole | null => {
   return req.user.user_type.type_name as UserRole
 }
 
-// ========== CHECK IF USER IS ADMIN ==========
 export const isUserAdmin = (req: AuthRequest): boolean => {
   if (!req.user) return false
   const role = req.user.user_type.type_name
   return role === UserRoles.ADMIN || role === UserRoles.SUPER_ADMIN
 }
-
-// ========== CHECK IF USER IS SUPER ADMIN ==========
 export const isUserSuperAdmin = (req: AuthRequest): boolean => {
   if (!req.user) return false
   return req.user.user_type.type_name === UserRoles.SUPER_ADMIN
@@ -420,7 +417,6 @@ export const getUserPermissions = (req: AuthRequest): Permission[] => {
   return rolePermissions[userRole] || []
 }
 
-// ========== EXPORT ALL ==========
 export default {
   UserRoles,
   authorize,

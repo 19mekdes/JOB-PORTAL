@@ -36,7 +36,6 @@ export interface BulkNotificationData {
   metadata?: Record<string, any>
 }
 
-// ========== NOTIFICATION TYPES CONSTANTS ==========
 export const NotificationTypes = {
   APPLICATION_SUBMITTED: 'application_submitted',
   APPLICATION_STATUS_CHANGE: 'status_change',

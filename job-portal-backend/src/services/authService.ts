@@ -5,7 +5,6 @@ import crypto from 'crypto'
 
 const prisma = new PrismaClient()
 
-// ========== TYPES ==========
 export interface RegisterData {
   email: string
   password: string
@@ -20,7 +19,6 @@ export interface LoginData {
   password: string
 }
 
-// ========== AUTH SERVICE ==========
 export class AuthService {
   private prisma: PrismaClient
 
@@ -289,7 +287,7 @@ export class AuthService {
     }
   }
 
-  // ========== UPDATE PROFILE ==========
+
   async updateProfile(userId: string, profileData: {
     full_name?: string
     phone?: string
