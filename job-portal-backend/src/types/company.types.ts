@@ -158,14 +158,11 @@ export interface CompanyReviewWithUser extends CompanyReview {
   user_avatar?: string;
 }
 
-// Company with reviews and rating
 export interface CompanyWithRating extends Company {
   average_rating: number;
   total_reviews: number;
   reviews?: CompanyReviewWithUser[];
 }
-
-// Company category/industry mapping
 export interface IndustryCompanyCount {
   industry_id: number;
   industry_name: string;
@@ -173,7 +170,7 @@ export interface IndustryCompanyCount {
   active_company_count: number;
 }
 
-// Company admin action logs
+
 export interface CompanyActionLog {
   id: string;
   company_id: string;
@@ -184,8 +181,6 @@ export interface CompanyActionLog {
   previous_data?: Record<string, any>;
   new_data?: Record<string, any>;
 }
-
-// Company validation helpers
 export const isCompanyActive = (company: Company): boolean => {
   return company.is_active === true;
 };
