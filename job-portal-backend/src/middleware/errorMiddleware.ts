@@ -144,7 +144,7 @@ export const errorHandler = (
     code = error.code || status === 'fail' ? 'VALIDATION_ERROR' : 'INTERNAL_SERVER_ERROR'
   }
 
-  // Handle Prisma errors
+
   else if (error instanceof Prisma.PrismaClientKnownRequestError) {
     const handledError = handlePrismaError(error)
     statusCode = handledError.statusCode
@@ -170,7 +170,7 @@ export const errorHandler = (
     code = handledError.code || 'AUTH_ERROR'
   }
 
-  // Handle multer errors (file upload)
+  
   else if (error.name === 'MulterError') {
     if (error.code === 'LIMIT_FILE_SIZE') {
       statusCode = 400
@@ -190,7 +190,6 @@ export const errorHandler = (
     }
   }
 
-  // Handle express-validator errors
   else if (error.array && typeof error.array === 'function') {
     const errors = error.array()
     statusCode = 400
@@ -199,7 +198,6 @@ export const errorHandler = (
     code = 'VALIDATION_ERROR'
   }
 
-  // Handle duplicate key errors (MongoDB style, but for completeness)
   else if (error.code === 11000) {
     const field = Object.keys(error.keyPattern)[0]
     statusCode = 409
@@ -208,7 +206,6 @@ export const errorHandler = (
     code = 'DUPLICATE_FIELD'
   }
 
-  // Handle cast errors (invalid ObjectId)
   else if (error.name === 'CastError') {
     statusCode = 400
     status = 'fail'
@@ -216,7 +213,7 @@ export const errorHandler = (
     code = 'INVALID_ID'
   }
 
-  // Send response
+ 
   const response: any = {
     success: false,
     status,
@@ -224,13 +221,13 @@ export const errorHandler = (
     code
   }
 
-  // Add stack trace in development
+
   if (process.env.NODE_ENV === 'development') {
     response.stack = error.stack
     response.details = error.details || undefined
   }
 
-  // Add validation details if available
+
   if (error.details || error.errors) {
     response.errors = error.details || error.errors
   }
@@ -238,14 +235,14 @@ export const errorHandler = (
   res.status(statusCode).json(response)
 }
 
-// ========== 404 NOT FOUND HANDLER ==========
+
 export const notFound = (req: Request, res: Response, next: NextFunction): void => {
   const error = new AppError(`Cannot find ${req.originalUrl} on this server`, 404, 'ROUTE_NOT_FOUND')
   next(error)
 }
 
 // ========== ASYNC WRAPPER ==========
-// Wraps async route handlers to avoid try-catch blocks
+
 export const catchAsync = (fn: Function) => {
   return (req: Request, res: Response, next: NextFunction) => {
     fn(req, res, next).catch(next)
@@ -256,7 +253,6 @@ export const catchAsync = (fn: Function) => {
 export const handleUnhandledRejection = (error: Error) => {
   console.error('UNHANDLED REJECTION:', error)
 
-  // Graceful shutdown
   if (process.env.NODE_ENV === 'production') {
     console.log('💥 Shutting down due to unhandled rejection...')
     process.exit(1)
@@ -267,7 +263,7 @@ export const handleUnhandledRejection = (error: Error) => {
 export const handleUncaughtException = (error: Error) => {
   console.error('UNCAUGHT EXCEPTION:', error)
 
-  // Graceful shutdown
+
   console.log('💥 Shutting down due to uncaught exception...')
   process.exit(1)
 }
@@ -315,7 +311,6 @@ export const filterSensitiveData = (err: any): any => {
   return err
 }
 
-// ========== EXPORT ALL ==========
 export default {
   AppError,
   ValidationError,

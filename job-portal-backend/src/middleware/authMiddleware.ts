@@ -135,7 +135,6 @@ export const isJobSeeker = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-// Authorize any of the provided roles
 export const authorizeAny = (...roles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
