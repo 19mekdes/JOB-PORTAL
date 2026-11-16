@@ -96,7 +96,7 @@ const getPublicIdFromUrl = (url: string): string | null => {
   }
 };
 // ========== MULTER CONFIGURATION ==========
-// 1. Keep Local Engine for Resumes
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = "./uploads/resumes";
@@ -167,7 +167,6 @@ async function sendEmail(to: string, subject: string, html: string) {
   }
 }
 
-// Send application status update email
 async function sendApplicationStatusEmail(
   userEmail: string,
   userName: string,
@@ -227,7 +226,7 @@ async function sendApplicationStatusEmail(
 
   await sendEmail(userEmail, `Application Status Update: ${status}`, html);
 
-  // Send new job alert email
+
   async function sendNewJobAlertEmail(
     userEmail: string,
     userName: string,
@@ -329,8 +328,6 @@ const authMiddleware = async (
     res.status(401).json({ success: false, message: "Invalid token" });
   }
 };
-
-// Check if user is Super Admin only
 const superAdminMiddleware = async (
   req: Request,
   res: Response,
@@ -373,7 +370,6 @@ const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-// Check if user is Employer
 const isEmployer = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await prisma.user.findUnique({
@@ -393,7 +389,6 @@ const isEmployer = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-// Check if user is Job Seeker
 const isJobSeeker = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await prisma.user.findUnique({

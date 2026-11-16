@@ -34,7 +34,6 @@ app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/super-admin', superAdminRoutes);
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Server is running' });
 });
@@ -44,7 +43,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(500).json({ success: false, message: 'Something went wrong!' });
 });
 
-// Handle 404
 app.use((req, res) => {
   res.status(404).json({ success: false, message: `Route not found: ${req.method} ${req.url}` });
 });
