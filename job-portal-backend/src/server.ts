@@ -1568,7 +1568,6 @@ app.get(
         console.log("Backup table not found, returning mock data");
       }
 
-      // If no backups in database, return mock data for demo
       if (backups.length === 0) {
         backups = [
 
@@ -1584,7 +1583,6 @@ app.get(
   }
 );
 
-// Get backup storage stats
 app.get(
   "/api/admin/backups/stats",
   authMiddleware,
@@ -1616,7 +1614,7 @@ app.get(
         },
       });
     } catch (error: any) {
-      // Return demo stats if error
+     
       res.json({
         success: true,
         data: {
@@ -1631,7 +1629,6 @@ app.get(
   }
 );
 
-// Create backup
 app.post(
   "/api/admin/backups/create",
   authMiddleware,
@@ -1765,7 +1762,6 @@ app.get(
   isAdmin,
   async (req: Request, res: Response) => {
     try {
-      // Check if user is Super Admin
       const currentUser = await prisma.user.findUnique({
         where: { id: req.user!.id },
         include: { user_type: true },
@@ -1802,8 +1798,6 @@ app.get(
         console.log("AuditLog table not found");
         return res.json({ success: true, data: [] });
       }
-
-      // Format the logs 
       const formattedLogs = auditLogs.map((log) => ({
         id: log.id.toString(),
         action: log.action,
@@ -1864,7 +1858,7 @@ app.get(
         return res.json({ success: true, data: [] });
       }
 
-      // Create CSV 
+    
       const headers = [
         "ID",
         "Action",
@@ -2146,7 +2140,6 @@ app.delete(
         });
       }
 
-      // Delete notifications
       await prisma.notification.deleteMany({
         where: { user_id: userId },
       });
@@ -2155,7 +2148,6 @@ app.delete(
         where: { user_id: userId },
       });
 
-      // Delete the user
       await prisma.user.delete({
         where: { id: userId },
       });
@@ -2375,7 +2367,7 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
     const normalizedTitle = title.trim()
     const normalizedLocation = location.trim()
 
-    // Detect duplicate jobs for this employer
+  
     const duplicateJob = await prisma.jobPost.findFirst({
       where: {
         employer_id: user.employer_profile.id,
@@ -2394,8 +2386,6 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
         code: 'DUPLICATE_JOB'
       })
     }
-
-    // Create job with PENDING status (requires admin approval)
     const job = await prisma.jobPost.create({
       data: {
         title: normalizedTitle,
