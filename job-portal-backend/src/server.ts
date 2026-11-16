@@ -2407,7 +2407,6 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
       include: { status: true },
     });
 
-    // Notify admins about new job pending approval
     const admins = await prisma.user.findMany({
       where: {
         user_type: {
@@ -2465,7 +2464,7 @@ app.put(
         include: { employer: { include: { user: true } } },
       });
 
-      // Notify employer
+    
       await prisma.notification.create({
         data: {
           user_id: job.employer.user_id,
@@ -2506,7 +2505,7 @@ app.put(
         include: { employer: { include: { user: true } } },
       });
 
-      // Notify employer with reason
+
       await prisma.notification.create({
         data: {
           user_id: job.employer.user_id,
@@ -2790,19 +2789,15 @@ app.get(
       const rejectedApplications = allApplications.filter(
         (app) => app.status?.status_name === "Rejected"
       ).length;
-
-      // FORMAT RECENT JOBS - Extract status_name as string
       const recentJobs = jobs.slice(0, 5).map((job) => ({
         id: job.id,
         title: job.title || "Untitled",
         location: job.location || "Not specified",
         applications_count: job._count?.applications || 0,
         views_count: job.views_count || 0,
-        status: job.status?.status_name || "Unknown", // ← Convert to string!
+        status: job.status?.status_name || "Unknown",
         created_at: job.created_at,
       }));
-
-      // FORMAT RECENT APPLICATIONS - Extract status_name as string
       const recentApplications = allApplications.slice(0, 5).map((app) => ({
         id: app.id,
         job_title: app.job?.title || "Unknown Position",
@@ -3068,7 +3063,6 @@ app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) 
       take: Number(limit)
     });
 
-    // Get stats
     const stats = {
       total: await prisma.user.count(),
       active: await prisma.user.count({ where: { is_active: true } }),
@@ -3079,7 +3073,6 @@ app.get('/api/admin/users', authMiddleware, async (req: Request, res: Response) 
       superAdmins: await prisma.user.count({ where: { user_type: { type_name: 'Super Admin' } } })
     };
 
-    // Add stats to each user
     const usersWithStats = await Promise.all(users.map(async (user) => {
       let jobsCount = 0;
       let applicationsCount = 0;
@@ -3128,8 +3121,6 @@ app.put('/api/admin/users/:userId/status', authMiddleware, async (req: Request, 
   try {
     const { userId } = req.params;
     const { is_active } = req.body;
-
-    // Check current user role
     const currentUser = await prisma.user.findUnique({
       where: { id: req.user!.id },
       include: { user_type: true }
@@ -3148,7 +3139,6 @@ app.put('/api/admin/users/:userId/status', authMiddleware, async (req: Request, 
       });
     }
 
-    // Don't allow modifying own status
     if (userId === req.user!.id) {
       return res.status(400).json({
         success: false,
@@ -3167,7 +3157,6 @@ app.put('/api/admin/users/:userId/status', authMiddleware, async (req: Request, 
 
     const targetRole = targetUser.user_type?.type_name;
 
-    // Admin can only modify Job Seekers and Employers
     if (currentRole === 'Admin') {
       if (targetRole !== 'Job Seeker' && targetRole !== 'Employer') {
         return res.status(403).json({
@@ -3185,7 +3174,6 @@ app.put('/api/admin/users/:userId/status', authMiddleware, async (req: Request, 
       data: { is_active: is_active, updated_at: new Date() }
     });
 
-    // Create notification for the user
     await prisma.notification.create({
       data: {
         user_id: userId,
@@ -3216,7 +3204,6 @@ app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res:
 
     console.log(`🗑️ Delete user request for ID: ${userId}`);
 
-    // Get current user with their role
     const currentUser = await prisma.user.findUnique({
       where: { id: req.user!.id },
       include: { user_type: true }
@@ -3228,7 +3215,7 @@ app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res:
 
     const currentRole = currentUser.user_type?.type_name;
 
-    // Check if user has permission to delete
+
     if (currentRole !== 'Admin' && currentRole !== 'Super Admin') {
       return res.status(403).json({
         success: false,
@@ -3238,7 +3225,7 @@ app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res:
       });
     }
 
-    // Don't allow deleting yourself
+
     if (userId === req.user!.id) {
       return res.status(400).json({
         success: false,
@@ -3246,7 +3233,7 @@ app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res:
       });
     }
 
-    // Get target user with full details
+
     const targetUser = await prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -3266,9 +3253,9 @@ app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res:
     const targetRole = targetUser.user_type?.type_name;
     const targetEmail = targetUser.email;
 
-    // Role-based permission check
+   
     if (currentRole === 'Admin') {
-      // Admin can ONLY delete Job Seekers and Employers
+    
       if (targetRole !== 'Job Seeker' && targetRole !== 'Employer') {
         return res.status(403).json({
           success: false,
@@ -3284,7 +3271,6 @@ app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res:
 
     // ========== DELETE RELATED DATA ==========
 
-    // 1. Delete job application notes (if job seeker)
     if (targetUser.seeker_profile) {
       const applications = await prisma.jobApplication.findMany({
         where: { seeker_id: targetUser.seeker_profile.id }
@@ -3296,63 +3282,61 @@ app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res:
         });
       }
 
-      // 2. Delete job applications
+    
       await prisma.jobApplication.deleteMany({
         where: { seeker_id: targetUser.seeker_profile.id }
       });
 
-      // 3. Delete bookmarks
+     
       await prisma.jobBookmark.deleteMany({
         where: { seeker_id: targetUser.seeker_profile.id }
       });
 
-      // 4. Delete seeker profile
+   
       await prisma.jobSeekerProfile.delete({
         where: { id: targetUser.seeker_profile.id }
       });
     }
 
-    // 5. Delete employer related data (if employer)
     if (targetUser.employer_profile) {
-      // Get all jobs by this employer
+   
       const jobs = await prisma.jobPost.findMany({
         where: { employer_id: targetUser.employer_profile.id }
       });
 
       for (const job of jobs) {
-        // Delete applications for each job
+       
         await prisma.jobApplication.deleteMany({
           where: { job_id: job.id }
         });
 
-        // Delete bookmarks for each job
+       
         await prisma.jobBookmark.deleteMany({
           where: { job_id: job.id }
         });
       }
 
-      // Delete all jobs
+     
       await prisma.jobPost.deleteMany({
         where: { employer_id: targetUser.employer_profile.id }
       });
 
-      // Delete employer profile
+    
       await prisma.employerProfile.delete({
         where: { id: targetUser.employer_profile.id }
       });
     }
 
-    // 6. Delete notifications
+    
     await prisma.notification.deleteMany({
       where: { user_id: userId }
     });
 
-    // 7. Delete notification preferences
     await prisma.notificationPreference.deleteMany({
       where: { user_id: userId }
     });
 
-    // 8. Finally delete the user
+    
     await prisma.user.delete({
       where: { id: userId }
     });
