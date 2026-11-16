@@ -737,7 +737,7 @@ app.get(
           .status(404)
           .json({ success: false, message: "User not found" });
 
-      //  return seeker_profile fields if it's a job seeker
+    
       let profile = null;
       if (user.seeker_profile) {
         profile = {
@@ -821,8 +821,6 @@ app.put(
       } = req.body;
 
 
-
-      // Check if user is a job seeker
       const user = await prisma.user.findUnique({
         where: { id: userId },
         include: { seeker_profile: true },
@@ -835,7 +833,6 @@ app.put(
         });
       }
 
-      // Build update data
       const updateData: any = {};
 
       if (title !== undefined && title !== "") updateData.title = title;
@@ -863,19 +860,19 @@ app.put(
             : [];
       }
 
-      // Experience
+   
       if (experience !== undefined) {
         updateData.experience = safeJsonParse(experience)
       }
 
-      // Education
+    
       if (education !== undefined) {
         updateData.education = safeJsonParse(education)
       }
 
       console.log("Updating fields:", Object.keys(updateData));
 
-      // Update profile
+  
       const updatedProfile = await prisma.jobSeekerProfile.update({
         where: { id: user.seeker_profile.id },
         data: updateData,
@@ -900,8 +897,6 @@ app.put(
   }
 );
 
-
-// PROFILE UPDATE ENDPOINT
 app.put("/api/profile/update-info",
   authMiddleware,
   async (req: Request, res: Response) => {
@@ -927,7 +922,6 @@ app.put("/api/profile/update-info",
       console.log("Portfolio:", portfolio_url);
       console.log("Availability:", availability);
 
-      // Find the profile
       let profile = await prisma.jobSeekerProfile.findFirst({
         where: { user_id: userId },
       });
@@ -942,9 +936,7 @@ app.put("/api/profile/update-info",
             skills: [],
           },
         });
-      }
-
-      // Update the profile 
+      } 
       const updatedProfile = await prisma.jobSeekerProfile.update({
         where: { id: profile.id },
         data: {
@@ -1279,8 +1271,6 @@ app.get(
   async (req: Request, res: Response) => {
     try {
       console.log("🏢 Fetching all companies for Super Admin");
-
-      // Get all users with Employer type
       const employers = await prisma.user.findMany({
         where: {
           user_type: {
@@ -1470,7 +1460,6 @@ app.put(
   }
 );
 
-// Update company status (activate/suspend)
 app.put(
   "/api/super-admin/companies/:id/status",
   authMiddleware,
@@ -1503,8 +1492,6 @@ app.put(
     }
   }
 );
-
-// Delete company
 app.delete(
   "/api/super-admin/companies/:id",
   authMiddleware,
@@ -1528,7 +1515,7 @@ app.delete(
           .json({ success: false, message: "Company not found" });
       }
 
-      // Delete related data
+
       if (company.employer_profile) {
         const jobs = await prisma.jobPost.findMany({
           where: { employer_id: company.employer_profile.id },
@@ -1566,7 +1553,6 @@ app.delete(
 );
 // ========== BACKUP & RESTORE ENDPOINTS ==========
 
-// Get all backups
 app.get(
   "/api/admin/backups",
   authMiddleware,
