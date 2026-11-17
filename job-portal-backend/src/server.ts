@@ -5012,7 +5012,7 @@ app.get(
     try {
       console.log("📊 Getting users with job counts...");
 
-      // Get all users
+     
       const users = await prisma.user.findMany({
         include: {
           user_type: true,
@@ -5027,7 +5027,7 @@ app.get(
         let jobCount = 0;
         let appCount = 0;
 
-        // Count jobs for employer
+        
         if (user.employer_profile) {
           jobCount = await prisma.jobPost.count({
             where: { employer_id: user.employer_profile.id },
@@ -5035,7 +5035,6 @@ app.get(
           console.log(`Employer ${user.email}: ${jobCount} jobs`);
         }
 
-        // Count applications for job seeker
         if (user.seeker_profile) {
           appCount = await prisma.jobApplication.count({
             where: { seeker_id: user.seeker_profile.id },
@@ -5066,7 +5065,7 @@ app.get(
         });
       }
 
-      // Stats for cards
+   
       const stats = {
         total: users.length,
         active: users.filter((u) => u.is_active).length,
@@ -5103,20 +5102,20 @@ app.get(
       let settings = await prisma.systemSetting.findFirst();
 
       if (!settings) {
-        // Return default settings if none exist
+       
         res.json({
           success: true,
           data: {
-            // General Settings
+         
             siteName: "JobPortal",
             siteDescription: "Connect job seekers with employers",
             contactEmail: "admin@jobportal.com",
 
-            // User Settings
+           
             enableRegistration: true,
             emailVerification: true,
 
-            // Job Settings
+           
             maxJobsPerEmployer: 50,
             jobExpiryDays: 30,
 
@@ -5159,7 +5158,6 @@ app.get(
   }
 );
 
-// PUT /api/admin/settings 
 app.put(
   "/api/admin/settings",
   authMiddleware,
@@ -5168,12 +5166,12 @@ app.put(
     try {
       const settingsData = req.body;
 
-      // Check if settings exist
+     
       const existingSettings = await prisma.systemSetting.findFirst();
 
       let settings;
       if (existingSettings) {
-        // Update existing settings
+        
         settings = await prisma.systemSetting.update({
           where: { id: existingSettings.id },
           data: {
@@ -5192,7 +5190,7 @@ app.put(
           },
         });
       } else {
-        // Create new settings
+     
         settings = await prisma.systemSetting.create({
           data: {
             site_name: settingsData.siteName || "JobPortal",
@@ -5231,15 +5229,13 @@ app.put(
     }
   }
 );
-
-// POST /api/admin/settings/test-email 
+ 
 app.post(
   "/api/admin/settings/test-email",
   authMiddleware,
   isAdmin,
   async (req: Request, res: Response) => {
     try {
-      // For now, just return success
       res.json({ success: true, message: "Test email sent successfully!" });
     } catch (error: any) {
       console.error("Error sending test email:", error);
@@ -5249,7 +5245,6 @@ app.post(
 );
 // ========== ADMIN APPLICATIONS MANAGEMENT ==========
 
-// Get all applications for admin
 app.get(
   "/api/admin/applications",
   authMiddleware,
