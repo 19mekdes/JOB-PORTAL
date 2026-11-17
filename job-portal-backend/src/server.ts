@@ -5252,7 +5252,6 @@ app.get(
     try {
       console.log("\n🔍 ========== ADMIN APPLICATIONS API ==========");
 
-      // Check if user is admin
       const currentUser = await prisma.user.findUnique({
         where: { id: req.user!.id },
         include: { user_type: true },
@@ -5270,7 +5269,7 @@ app.get(
 
       const { search = "", status = "all", page = 1, limit = 20 } = req.query;
 
-      // Build where clause
+
       let where: any = {};
 
       if (search) {
@@ -5307,7 +5306,6 @@ app.get(
         where.status = { status_name: status as string };
       }
 
-      // Get applications
       const applications = await prisma.jobApplication.findMany({
         where,
         include: {
@@ -5338,10 +5336,10 @@ app.get(
         take: Number(limit),
       });
 
-      // Get total count
+  
       const total = await prisma.jobApplication.count({ where });
 
-      // Calculate stats
+      
       const stats = {
         total: await prisma.jobApplication.count(),
         pending: await prisma.jobApplication.count({
@@ -5385,7 +5383,7 @@ app.get(
   }
 );
 
-// Update application status (admin) - WITH EMAIL NOTIFICATION
+
 app.put(
   "/api/admin/applications/:id/status",
   authMiddleware,
@@ -5512,10 +5510,10 @@ app.put(
         );
       } catch (emailError) {
         console.error("❌ Failed to send status update email:", emailError);
-        // Don't block the status update if email fails
+        
       }
 
-      // Create notification for job seeker
+      
       await prisma.notification.create({
         data: {
           user_id: application.seeker.user_id,
@@ -5539,7 +5537,7 @@ app.put(
   }
 );
 
-// Update job status (approve/reject) - WITH EMAIL TO EMPLOYER (KEEP THIS ONE)
+
 app.put(
   "/api/admin/jobs/:jobId/status",
   authMiddleware,
