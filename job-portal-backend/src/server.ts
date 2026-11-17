@@ -4544,7 +4544,7 @@ app.put(
           });
       }
 
-      // Get the status record from database
+   
       const statusRecord = await prisma.jobPostStatus.findFirst({
         where: { status_name: status },
       });
@@ -4558,7 +4558,6 @@ app.put(
           });
       }
 
-      // Update the job status
       const updatedJob = await prisma.jobPost.update({
         where: { id: id },
         data: {
@@ -4586,7 +4585,7 @@ app.put(
   }
 );
 
-// SPECIFIC ROUTES FIRST 
+ 
 app.put(
   "/api/jobs/:id/status",
   authMiddleware,
@@ -4595,7 +4594,6 @@ app.put(
   }
 );
 
-// Then generic routes
 app.put(
   "/api/jobs/:id",
   authMiddleware,
@@ -4608,7 +4606,7 @@ app.delete(
   "/api/jobs/:id",
   authMiddleware,
   async (req: Request, res: Response) => {
-    // ... delete logic
+    
   }
 );
 
@@ -4626,7 +4624,7 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
       });
     }
 
-    // Find user by email
+    
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
@@ -4644,7 +4642,7 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
       });
     }
 
-    // Check if user is active
+   
     if (!user.is_active) {
       console.log("❌ Account deactivated:", email);
       return res.status(401).json({
@@ -4653,7 +4651,6 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
       });
     }
 
-    // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
@@ -4664,17 +4661,16 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
       });
     }
 
-    // Generate JWT token
+ 
     const token = jwt.sign(
       { id: user.id, email: user.email, user_type: user.user_type?.type_name },
       process.env.JWT_SECRET!,
       { expiresIn: "7d" }
     );
 
-    // Get user type name
     const userTypeName = user.user_type?.type_name || "Job Seeker";
 
-    // Get full name from profile
+  
     let fullName = user.full_name || null;
     if (!fullName) {
       if (user.seeker_profile) {
@@ -4715,7 +4711,7 @@ app.get(
   authMiddleware,
   async (req: Request, res: Response) => {
     try {
-      // Check if user is admin or super admin
+    
       const currentUser = await prisma.user.findUnique({
         where: { id: req.user!.id },
         include: { user_type: true },
@@ -4797,7 +4793,6 @@ app.get(
           ? Math.round((totalApplications / totalJobs) * 10) / 10
           : 0;
 
-      // Last 30 days stats
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
