@@ -3601,7 +3601,7 @@ app.post("/api/contact", async (req: Request, res: Response) => {
       html: supportEmailHtml,
     });
 
-    // Send auto-reply to user
+   
     await transporter.sendMail({
       from: `"JobPortal Support" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -3629,7 +3629,6 @@ app.post("/api/contact", async (req: Request, res: Response) => {
 
 // ========== EMPLOYER SETTINGS ENDPOINTS ==========
 
-// 1. GET Employer Profile
 app.get(
   "/api/employer/profile",
   authMiddleware,
@@ -3655,7 +3654,6 @@ app.get(
         });
       }
 
-      // Get jobs count
       const jobsCount = await prisma.jobPost.count({
         where: { employer_id: employer.id },
       });
@@ -3688,7 +3686,6 @@ app.get(
   }
 );
 
-// 2. UPDATE Employer Profile
 app.put(
   "/api/employer/profile",
   authMiddleware,
@@ -3707,7 +3704,6 @@ app.put(
 
       console.log("✏️ Updating employer profile for user:", req.user!.id);
 
-      // Get industry ID if industry name is provided
       let industryId = undefined;
       if (industry) {
         const industryRecord = await prisma.jobIndustry.findFirst({
@@ -3746,7 +3742,6 @@ app.put(
   }
 );
 
-// 3. UPLOAD Company Logo
 app.post(
   "/api/employer/logo",
   authMiddleware,
@@ -3774,7 +3769,6 @@ app.post(
         });
       }
 
-      // Delete old logo from Cloudinary if exists
       if (employer.logo_url) {
         const oldPublicId = getPublicIdFromUrl(employer.logo_url);
         if (oldPublicId) {
@@ -3785,7 +3779,7 @@ app.post(
       const updatedEmployer = await prisma.employerProfile.update({
         where: { id: employer.id },
         data: {
-          logo_url: req.file.path, // Cloudinary URL
+          logo_url: req.file.path, 
           updated_at: new Date(),
         },
       });
@@ -3804,7 +3798,6 @@ app.post(
   }
 );
 
-// 4. DELETE Company Logo
 app.delete(
   "/api/employer/logo",
   authMiddleware,
@@ -3824,7 +3817,6 @@ app.delete(
         });
       }
 
-      // Delete from Cloudinary
       if (employer.logo_url) {
         const publicId = getPublicIdFromUrl(employer.logo_url);
         if (publicId) {
@@ -3853,7 +3845,6 @@ app.delete(
   }
 );
 
-// 5. GET All Industries
 app.get("/api/industries", async (req: Request, res: Response) => {
   try {
     const industries = await prisma.jobIndustry.findMany({
