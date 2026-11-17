@@ -3370,7 +3370,6 @@ app.post('/api/admin/users/:userId/reset-password', authMiddleware, async (req: 
     const { userId } = req.params;
     const { newPassword } = req.body;
 
-    // Check current user role
     const currentUser = await prisma.user.findUnique({
       where: { id: req.user!.id },
       include: { user_type: true }
@@ -3389,7 +3388,7 @@ app.post('/api/admin/users/:userId/reset-password', authMiddleware, async (req: 
       });
     }
 
-    // Get target user
+  
     const targetUser = await prisma.user.findUnique({
       where: { id: userId }
     });
@@ -3398,7 +3397,6 @@ app.post('/api/admin/users/:userId/reset-password', authMiddleware, async (req: 
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Validate password
     if (!newPassword || newPassword.length < 6) {
       return res.status(400).json({
         success: false,
@@ -3406,16 +3404,15 @@ app.post('/api/admin/users/:userId/reset-password', authMiddleware, async (req: 
       });
     }
 
-    // Hash new password
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update password
     await prisma.user.update({
       where: { id: userId },
       data: { password: hashedPassword, updated_at: new Date() }
     });
 
-    // Create notification
+   
     await prisma.notification.create({
       data: {
         user_id: userId,
@@ -3470,7 +3467,7 @@ app.post("/api/contact", async (req: Request, res: Response) => {
       category,
     });
 
-    // Validate required fields
+
     if (!name || !email || !subject || !message) {
       return res.status(400).json({
         success: false,
@@ -3478,7 +3475,7 @@ app.post("/api/contact", async (req: Request, res: Response) => {
       });
     }
 
-    // Validate email format
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
@@ -3487,7 +3484,7 @@ app.post("/api/contact", async (req: Request, res: Response) => {
       });
     }
 
-    // Configure email transporter
+
     const nodemailer = require("nodemailer");
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -3497,7 +3494,7 @@ app.post("/api/contact", async (req: Request, res: Response) => {
       },
     });
 
-    // Send email to support (mekdesw60@gmail.com)
+   
     const supportEmailHtml = `
       <!DOCTYPE html>
       <html>
@@ -3553,7 +3550,7 @@ app.post("/api/contact", async (req: Request, res: Response) => {
       </html>
     `;
 
-    // Send auto-reply to user
+  
     const userEmailHtml = `
       <!DOCTYPE html>
       <html>
@@ -3597,7 +3594,6 @@ app.post("/api/contact", async (req: Request, res: Response) => {
       </html>
     `;
 
-    // Send to support email (mekdesw60@gmail.com)
     await transporter.sendMail({
       from: `"JobPortal Contact" <${process.env.EMAIL_USER}>`,
       to: "mekdesw60@gmail.com",
