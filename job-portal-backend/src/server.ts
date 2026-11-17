@@ -3861,7 +3861,7 @@ app.get("/api/industries", async (req: Request, res: Response) => {
   }
 });
 
-// 6. GET Notification Preferences
+
 app.get(
   "/api/notifications/preferences",
   authMiddleware,
@@ -3976,7 +3976,6 @@ app.put(
   }
 );
 
-// 8. CHANGE Password (Works for all user types)
 app.post(
   "/api/auth/change-password",
   authMiddleware,
@@ -4028,7 +4027,6 @@ app.post(
 
       console.log("✅ Password changed successfully");
 
-      // Create notification
       await prisma.notification.create({
         data: {
           user_id: req.user!.id,
@@ -4105,7 +4103,6 @@ app.put(
           .json({ success: false, message: "Employer not found" });
       }
 
-      // Check if job exists and belongs to employer
       const job = await prisma.jobPost.findFirst({
         where: {
           id: id,
@@ -4119,7 +4116,6 @@ app.put(
           .json({ success: false, message: "Job not found" });
       }
 
-      // Get the status record
       const statusRecord = await prisma.jobPostStatus.findFirst({
         where: { status_name: status },
       });
@@ -4130,7 +4126,6 @@ app.put(
           .json({ success: false, message: `Status '${status}' not found` });
       }
 
-      // Update job status
       const updatedJob = await prisma.jobPost.update({
         where: { id: id },
         data: {
@@ -4349,7 +4344,6 @@ app.put(
           .json({ success: false, message: "Job not found" });
       }
 
-      // Build update data dynamically
       const updateData: any = {};
 
       if (title !== undefined) updateData.title = title;
@@ -4359,7 +4353,6 @@ app.put(
       if (location !== undefined) updateData.location = location;
       if (is_remote !== undefined) updateData.is_remote = is_remote;
 
-      // Handle employment_type_id - ensure it's a number
       if (
         employment_type_id !== undefined &&
         employment_type_id !== null &&
@@ -4371,7 +4364,6 @@ app.put(
             : employment_type_id;
       }
 
-      // Handle industry_id - ensure it's a number
       if (
         industry_id !== undefined &&
         industry_id !== null &&
@@ -4381,13 +4373,10 @@ app.put(
           typeof industry_id === "string" ? parseInt(industry_id) : industry_id;
       }
 
-      // Handle status_id - ensure it's a number
       if (status_id !== undefined && status_id !== null && status_id !== "") {
         updateData.status_id =
           typeof status_id === "string" ? parseInt(status_id) : status_id;
       }
-
-      // Handle salary fields
       if (
         salary_min !== undefined &&
         salary_min !== null &&
@@ -4512,14 +4501,14 @@ app.put(
       console.log("Request body:", req.body);
       console.log("Status received:", status);
 
-      // Validate status is provided
+      
       if (!status) {
         return res
           .status(400)
           .json({ success: false, message: "Status is required" });
       }
 
-      // Validate status value
+  
       if (status !== "Open" && status !== "Closed") {
         return res
           .status(400)
@@ -4529,7 +4518,6 @@ app.put(
           });
       }
 
-      // Get the employer profile
       const employer = await prisma.employerProfile.findFirst({
         where: { user_id: req.user!.id },
       });
@@ -4540,7 +4528,6 @@ app.put(
           .json({ success: false, message: "Employer profile not found" });
       }
 
-      // Check if job exists and belongs to this employer
       const job = await prisma.jobPost.findFirst({
         where: {
           id: id,
