@@ -6905,7 +6905,7 @@ app.post(
       } catch (emailError) {
         console.error("❌ Failed to send password reset email:", emailError);
         emailError = emailError.message;
-        // Don't block the password reset if email fails
+        
       }
 
       // ========== CREATE IN-APP NOTIFICATION ==========
@@ -6978,7 +6978,7 @@ app.get(
     try {
       const userId = req.user!.id;
 
-      // Check if user is a job seeker
+    
       const seeker = await prisma.jobSeekerProfile.findFirst({
         where: { user_id: userId },
       });
@@ -6992,7 +6992,6 @@ app.get(
           });
       }
 
-      // Get or create preferences
       let preferences = await prisma.jobSeekerPreference.findUnique({
         where: { seeker_id: seeker.id },
       });
@@ -7022,7 +7021,6 @@ app.get(
   }
 );
 
-// Update job seeker preferences
 app.put(
   "/api/jobseeker/preferences",
   authMiddleware,
@@ -7127,7 +7125,7 @@ app.get(
           .json({ success: false, message: "User not found" });
       }
 
-      // Handle both seeker and employer profiles
+      
       let profile = null;
       let fullName = user.full_name || null;
       let phone = null;
@@ -7185,18 +7183,18 @@ app.get(
     try {
       const userId = req.user!.id;
 
-      // Get or create notification preferences
+      
       let preferences = await prisma.notificationPreference.findUnique({
         where: { user_id: userId },
       });
 
       if (!preferences) {
-        // Create default preferences with correct field names
+        
         preferences = await prisma.notificationPreference.create({
           data: {
             user_id: userId,
             email_notifications: true,
-            application_updates: true, // Changed from application_alerts
+            application_updates: true, 
             marketing_emails: false,
             push_notifications: true,
             status_changes: true,
@@ -7205,12 +7203,12 @@ app.get(
         });
       }
 
-      // Map the response to match frontend expectations
+      
       res.json({
         success: true,
         data: {
           email_notifications: preferences.email_notifications,
-          application_alerts: preferences.application_updates, // Map to frontend field name
+          application_alerts: preferences.application_updates, 
           marketing_emails: preferences.marketing_emails,
           push_notifications: preferences.push_notifications,
           status_changes: preferences.status_changes,
@@ -7240,7 +7238,7 @@ app.put(
         weekly_digest,
       } = req.body;
 
-      // Update with correct field names
+      
       const preferences = await prisma.notificationPreference.upsert({
         where: { user_id: userId },
         update: {
@@ -7269,7 +7267,7 @@ app.put(
         },
       });
 
-      // Return mapped response
+ 
       res.json({
         success: true,
         data: {
@@ -7465,7 +7463,6 @@ app.post(
         console.error("❌ Failed to send email to employer:", emailError);
       }
 
-      // Create notifications
       await createNotification(
         job.employer.user_id,
         "New Application Received",
