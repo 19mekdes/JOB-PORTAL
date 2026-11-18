@@ -5850,7 +5850,7 @@ app.put(
   }
 );
 
-// Reset admin password (Super Admin only)
+
 app.post(
   "/api/super-admin/admins/:adminId/reset-password",
   authMiddleware,
@@ -5890,7 +5890,7 @@ app.post(
   }
 );
 
-// Suspend admin (Super Admin only)
+
 app.put(
   "/api/super-admin/admins/:adminId/suspend",
   authMiddleware,
@@ -5899,7 +5899,7 @@ app.put(
     try {
       const { adminId } = req.params;
 
-      // Don't allow suspending yourself
+     
       if (adminId === req.user!.id) {
         return res
           .status(400)
@@ -5926,7 +5926,6 @@ app.put(
   }
 );
 
-// Activate admin (Super Admin only)
 app.put(
   "/api/super-admin/admins/:adminId/activate",
   authMiddleware,
@@ -5955,7 +5954,6 @@ app.put(
   }
 );
 
-// Delete admin (Super Admin only)
 app.delete(
   "/api/super-admin/admins/:adminId",
   authMiddleware,
@@ -5964,14 +5962,14 @@ app.delete(
     try {
       const { adminId } = req.params;
 
-      // Don't allow deleting yourself
+      
       if (adminId === req.user!.id) {
         return res
           .status(400)
           .json({ success: false, message: "Cannot delete your own account" });
       }
 
-      // Get admin details before deletion
+      
       const admin = await prisma.user.findUnique({
         where: { id: adminId },
         include: { seeker_profile: true, employer_profile: true },
@@ -5983,7 +5981,6 @@ app.delete(
           .json({ success: false, message: "Admin not found" });
       }
 
-      // Delete related data
       if (admin.seeker_profile) {
         await prisma.jobApplication.deleteMany({
           where: { seeker_id: admin.seeker_profile.id },
@@ -6017,7 +6014,7 @@ app.delete(
         where: { user_id: adminId },
       });
 
-      // Delete the user
+    
       await prisma.user.delete({
         where: { id: adminId },
       });
@@ -6033,7 +6030,7 @@ app.delete(
   }
 );
 
-// Bulk action on jobs
+
 app.post(
   "/api/admin/jobs/bulk-action",
   authMiddleware,
@@ -6079,7 +6076,7 @@ app.post(
   }
 );
 
-// Delete job (admin only)
+
 app.delete(
   "/api/admin/jobs/:jobId",
   authMiddleware,
@@ -6114,7 +6111,7 @@ app.delete(
 
       await prisma.jobPost.delete({ where: { id: jobId } });
 
-      // Notify employer
+    
       await prisma.notification.create({
         data: {
           user_id: job.employer.user_id,
@@ -6143,7 +6140,7 @@ app.put(
       const { userId } = req.params;
       const { is_active, reason } = req.body;
 
-      // Get current user with their role
+
       const currentUser = await prisma.user.findUnique({
         where: { id: req.user!.id },
         include: { user_type: true },
@@ -6157,7 +6154,7 @@ app.put(
 
       const currentRole = currentUser.user_type?.type_name;
 
-      // Check if user has permission to modify status
+     
       if (currentRole !== "Admin" && currentRole !== "Super Admin") {
         return res.status(403).json({
           success: false,
@@ -6166,15 +6163,12 @@ app.put(
         });
       }
 
-      // Don't allow modifying own status
       if (userId === req.user!.id) {
         return res.status(400).json({
           success: false,
           message: "Cannot modify your own account status",
         });
       }
-
-      // Get target user with their role
       const targetUser = await prisma.user.findUnique({
         where: { id: userId },
         include: {
@@ -6194,11 +6188,10 @@ app.put(
 
       // ========== ROLE-BASED PERMISSION CHECKS ==========
 
-      // Super Admin can suspend/activate anyone except themselves (already checked)
       if (currentRole === "Super Admin") {
 
       }
-      // Admin can ONLY suspend/activate Job Seekers and Employers
+
       else if (currentRole === "Admin") {
         if (targetRole !== "Job Seeker" && targetRole !== "Employer") {
           return res.status(403).json({
