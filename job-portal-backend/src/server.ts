@@ -6205,7 +6205,7 @@ app.put(
         }
       }
 
-      // Prevent suspending the last Super Admin
+     
       if (targetRole === "Super Admin" && !is_active) {
         const superAdminCount = await prisma.user.count({
           where: {
@@ -6223,7 +6223,7 @@ app.put(
         }
       }
 
-      // Check if trying to suspend already suspended user or activate already active user
+      
       if (targetUser.is_active === is_active) {
         const statusText = is_active ? "active" : "suspended";
         return res.status(400).json({
@@ -6460,7 +6460,7 @@ app.delete(
 
       const currentRole = currentUser.user_type?.type_name;
 
-      // Check if user has permission to delete
+ 
       if (currentRole !== "Admin" && currentRole !== "Super Admin") {
         return res.status(403).json({
           success: false,
@@ -6470,7 +6470,7 @@ app.delete(
         });
       }
 
-      // Don't allow deleting own account
+  
       if (userId === req.user!.id) {
         return res.status(400).json({
           success: false,
@@ -6478,7 +6478,7 @@ app.delete(
         });
       }
 
-      // Check if target user exists with full details
+ 
       const targetUser = await prisma.user.findUnique({
         where: { id: userId },
         include: {
@@ -6500,11 +6500,10 @@ app.delete(
 
       // ========== ROLE-BASED PERMISSION CHECKS ==========
 
-      // Super Admin can delete anyone except themselves
       if (currentRole === "Super Admin") {
 
       }
-      // Admin can ONLY delete Job Seekers and Employers
+      
       else if (currentRole === "Admin") {
         if (targetRole !== "Job Seeker" && targetRole !== "Employer") {
           return res.status(403).json({
@@ -6517,7 +6516,6 @@ app.delete(
         }
       }
 
-      // Prevent deleting the last Super Admin
       if (targetRole === "Super Admin") {
         const superAdminCount = await prisma.user.count({
           where: { user_type: { type_name: "Super Admin" } },
@@ -6546,8 +6544,6 @@ app.delete(
         deleted_by_role: currentRole,
         details: {},
       };
-
-      // 1. Delete job application notes (if job seeker)
       if (targetUser.seeker_profile) {
         const applications = await prisma.jobApplication.findMany({
           where: { seeker_id: targetUser.seeker_profile.id },
@@ -6561,28 +6557,26 @@ app.delete(
         deletionSummary.details["application_notes_deleted"] =
           applications.length;
 
-        // 2. Delete job applications
+       
         const deletedApps = await prisma.jobApplication.deleteMany({
           where: { seeker_id: targetUser.seeker_profile.id },
         });
         deletionSummary.details["applications_deleted"] = deletedApps.count;
 
-        // 3. Delete bookmarks
         const deletedBookmarks = await prisma.jobBookmark.deleteMany({
           where: { seeker_id: targetUser.seeker_profile.id },
         });
         deletionSummary.details["bookmarks_deleted"] = deletedBookmarks.count;
 
-        // 4. Delete seeker profile
+    
         await prisma.jobSeekerProfile.delete({
           where: { id: targetUser.seeker_profile.id },
         });
         deletionSummary.details["seeker_profile_deleted"] = true;
       }
 
-      // 5. Delete employer related data (if employer)
       if (targetUser.employer_profile) {
-        // Get all jobs by this employer
+      
         const jobs = await prisma.jobPost.findMany({
           where: { employer_id: targetUser.employer_profile.id },
         });
@@ -6592,13 +6586,12 @@ app.delete(
         let totalBookmarksDeleted = 0;
 
         for (const job of jobs) {
-          // Delete applications for each job
+          
           const deletedJobApps = await prisma.jobApplication.deleteMany({
             where: { job_id: job.id },
           });
           totalApplicationsDeleted += deletedJobApps.count;
 
-          // Delete bookmarks for each job
           const deletedJobBookmarks = await prisma.jobBookmark.deleteMany({
             where: { job_id: job.id },
           });
@@ -6610,54 +6603,49 @@ app.delete(
         deletionSummary.details["job_bookmarks_deleted"] =
           totalBookmarksDeleted;
 
-        // Delete all jobs
         const deletedJobs = await prisma.jobPost.deleteMany({
           where: { employer_id: targetUser.employer_profile.id },
         });
         deletionSummary.details["jobs_deleted"] = deletedJobs.count;
 
-        // Delete managed companies
         const deletedCompanies = await prisma.managedCompany.deleteMany({
           where: { employer_id: targetUser.employer_profile.id },
         });
         deletionSummary.details["managed_companies_deleted"] =
           deletedCompanies.count;
 
-        // Delete employer profile
+      
         await prisma.employerProfile.delete({
           where: { id: targetUser.employer_profile.id },
         });
         deletionSummary.details["employer_profile_deleted"] = true;
       }
 
-      // 6. Delete notifications
       const deletedNotifications = await prisma.notification.deleteMany({
         where: { user_id: userId },
       });
       deletionSummary.details["notifications_deleted"] =
         deletedNotifications.count;
 
-      // 7. Delete notification preferences
+    
       await prisma.notificationPreference.deleteMany({
         where: { user_id: userId },
       });
       deletionSummary.details["notification_preferences_deleted"] = true;
 
-      // 8. Delete search logs
+  
       const deletedSearchLogs = await prisma.searchLog.deleteMany({
         where: { user_id: userId },
       });
       deletionSummary.details["search_logs_deleted"] = deletedSearchLogs.count;
 
-      // 9. Delete audit logs (if any)
+      
       const deletedAuditLogs = await prisma.auditLog.deleteMany({
         where: { admin_id: userId },
       });
       if (deletedAuditLogs.count > 0) {
         deletionSummary.details["audit_logs_deleted"] = deletedAuditLogs.count;
       }
-
-      // 10. Finally delete the user
       await prisma.user.delete({
         where: { id: userId },
       });
@@ -6667,7 +6655,7 @@ app.delete(
       );
       console.log(`📊 Deletion summary:`, deletionSummary.details);
 
-      // Create audit log entry
+      
       try {
         await prisma.auditLog.create({
           data: {
@@ -6726,7 +6714,6 @@ app.post(
 
       const currentRole = currentUser.user_type?.type_name;
 
-      // Check if user has permission to reset passwords
       if (currentRole !== "Admin" && currentRole !== "Super Admin") {
         return res.status(403).json({
           success: false,
@@ -6735,7 +6722,6 @@ app.post(
         });
       }
 
-      // Get target user with full details
       const targetUser = await prisma.user.findUnique({
         where: { id: userId },
         include: {
@@ -6761,7 +6747,6 @@ app.post(
 
       // ========== ROLE-BASED PERMISSION CHECKS ==========
 
-      // Super Admin can reset anyone's password except themselves
       if (currentRole === "Super Admin") {
         if (userId === req.user!.id) {
           return res.status(400).json({
@@ -6772,7 +6757,7 @@ app.post(
         }
 
       }
-      // Admin can ONLY reset passwords for Job Seekers and Employers
+    
       else if (currentRole === "Admin") {
         if (targetRole !== "Job Seeker" && targetRole !== "Employer") {
           return res.status(403).json({
@@ -6785,15 +6770,12 @@ app.post(
         }
       }
 
-      // Validate password strength
       if (!newPassword || newPassword.length < 6) {
         return res.status(400).json({
           success: false,
           message: "Password must be at least 6 characters long",
         });
       }
-
-      // Additional password strength checks (optional but recommended)
       const hasUpperCase = /[A-Z]/.test(newPassword);
       const hasLowerCase = /[a-z]/.test(newPassword);
       const hasNumbers = /\d/.test(newPassword);
@@ -6804,10 +6786,8 @@ app.post(
           " For better security, use uppercase, lowercase, and numbers.";
       }
 
-      // Hash the new password
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-      // Update user password
       await prisma.user.update({
         where: { id: userId },
         data: {
