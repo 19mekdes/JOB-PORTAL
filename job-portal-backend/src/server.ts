@@ -7657,7 +7657,6 @@ app.post(
       console.log(`User ID: ${req.user!.id}`);
       console.log(`User Email: ${req.user!.email}`);
 
-      // Get job details
       const job = await prisma.jobPost.findUnique({
         where: { id: jobId },
         include: {
@@ -7683,7 +7682,7 @@ app.post(
           });
       }
 
-      // Get or create seeker profile
+  
       let seeker = await prisma.jobSeekerProfile.findFirst({
         where: { user_id: req.user!.id },
       });
@@ -7702,7 +7701,7 @@ app.post(
         console.log(`Created new seeker profile for: ${req.user!.email}`);
       }
 
-      // Check for duplicate application
+  
       const existing = await prisma.jobApplication.findFirst({
         where: { job_id: jobId, seeker_id: seeker.id },
       });
@@ -7716,7 +7715,7 @@ app.post(
           });
       }
 
-      // Get pending status
+   
       const pendingStatus = await prisma.jobApplicationStatus.findFirst({
         where: { status_name: "Pending" },
       });
@@ -7730,7 +7729,7 @@ app.post(
           });
       }
 
-      // Create application
+    
       const application = await prisma.jobApplication.create({
         data: {
           job_id: jobId,
@@ -7744,7 +7743,7 @@ app.post(
 
       console.log(`✅ Application created: ${application.id}`);
 
-      // Update job applications count
+ 
       await prisma.jobPost.update({
         where: { id: jobId },
         data: { applications_count: { increment: 1 } },
@@ -7829,7 +7828,7 @@ app.post(
         );
       } catch (emailError) {
         console.error("❌ Failed to send email to job seeker:", emailError);
-        // Don't block application if email fails
+        
       }
 
       // ========== SEND EMAIL TO EMPLOYER ==========
@@ -7906,10 +7905,9 @@ app.post(
         );
       } catch (emailError) {
         console.error("❌ Failed to send email to employer:", emailError);
-        // Don't block application if email fails
+        
       }
 
-      // Create notifications
       await createNotification(
         job.employer.user_id,
         "New Application Received",
@@ -7952,7 +7950,7 @@ app.put(
 
       console.log(`📝 Updating application ${id} status to: ${statusId}`);
 
-      // Get the employer
+    
       const employer = await prisma.employerProfile.findFirst({
         where: { user_id: req.user!.id },
       });
@@ -7963,7 +7961,6 @@ app.put(
           .json({ success: false, message: "Employer not found" });
       }
 
-      // Get application with details
       const application = await prisma.jobApplication.findUnique({
         where: { id },
         include: {
@@ -7979,14 +7976,14 @@ app.put(
           .json({ success: false, message: "Application not found" });
       }
 
-      // Check if employer owns this job
+    
       if (application.job.employer_id !== employer.id) {
         return res
           .status(403)
           .json({ success: false, message: "Not authorized" });
       }
 
-      // Get new status
+  
       const newStatus = await prisma.jobApplicationStatus.findUnique({
         where: { id: parseInt(statusId) },
       });
@@ -7997,7 +7994,6 @@ app.put(
           .json({ success: false, message: "Status not found" });
       }
 
-      // Update application
       const updatedApplication = await prisma.jobApplication.update({
         where: { id },
         data: {
@@ -8008,7 +8004,7 @@ app.put(
         include: { status: true },
       });
 
-      // SEND EMAIL TO JOB SEEKER ABOUT STATUS CHANGE
+     
       try {
         console.log(
           `📧 Sending status update email to job seeker: ${application.seeker.user.email}`
@@ -8102,7 +8098,6 @@ app.put(
         console.error("❌ Failed to send status update email:", emailError);
       }
 
-      // Create notification
       await createNotification(
         application.seeker.user_id,
         "Application Status Updated",
