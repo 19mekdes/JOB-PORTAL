@@ -5642,7 +5642,7 @@ app.put(
         console.error("❌ Failed to send job status email:", emailError);
       }
 
-      // Create notification for employer
+  
       await prisma.notification.create({
         data: {
           user_id: job.employer.user_id,
@@ -5668,14 +5668,13 @@ app.put(
 
 // ========== SUPER ADMIN - ADMIN MANAGEMENT ENDPOINTS ==========
 
-// Get all admins (Super Admin only)
 app.get(
   "/api/super-admin/admins",
   authMiddleware,
   superAdminMiddleware,
   async (req: Request, res: Response) => {
     try {
-      // Get all users with Admin or Super Admin role
+    
       const admins = await prisma.user.findMany({
         where: {
           user_type: {
@@ -5690,7 +5689,7 @@ app.get(
         orderBy: { created_at: "desc" },
       });
 
-      // Format admin data
+     
       const formattedAdmins = admins.map((admin) => ({
         id: admin.id,
         full_name: admin.full_name || admin.email?.split("@")[0] || "Admin",
@@ -5715,7 +5714,6 @@ app.get(
   }
 );
 
-// Create new admin (Super Admin only)
 app.post(
   "/api/super-admin/admins",
   authMiddleware,
@@ -5724,7 +5722,7 @@ app.post(
     try {
       const { full_name, email, password, phone, role } = req.body;
 
-      // Check if user already exists
+   
       const existingUser = await prisma.user.findUnique({
         where: { email },
       });
@@ -5738,7 +5736,7 @@ app.post(
           });
       }
 
-      // Get user type ID
+   
       const userType = await prisma.userType.findFirst({
         where: { type_name: role || "Admin" },
       });
@@ -5749,10 +5747,9 @@ app.post(
           .json({ success: false, message: "Invalid user type" });
       }
 
-      // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Create user
+    
       const user = await prisma.user.create({
         data: {
           email,
@@ -5765,7 +5762,7 @@ app.post(
         },
       });
 
-      // Create profile based on role (for admin, create seeker profile or employer profile?)
+      
       await prisma.jobSeekerProfile.create({
         data: {
           user_id: user.id,
@@ -5792,7 +5789,6 @@ app.post(
   }
 );
 
-// Update admin (Super Admin only)
 app.put(
   "/api/super-admin/admins/:adminId",
   authMiddleware,
@@ -5802,7 +5798,7 @@ app.put(
       const { adminId } = req.params;
       const { full_name, phone, role, is_active } = req.body;
 
-      // Get user type ID if role is changing
+    
       let userTypeId;
       if (role) {
         const userType = await prisma.userType.findFirst({
@@ -5816,7 +5812,6 @@ app.put(
         userTypeId = userType.id;
       }
 
-      // Update user
       const updatedUser = await prisma.user.update({
         where: { id: adminId },
         data: {
@@ -5827,7 +5822,6 @@ app.put(
         },
       });
 
-      // Update seeker profile if exists
       const seekerProfile = await prisma.jobSeekerProfile.findFirst({
         where: { user_id: adminId },
       });
