@@ -8127,7 +8127,7 @@ app.post(
     try {
       const userId = req.user!.id;
 
-      // Get user details
+     
       const user = await prisma.user.findUnique({
         where: { id: userId },
         include: { seeker_profile: true, employer_profile: true },
@@ -8193,7 +8193,6 @@ app.post(
       </html>
     `;
 
-      // Use your email transporter
       const emailTransporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
@@ -8360,7 +8359,7 @@ app.get("/api/employment-types", async (req: Request, res: Response) => {
   }
 });
 
-// DEBUG: Check what data is being sent
+
 app.get(
   "/api/admin/analytics-debug",
   authMiddleware,
@@ -8370,7 +8369,7 @@ app.get(
       const totalJobs = await prisma.jobPost.count();
       const totalApplications = await prisma.jobApplication.count();
 
-      // Return in the exact format frontend expects
+      
       res.json({
         success: true,
         data: {
@@ -8520,7 +8519,6 @@ app.get(
 
       // ========== GET ALL STATS IN THE FORMAT FRONTEND EXPECTS ==========
 
-      // User Statistics
       const totalUsers = await prisma.user.count();
       const totalJobSeekers = await prisma.user.count({
         where: { user_type: { type_name: "Job Seeker" } },
@@ -8541,7 +8539,6 @@ app.get(
         where: { status: { status_name: "Closed" } },
       });
 
-      // Application Statistics
       const totalApplications = await prisma.jobApplication.count();
       const pendingApplications = await prisma.jobApplication.count({
         where: { status: { status_name: "Pending" } },
@@ -8562,7 +8559,7 @@ app.get(
         where: { status: { status_name: "Rejected" } },
       });
 
-      // New this month (last 30 days)
+   
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -8576,7 +8573,7 @@ app.get(
         where: { applied_at: { gte: thirtyDaysAgo } },
       });
 
-      // Engagement Metrics
+   
       const totalViewsResult = await prisma.jobPost.aggregate({
         _sum: { views_count: true },
       });
@@ -8592,7 +8589,7 @@ app.get(
           ? Math.round((acceptedApplications / totalApplications) * 100)
           : 0;
 
-      // Monthly chart data (last 6 months)
+   
       const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
       const jobsByMonth = [];
 
@@ -8624,7 +8621,7 @@ app.get(
         });
       }
 
-      // Application status distribution for pie chart
+      
       const applicationsByStatus = [
         { status: "Pending", count: pendingApplications },
         { status: "Reviewed", count: reviewedApplications },
@@ -8640,11 +8637,11 @@ app.get(
         totalApplications,
       });
 
-      // Return in the format frontend expects
+      
       res.json({
         success: true,
         data: {
-          // User Statistics
+       
           totalUsers,
           totalJobSeekers,
           totalEmployers,
@@ -8653,7 +8650,7 @@ app.get(
           userGrowth: 0,
           activeUsers: totalUsers,
 
-          // Job Statistics
+        
           totalJobs,
           activeJobs,
           closedJobs,
@@ -8662,7 +8659,7 @@ app.get(
           jobsByIndustry: [],
           jobsByType: [],
 
-          // Application Statistics
+       
           totalApplications,
           pendingApplications,
           reviewedApplications,
@@ -8690,7 +8687,7 @@ app.get(
           topEmployers: [],
           topSkills: [],
 
-          // Application Status Distribution
+          
           applicationsByStatus,
         },
       });
@@ -8746,7 +8743,7 @@ app.get(
     try {
       console.log("📊 Super Admin Analytics endpoint called - CORRECT VERSION");
 
-      // Check if user is Super Admin
+     
       const currentUser = await prisma.user.findUnique({
         where: { id: req.user!.id },
         include: { user_type: true },
