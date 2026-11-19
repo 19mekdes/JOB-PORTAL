@@ -9244,7 +9244,7 @@ app.get(
           status: overallStatus,
           timestamp: new Date().toISOString(),
 
-          // Components Health
+   
           components: {
             database: {
               status: databaseStatus,
@@ -9268,7 +9268,7 @@ app.get(
             },
           },
 
-          // Server Metrics
+       
           server: {
             uptime_seconds: Math.floor(serverUptime),
             uptime_formatted: formatUptime(serverUptime),
@@ -9282,7 +9282,7 @@ app.get(
             platform: process.platform,
           },
 
-          // Database Statistics
+        
           statistics: {
             total_users: totalUsers,
             active_users: activeUsers,
@@ -9294,18 +9294,18 @@ app.get(
             recent_applications_7d: recentApplications,
           },
 
-          // Performance Metrics
+        
           performance: {
             average_response_time_ms: averageResponseTime,
             error_rate_percent: errorRate,
-            requests_per_minute: 0, // Would need request tracking
+            requests_per_minute: 0, 
             dependencies: dependencies,
           },
 
-          // Active Alerts
+        
           alerts: alerts,
 
-          // Service Status
+         
           services: {
             database: databaseStatus === "healthy",
             api: apiStatus === "healthy",
@@ -9341,7 +9341,6 @@ app.get(
   }
 );
 
-// Helper function to format uptime
 function formatUptime(seconds: number): string {
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
@@ -9358,7 +9357,7 @@ function formatUptime(seconds: number): string {
 }
 
 // ========== SUPER ADMIN SETTINGS (Global System Configuration) ==========
-// GET all system settings - Super Admin only
+
 app.get(
   "/api/super-admin/settings",
   authMiddleware,
@@ -9367,11 +9366,11 @@ app.get(
     try {
       console.log("⚙️ Super Admin fetching system settings");
 
-      // Get or create default settings
+   
       let settings = await prisma.systemSetting.findFirst();
 
       if (!settings) {
-        // Create default settings if none exist
+        
         settings = await prisma.systemSetting.create({
           data: {
             site_name: "JobPortal",
@@ -9441,11 +9440,11 @@ app.get(
         });
       }
 
-      // Return settings in camelCase for frontend (mask sensitive data)
+      
       res.json({
         success: true,
         data: {
-          // General Settings
+          
           siteName: settings.site_name,
           siteDescription: settings.site_description,
           siteLogo: settings.site_logo,
@@ -9540,7 +9539,7 @@ app.get(
   }
 );
 
-// UPDATE system settings - Super Admin only
+
 app.put(
   "/api/super-admin/settings",
   authMiddleware,
@@ -9550,7 +9549,7 @@ app.put(
       console.log("⚙️ Super Admin updating system settings");
 
       const {
-        // General Settings
+        
         siteName,
         siteDescription,
         siteLogo,
@@ -9634,7 +9633,6 @@ app.put(
         maxFileSizeMb,
       } = req.body;
 
-      // Get existing settings
       let settings = await prisma.systemSetting.findFirst();
 
       if (!settings) {
@@ -9643,7 +9641,6 @@ app.put(
           .json({ success: false, message: "Settings not found" });
       }
 
-      // Prepare update data (only include fields that are provided)
       const updateData: any = {
         updated_at: new Date(),
       };
