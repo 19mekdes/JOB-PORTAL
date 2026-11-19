@@ -8965,7 +8965,7 @@ app.get(
       res.json({
         success: true,
         data: {
-          // User Statistics
+        
           totalUsers,
           totalJobSeekers,
           totalEmployers,
@@ -8974,7 +8974,7 @@ app.get(
           newUsersThisMonth,
           userGrowth,
 
-          // Job Statistics
+         
           totalJobs,
           activeJobs,
           closedJobs,
@@ -8984,8 +8984,6 @@ app.get(
           averageViewsPerJob,
           averageApplicationsPerJob,
           conversionRate,
-
-          // Application Statistics
           totalApplications,
           pendingApplications,
           reviewedApplications,
@@ -8993,19 +8991,12 @@ app.get(
           interviewApplications,
           acceptedApplications,
           rejectedApplications,
-
-          // Views
           totalViews,
-
-          // Monthly Trends
           jobsByMonth,
           applicationsByMonth,
 
-          // Distribution
           applicationsByStatus,
           jobsByIndustry,
-
-          // Top Lists
           topSkills,
           topEmployers,
         },
@@ -9060,7 +9051,7 @@ app.get(
     try {
       console.log("🏥 System Health endpoint called");
 
-      // Check if user is Admin or Super Admin
+      
       const currentUser = await prisma.user.findUnique({
         where: { id: req.user!.id },
         include: { user_type: true },
@@ -9082,7 +9073,7 @@ app.get(
 
       const dbStartTime = Date.now();
       try {
-        // Test database connection with a simple query
+       
         await prisma.$queryRaw`SELECT 1 as connected`;
         databaseLatency = Date.now() - dbStartTime;
       } catch (error: any) {
@@ -9098,7 +9089,6 @@ app.get(
       const memoryUsage = process.memoryUsage();
       const cpuUsage = process.cpuUsage();
 
-      // Calculate CPU usage percentage
       const cpuUsagePercent = (cpuUsage.user + cpuUsage.system) / 1000000; // Convert to seconds
 
       // ========== API HEALTH ==========
@@ -9108,7 +9098,7 @@ app.get(
 
       const apiStartTime = Date.now();
       try {
-        // Test a simple API call to itself
+     
         await prisma.user.count();
         apiLatency = Date.now() - apiStartTime;
       } catch (error: any) {
@@ -9125,12 +9115,13 @@ app.get(
       let storageError = null;
 
       try {
-        // Check if uploads directory exists, create if not
+        
         if (!fs.existsSync(uploadsDir)) {
           fs.mkdirSync(uploadsDir, { recursive: true });
         }
 
-        // Get storage info (simulated for cloud storage)
+      
+        
         const files = fs.readdirSync(uploadsDir);
         let totalSize = 0;
         for (const file of files) {
@@ -9171,8 +9162,8 @@ app.get(
       });
 
       // ========== ERROR RATE (Last 24 hours from logs) ==========
-      // This would require a logs table, for now using approximate
-      const errorRate = 0.5; // Percentage of failed requests (approximate)
+      
+      const errorRate = 0.5; 
 
       // ========== RESPONSE TIME ==========
       const averageResponseTime = apiLatency > 0 ? apiLatency : 45; // ms
