@@ -9775,13 +9775,13 @@ app.put(
       if (maxFileSizeMb !== undefined)
         updateData.max_file_size_mb = maxFileSizeMb;
 
-      // Update settings
+   
       const updatedSettings = await prisma.systemSetting.update({
         where: { id: settings.id },
         data: updateData,
       });
 
-      // Create audit log
+   
       await prisma.auditLog.create({
         data: {
           admin_id: req.user!.id,
@@ -9803,7 +9803,7 @@ app.put(
         `✅ System settings updated by Super Admin: ${req.user!.email}`
       );
 
-      // If maintenance mode changed, notify all admins
+      
       if (
         maintenanceMode !== undefined &&
         maintenanceMode !== settings.maintenance_mode
@@ -9842,7 +9842,6 @@ app.put(
   }
 );
 
-// GET public settings (non-sensitive, for frontend)
 app.get("/api/public-settings", async (req: Request, res: Response) => {
   try {
     const settings = await prisma.systemSetting.findFirst();
@@ -9889,7 +9888,7 @@ app.get("/api/public-settings", async (req: Request, res: Response) => {
   }
 });
 
-// Test email configuration
+
 app.post(
   "/api/super-admin/settings/test-email",
   authMiddleware,
@@ -10016,7 +10015,7 @@ app.get("/api/home/stats", async (req: Request, res: Response) => {
   }
 });
 
-// 2. Recent Jobs
+
 app.get("/api/home/recent-jobs", async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 6;
@@ -10052,7 +10051,7 @@ app.get("/api/home/recent-jobs", async (req: Request, res: Response) => {
   }
 });
 
-// 3. Popular Searches
+
 app.get("/api/popular-searches", async (req: Request, res: Response) => {
   try {
     const getIcon = (title: string) => {
@@ -10120,7 +10119,6 @@ app.get("/api/popular-searches", async (req: Request, res: Response) => {
         });
     }
 
-    // Remove duplicates
     const seen = new Set();
     const unique = searches.filter(
       (s) => !seen.has(s.label.toLowerCase()) && seen.add(s.label.toLowerCase())
@@ -10138,7 +10136,6 @@ app.get("/api/popular-searches", async (req: Request, res: Response) => {
   }
 });
 
-// 4. Top Companies
 app.get("/api/companies/top", async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 6;
