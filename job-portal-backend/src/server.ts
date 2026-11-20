@@ -2700,7 +2700,7 @@ app.get(
         orderBy: { created_at: "desc" },
       });
 
-      // Get all applications with job and seeker info
+      
       const allApplications = await prisma.jobApplication.findMany({
         where: {
           job: { employer_id: employer.id },
@@ -5119,14 +5119,13 @@ app.get(
             maxJobsPerEmployer: 50,
             jobExpiryDays: 30,
 
-            // Application Settings
+  
             maxApplicationsPerSeeker: 100,
             requireResumeUpload: true,
 
-            // Maintenance
+          
             maintenanceMode: false,
 
-            // File Settings
             allowedFileTypes: ["pdf", "doc", "docx", "txt"],
             maxFileSizeMb: 5,
           },
