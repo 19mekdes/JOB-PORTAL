@@ -8530,7 +8530,7 @@ app.get(
         where: { user_type: { type_name: { in: ["Admin", "Super Admin"] } } },
       });
 
-      // Job Statistics
+     
       const totalJobs = await prisma.jobPost.count();
       const activeJobs = await prisma.jobPost.count({
         where: { status: { status_name: "Open" } },
@@ -9720,7 +9720,7 @@ app.put(
       if (lockoutDuration !== undefined)
         updateData.lockout_duration = lockoutDuration;
 
-      // Notification Settings
+    
       if (emailNotifications !== undefined)
         updateData.email_notifications = emailNotifications;
       if (pushNotifications !== undefined)
@@ -9746,7 +9746,7 @@ app.put(
       if (fromEmail !== undefined) updateData.from_email = fromEmail;
       if (fromName !== undefined) updateData.from_name = fromName;
 
-      // API Settings
+      
       if (googleClientId !== undefined)
         updateData.google_client_id = googleClientId;
       if (googleClientSecret !== undefined && googleClientSecret !== "")
@@ -9760,7 +9760,7 @@ app.put(
       if (recaptchaSecretKey !== undefined && recaptchaSecretKey !== "")
         updateData.recaptcha_secret_key = recaptchaSecretKey;
 
-      // Backup Settings
+      
       if (autoBackup !== undefined) updateData.auto_backup = autoBackup;
       if (backupFrequency !== undefined)
         updateData.backup_frequency = backupFrequency;
@@ -9769,7 +9769,7 @@ app.put(
       if (logRetentionDays !== undefined)
         updateData.log_retention_days = logRetentionDays;
 
-      // File Settings
+   
       if (allowedFileTypes !== undefined)
         updateData.allowed_file_types = allowedFileTypes;
       if (maxFileSizeMb !== undefined)
