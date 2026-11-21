@@ -679,7 +679,7 @@ export const getJobApplications = async (req: AuthRequest, res: Response): Promi
       return
     }
 
-    // Verify job belongs to employer
+  
     const job = await prisma.jobPost.findFirst({
       where: {
         id: jobId,
@@ -936,13 +936,13 @@ export const getRecommendedJobs = async (req: AuthRequest, res: Response): Promi
     const query = req.query as JobQueryParams
     const { limit = '10' } = query
 
-    // Get job seeker profile and their skills
+  
     const seekerProfile = await prisma.jobSeekerProfile.findUnique({
       where: { user_id: req.user!.id }
     })
 
     if (!seekerProfile || !seekerProfile.skills || seekerProfile.skills.length === 0) {
-      // Return recent jobs if no skills
+  
       const recentJobs = await prisma.jobPost.findMany({
         where: { status: { status_name: 'Open' } },
         include: {
@@ -966,7 +966,6 @@ export const getRecommendedJobs = async (req: AuthRequest, res: Response): Promi
       return
     }
 
-    // Search jobs matching skills
     const skillsArray = seekerProfile.skills
     const skillConditions = skillsArray.slice(0, 5).map(skill => ({
       OR: [
@@ -1026,7 +1025,7 @@ export const toggleJobStatus = async (req: AuthRequest, res: Response): Promise<
       return
     }
 
-    // Check if job exists and belongs to employer
+  
     const job = await prisma.jobPost.findFirst({
       where: {
         id: req.params.id,
@@ -1045,7 +1044,6 @@ export const toggleJobStatus = async (req: AuthRequest, res: Response): Promise<
       return
     }
 
-    // Toggle status
     const newStatusName = job.status.status_name === 'Open' ? 'Closed' : 'Open'
     const newStatus = await prisma.jobPostStatus.findFirst({
       where: { status_name: newStatusName }
