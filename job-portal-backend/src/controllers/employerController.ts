@@ -368,13 +368,12 @@ export const getCompanyProfile = async (req: AuthRequest, res: Response): Promis
   }
 };
 
-// Update company profile
 export const updateCompanyProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
     const updateData = req.body;
 
-    // Parse social_links if it's a string
+  
     let socialLinks = updateData.social_links;
     if (socialLinks !== undefined) {
       socialLinks = safeJsonParse(socialLinks, null)
