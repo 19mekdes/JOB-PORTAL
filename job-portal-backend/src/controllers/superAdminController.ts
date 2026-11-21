@@ -240,7 +240,7 @@ export const deleteAdmin = async (req: Request, res: Response) => {
   try {
     const { adminId } = req.params;
     
-    // Don't allow deleting own admin account
+  
     if (adminId === req.user.id) {
       return res.status(400).json({ success: false, message: 'Cannot delete your own admin account' });
     }
@@ -311,7 +311,7 @@ export const updateAdminRole = async (req: Request, res: Response) => {
       }
     });
     
-    // Log the action
+   
     await prisma.auditLog.create({
       data: {
         admin_id: req.user.id,
@@ -506,8 +506,7 @@ export const getAdvancedAnalytics = async (req: Request, res: Response) => {
 
 export const getRevenueReport = async (req: Request, res: Response) => {
   try {
-    // This would integrate with payment system
-    // For now, return placeholder data
+    
     res.json({
       success: true,
       data: {
@@ -560,7 +559,7 @@ export const getUserGrowthReport = async (req: Request, res: Response) => {
 
 export const createBackup = async (req: Request, res: Response) => {
   try {
-    // Log backup action
+  
     await prisma.auditLog.create({
       data: {
         admin_id: req.user.id,
@@ -663,7 +662,7 @@ export const toggleMaintenanceMode = async (req: Request, res: Response) => {
 
 export const getEmailTemplates = async (req: Request, res: Response) => {
   try {
-    // This would fetch from database or file system
+    
     res.json({
       success: true,
       data: [],
