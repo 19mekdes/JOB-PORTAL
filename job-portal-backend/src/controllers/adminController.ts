@@ -782,7 +782,7 @@ export const bulkUpdateUserStatus = async (req: Request, res: Response) => {
     
     const hasSuperAdmin = targetUsers.some(u => u.user_type?.type_name === 'Super Admin');
     
-    // ❌ Prevent Admin from bulk updating Super Admins
+  
     if (adminRole === 'Admin' && hasSuperAdmin) {
       return res.status(403).json({ 
         success: false, 
@@ -828,7 +828,7 @@ export const getApplications = async (req: Request, res: Response) => {
 
     const where: any = {};
 
-    // Search by applicant name, email, or job title
+   
     if (search) {
       where.OR = [
         { seeker: { full_name: { contains: search as string, mode: 'insensitive' } } },
@@ -837,17 +837,15 @@ export const getApplications = async (req: Request, res: Response) => {
       ];
     }
 
-    // Filter by status
     if (status && status !== 'all') {
       where.status = { status_name: status as string };
     }
 
-    // Filter by company
     if (company && company !== 'all') {
       where.job = { employer: { company_name: company as string } };
     }
 
-    // Filter by date range
+
     if (date_range && date_range !== 'all') {
       const now = new Date();
       const startOfDay = new Date(now);
@@ -870,7 +868,6 @@ export const getApplications = async (req: Request, res: Response) => {
       }
     }
 
-    // Fetch paginated applications
     const [applications, total] = await Promise.all([
       prisma.jobApplication.findMany({
         where,
@@ -941,7 +938,7 @@ export const getApplications = async (req: Request, res: Response) => {
   }
 };
 
-// Update application status (admin version)
+
 export const updateApplicationStatus = async (req: Request, res: Response) => {
   try {
     const { applicationId } = req.params;
@@ -951,7 +948,7 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Status is required' });
     }
 
-    // Find the status by name
+   
     const statusRecord = await prisma.jobApplicationStatus.findFirst({
       where: { status_name: status }
     });
