@@ -1,6 +1,5 @@
 import express from 'express';
 import {
-  // System Settings
   getSystemSettings,
   updateSystemSettings,
   
@@ -16,13 +15,9 @@ import {
   getSystemHealth,
   getSystemLogs,
   clearCache,
-  
-  // Advanced Analytics
   getAdvancedAnalytics,
   getRevenueReport,
   getUserGrowthReport,
-  
-  // Backup & Maintenance
   createBackup,
   getBackups,
   restoreBackup,

@@ -12,8 +12,6 @@ export interface Company {
   created_at: Date;
   updated_at: Date;
 }
-
-
 export interface CreateCompanyDTO {
   user_id: string;
   company_name: string;
@@ -41,8 +39,6 @@ export interface CompanyResponse extends Company {
   jobs_count?: number;
   total_jobs?: number;
 }
-
-
 export interface CompanyWithOwner extends Company {
   owner?: {
     id: string;
@@ -58,8 +54,6 @@ export interface Industry {
   description?: string;
   created_at?: Date;
 }
-
-
 export interface CompanyStats {
   total_companies: number;
   active_companies: number;
