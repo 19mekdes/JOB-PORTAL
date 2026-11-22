@@ -4,7 +4,6 @@ import { safeJsonParse } from '../utils/safeJson'
 
 const prisma = new PrismaClient()
 
-// ========== TYPES ==========
 export interface SeekerProfileData {
   full_name?: string
   phone?: string
@@ -136,7 +135,6 @@ export class ProfileService {
       resume_url
     } = profileData
 
-    // Check if profile exists
     const existingProfile = await this.prisma.jobSeekerProfile.findUnique({
       where: { user_id: userId }
     })
@@ -174,7 +172,7 @@ export class ProfileService {
       logo_url
     } = profileData
 
-    // Check if profile exists
+
     const existingProfile = await this.prisma.employerProfile.findUnique({
       where: { user_id: userId }
     })
@@ -343,7 +341,7 @@ export class ProfileService {
       throw new NotFoundError('Job seeker profile')
     }
 
-    // Validate dates
+  
     if (experience.start_date && experience.end_date && !experience.current) {
       if (new Date(experience.end_date) <= new Date(experience.start_date)) {
         throw new ValidationError('End date must be after start date')

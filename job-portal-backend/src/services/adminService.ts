@@ -3,8 +3,6 @@ import bcrypt from 'bcryptjs'
 import { AppError, NotFoundError, ValidationError } from '../middleware/errorMiddleware.js'
 
 const prisma = new PrismaClient()
-
-// ========== TYPES ==========
 export interface UserFilters {
   search?: string
   user_type?: string
@@ -142,7 +140,7 @@ export class AdminService {
     return user
   }
 
-  // Create user (admin)
+
   async createUser(userData: {
     email: string
     password: string
@@ -154,7 +152,7 @@ export class AdminService {
   }) {
     const { email, password, user_type, full_name, company_name, phone, location } = userData
 
-    // Check if user exists
+
     const existingUser = await prisma.user.findUnique({
       where: { email }
     })
@@ -163,7 +161,7 @@ export class AdminService {
       throw new ValidationError('User with this email already exists')
     }
 
-    // Get user type
+    
     const userType = await prisma.userType.findFirst({
       where: { type_name: user_type }
     })
@@ -172,10 +170,9 @@ export class AdminService {
       throw new ValidationError('Invalid user type')
     }
 
-    // Hash password
+  
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create user
     const user = await prisma.user.create({
       data: {
         email,
@@ -185,7 +182,7 @@ export class AdminService {
       }
     })
 
-    // Create profile based on user type
+   
     if (user_type === 'Job Seeker') {
       await prisma.jobSeekerProfile.create({
         data: {
@@ -210,7 +207,7 @@ export class AdminService {
     return user
   }
 
-  // Update user
+
   async updateUser(userId: string, updateData: {
     email?: string
     is_active?: boolean
@@ -225,7 +222,6 @@ export class AdminService {
       throw new NotFoundError('User')
     }
 
-    // Update user type if changed
     if (updateData.user_type && updateData.user_type !== user.user_type.type_name) {
       const newUserType = await prisma.userType.findFirst({
         where: { type_name: updateData.user_type }
@@ -242,7 +238,6 @@ export class AdminService {
       })
     }
 
-    // Update user
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
@@ -259,7 +254,6 @@ export class AdminService {
     return updatedUser
   }
 
-  // Suspend user
   async suspendUser(userId: string, reason?: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -278,8 +272,6 @@ export class AdminService {
       where: { id: userId },
       data: { is_active: false }
     })
-
-    // Create notification
     await prisma.notification.create({
       data: {
         user_id: userId,
@@ -293,8 +285,6 @@ export class AdminService {
 
     return suspendedUser
   }
-
-  // Activate user
   async activateUser(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId }
@@ -325,8 +315,6 @@ export class AdminService {
 
     return activatedUser
   }
-
-  // Delete user
   async deleteUser(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId }
@@ -397,8 +385,6 @@ export class AdminService {
       }
     }
   }
-
-  // Get job by ID (admin view)
   async getJobById(jobId: string) {
     const job = await prisma.jobPost.findUnique({
       where: { id: jobId },
@@ -428,8 +414,6 @@ export class AdminService {
 
     return job
   }
-
-  // Moderate job (change status)
   async moderateJob(jobId: string, status: string, moderationNote?: string) {
     const job = await prisma.jobPost.findUnique({
       where: { id: jobId },
@@ -459,7 +443,6 @@ export class AdminService {
       }
     })
 
-    // Notify employer
     await prisma.notification.create({
       data: {
         user_id: job.employer.user.id,
@@ -471,8 +454,6 @@ export class AdminService {
 
     return moderatedJob
   }
-
-  // Delete job (admin)
   async deleteJob(jobId: string) {
     const job = await prisma.jobPost.findUnique({
       where: { id: jobId },
@@ -487,7 +468,6 @@ export class AdminService {
       where: { id: jobId }
     })
 
-    // Notify employer
     await prisma.notification.create({
       data: {
         user_id: job.employer.user.id,
@@ -558,8 +538,6 @@ export class AdminService {
   async getDashboardStats(): Promise<DashboardStats> {
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-
-    // User stats
     const [
       totalUsers,
       totalEmployers,
@@ -587,8 +565,6 @@ export class AdminService {
         } 
       })
     ])
-
-    // Job stats
     const [
       totalJobs,
       openJobs,
@@ -612,8 +588,6 @@ export class AdminService {
         _sum: { views_count: true }
       })
     ])
-
-    // Application stats
     const [
       totalApplications,
       pendingApps,

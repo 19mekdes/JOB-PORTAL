@@ -2,7 +2,6 @@ import { PrismaClient, Prisma } from '@prisma/client'
 import { AppError, NotFoundError, ValidationError } from '../middleware/errorMiddleware.js'
 
 const prisma = new PrismaClient()
-
 export interface ApplicationFilters {
   status?: string
   job_id?: string
@@ -55,7 +54,7 @@ export class ApplicationService {
     coverLetter?: string,
     resumeUrl?: string
   ) {
-    // Get job seeker profile
+   
     const seekerProfile = await this.prisma.jobSeekerProfile.findUnique({
       where: { user_id: seekerUserId }
     })
@@ -213,7 +212,6 @@ export class ApplicationService {
       this.prisma.jobApplication.count({ where })
     ])
 
-    // Get application statistics
     const stats = await this.getApplicationStatsForSeeker(seekerProfile.id)
 
     return {
@@ -268,7 +266,6 @@ export class ApplicationService {
       throw new NotFoundError('Application')
     }
 
-    // Check authorization
     const isOwner = application.seeker.user_id === userId
     const isEmployer = application.job.employer.user_id === userId
     const isAdmin = userRole === 'Admin' || userRole === 'Super Admin'
@@ -288,7 +285,6 @@ export class ApplicationService {
   ) {
     const { status, page = 1, limit = 10, sort = 'recent' } = filters
 
-    // Verify employer owns this job
     const employerProfile = await this.prisma.employerProfile.findUnique({
       where: { user_id: employerUserId }
     })
@@ -350,7 +346,6 @@ export class ApplicationService {
       this.prisma.jobApplication.count({ where })
     ])
 
-    // Get statistics for this job
     const stats = await this.getApplicationStatsForJob(jobId)
 
     return {
@@ -373,7 +368,7 @@ export class ApplicationService {
     status: string,
     feedback?: string
   ) {
-    // Verify employer owns this application
+ 
     const employerProfile = await this.prisma.employerProfile.findUnique({
       where: { user_id: employerUserId }
     })
@@ -410,7 +405,6 @@ export class ApplicationService {
       throw new ValidationError('Invalid status')
     }
 
-    // Don't allow updating if already in final state
     const finalStatuses = ['Accepted', 'Rejected']
     const currentStatus = await this.prisma.jobApplicationStatus.findUnique({
       where: { id: application.status_id }
@@ -429,7 +423,7 @@ export class ApplicationService {
       }
     })
 
-    // Create notification for job seeker
+
     let notificationMessage = `Your application for "${application.job.title}" has been ${status.toLowerCase()}`
     if (feedback) {
       notificationMessage += `. Feedback: ${feedback}`
@@ -444,7 +438,7 @@ export class ApplicationService {
       }
     })
 
-    // If feedback provided, add as note
+ 
     if (feedback) {
       await this.addApplicationNote(employerUserId, applicationId, `Status updated to ${status}: ${feedback}`)
     }
@@ -558,7 +552,6 @@ export class ApplicationService {
       throw new AppError('Not authorized to withdraw this application', 403)
     }
 
-    // Check if application is already in final state
     const finalStatuses = ['Accepted', 'Rejected']
     const currentStatus = await this.prisma.jobApplicationStatus.findUnique({
       where: { id: application.status_id }
@@ -568,18 +561,17 @@ export class ApplicationService {
       throw new ValidationError(`Cannot withdraw an application that is ${currentStatus!.status_name.toLowerCase()}`)
     }
 
-    // Delete the application
     await this.prisma.jobApplication.delete({
       where: { id: applicationId }
     })
 
-    // Update job applications count
+    
     await this.prisma.jobPost.update({
       where: { id: application.job_id },
       data: { applications_count: { decrement: 1 } }
     })
 
-    // Notify employer
+
     await this.prisma.notification.create({
       data: {
         user_id: application.job.employer.user.id,
@@ -609,7 +601,6 @@ export class ApplicationService {
 
     const total = byStatus.reduce((sum, s) => sum + s.count, 0)
 
-    // Get monthly statistics
     const monthlyStats = await this.prisma.$queryRaw<any[]>`
       SELECT 
         DATE_TRUNC('month', applied_at) as month,
@@ -732,7 +723,6 @@ export class ApplicationService {
       throw new ValidationError('Invalid status')
     }
 
-    // Verify all applications belong to employer
     const applications = await this.prisma.jobApplication.findMany({
       where: {
         id: { in: applicationIds },
@@ -748,7 +738,6 @@ export class ApplicationService {
       throw new AppError('Some applications are not authorized for bulk update', 403)
     }
 
-    // Update all applications
     const result = await this.prisma.jobApplication.updateMany({
       where: {
         id: { in: applicationIds }
@@ -756,7 +745,6 @@ export class ApplicationService {
       data: { status_id: statusObj.id }
     })
 
-    // Create notifications for all applicants
     for (const application of applications) {
       await this.prisma.notification.create({
         data: {
@@ -805,8 +793,6 @@ export class ApplicationService {
       },
       orderBy: { applied_at: 'desc' }
     })
-
-    // Convert to CSV format
     const headers = [
       'Application ID',
       'Job Title',
@@ -842,6 +828,4 @@ export class ApplicationService {
     }
   }
 }
-
-// ========== DEFAULT EXPORT ==========
 export default new ApplicationService()
