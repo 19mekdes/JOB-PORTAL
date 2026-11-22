@@ -436,7 +436,6 @@ export const deleteUser = async (req: Request, res: Response) => {
     const adminRole = adminUser?.user_type?.type_name;
     const targetRole = existingUser.user_type?.type_name;
     
-    // ❌ Prevent Admin from deleting Super Admin
     if (adminRole === 'Admin' && targetRole === 'Super Admin') {
       return res.status(403).json({ 
         success: false, 
@@ -766,7 +765,7 @@ export const bulkUpdateUserStatus = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'No user IDs provided' });
     }
     
-    // Get admin role
+   
     const adminUser = await prisma.user.findUnique({
       where: { id: adminId },
       include: { user_type: true }
@@ -774,7 +773,7 @@ export const bulkUpdateUserStatus = async (req: Request, res: Response) => {
     
     const adminRole = adminUser?.user_type?.type_name;
     
-    // Check if any of the target users are Super Admins
+   
     const targetUsers = await prisma.user.findMany({
       where: { id: { in: userIds } },
       include: { user_type: true }
@@ -900,7 +899,7 @@ export const getApplications = async (req: Request, res: Response) => {
       prisma.jobApplication.count({ where })
     ]);
 
-    // Get statistics
+    
     const stats = await prisma.jobApplicationStatus.findMany({
       include: {
         _count: {
@@ -996,7 +995,7 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
       }
     });
 
-    // Send notification to applicant
+    
     await prisma.notification.create({
       data: {
         user_id: application.seeker.user_id,
