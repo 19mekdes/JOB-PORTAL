@@ -12,7 +12,6 @@ import { authorize } from '../middleware/roleMiddleware';
 
 const router = Router();
 
-// Configure multer for file upload
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/resumes/');

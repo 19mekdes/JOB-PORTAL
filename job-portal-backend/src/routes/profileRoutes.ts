@@ -22,12 +22,10 @@ import {
 import { protect } from '../middleware/authMiddleware'
 import { authorize } from '../middleware/roleMiddleware'
 
-// Import Cloudinary upload configurations straight from your config file
 import { uploadCover, uploadAvatar } from '../config/cloudinary'
 
 const router = express.Router()
 
-// All profile routes require authentication
 router.use(protect)
 
 // ========== BASIC PROFILE ROUTES ==========

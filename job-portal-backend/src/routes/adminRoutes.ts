@@ -26,18 +26,15 @@ import {
 
 const router = express.Router();
 
-// Debug middleware to log all requests
 router.use((req, res, next) => {
   console.log(`📌 [Admin Route] ${req.method} ${req.originalUrl}`);
   next();
 });
-// Add to your admin routes (after auth middleware)
 router.get('/settings', getSettings)
 router.put('/settings', updateSettings)
 // Apply authentication to all admin routes
 router.use(authMiddleware);
 
-// Apply admin authorization (Admin or Super Admin) to all routes
 router.use(isAdmin);
 
 // ========== DASHBOARD ==========
