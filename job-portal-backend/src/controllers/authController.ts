@@ -61,7 +61,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password, full_name, user_type, phone, location }: RegisterInput = req.body
 
-    // Validate required fields
+  
     if (!email || !password || !full_name || !user_type) {
       res.status(400).json({
         success: false,
@@ -70,7 +70,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    // Validate email format
+   
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       res.status(400).json({
@@ -102,7 +102,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    // Get user type
     const userType = await prisma.userType.findFirst({
       where: { type_name: user_type }
     })
@@ -114,8 +113,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       })
       return
     }
-
-    
     const hashedPassword = await bcrypt.hash(password, 10)
 
    
@@ -151,7 +148,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       })
     }
 
-    // Generate tokens
+  
     const token = generateToken(user.id, user.email)
     const refreshToken = generateRefreshToken(user.id)
 

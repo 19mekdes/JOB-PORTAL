@@ -1012,7 +1012,7 @@ export const getRecommendedJobs = async (req: AuthRequest, res: Response): Promi
 // ========== TOGGLE JOB STATUS ==========
 export const toggleJobStatus = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // Get employer profile
+    
     const employerProfile = await prisma.employerProfile.findUnique({
       where: { user_id: req.user!.id }
     })
