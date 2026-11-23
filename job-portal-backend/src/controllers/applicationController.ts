@@ -9,71 +9,71 @@ export const applyForJob = async (req: Request, res: Response) => {
     const { jobId } = req.params;
     const { coverLetter } = req.body;
     const userId = req.user.id;
-    
+
     console.log('Applying for job:', jobId, 'User:', userId);
-    
-    
+
+
     const job = await prisma.jobPost.findUnique({
       where: { id: jobId },
       include: { status: true, employer: true }
     });
-    
+
     if (!job) {
       return res.status(404).json({ success: false, message: 'Job not found' });
     }
-    
+
     if (job.status.status_name !== 'Open') {
       return res.status(400).json({ success: false, message: 'This job is no longer accepting applications' });
     }
-    
+
 
     let seeker = await prisma.jobSeekerProfile.findFirst({
       where: { user_id: userId }
     });
-    
+
     if (!seeker) {
       console.log('Creating seeker profile for user:', userId);
-      
+
       seeker = await prisma.jobSeekerProfile.create({
         data: {
           user_id: userId,
           full_name: 'Job Seeker',
           skills: [],
-        
+
         }
       });
       console.log('Created seeker profile:', seeker.id);
     }
-    
-    
+
+
     const existing = await prisma.jobApplication.findFirst({
       where: {
         job_id: jobId,
         seeker_id: seeker.id
       }
     });
-    
+
     if (existing) {
       return res.status(400).json({ success: false, message: 'You have already applied for this job' });
     }
-    
-  
+
+
     const pendingStatus = await prisma.jobApplicationStatus.findFirst({
       where: { status_name: 'Pending' }
     });
-    
+
     if (!pendingStatus) {
       return res.status(500).json({ success: false, message: 'Application status not configured' });
     }
-    
-    
+
+
     const application = await prisma.jobApplication.create({
       data: {
         job_id: jobId,
         seeker_id: seeker.id,
         cover_letter: coverLetter || null,
         status_id: pendingStatus.id,
-        
+
       },
       include: {
         job: {
@@ -82,9 +82,9 @@ export const applyForJob = async (req: Request, res: Response) => {
         status: true
       }
     });
-    
+
     console.log('Application created:', application.id);
-    
+
     res.status(201).json({
       success: true,
       data: application,
@@ -102,11 +102,11 @@ export const getMyApplications = async (req: Request, res: Response) => {
     const userId = req.user.id;
     console.log('=== getMyApplications ===');
     console.log('User ID:', userId);
-    
+
     const seeker = await prisma.jobSeekerProfile.findFirst({
       where: { user_id: userId }
     });
-    
+
     if (!seeker) {
       console.log('No seeker profile - returning empty array');
       return res.status(200).json({
@@ -115,9 +115,9 @@ export const getMyApplications = async (req: Request, res: Response) => {
         count: 0
       });
     }
-    
+
     console.log('Seeker found:', seeker.id);
-    
+
     const applications = await prisma.jobApplication.findMany({
       where: { seeker_id: seeker.id },
       include: {
@@ -133,9 +133,9 @@ export const getMyApplications = async (req: Request, res: Response) => {
       },
       orderBy: { applied_at: 'desc' }
     });
-    
+
     console.log(`Found ${applications.length} applications`);
-    
+
     res.json({
       success: true,
       data: applications,
@@ -155,23 +155,23 @@ export const getJobApplications = async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
     const userId = req.user.id;
-    
+
     const employer = await prisma.employerProfile.findFirst({
       where: { user_id: userId }
     });
-    
+
     if (!employer) {
       return res.status(404).json({ success: false, message: 'Employer profile not found' });
     }
-    
+
     const job = await prisma.jobPost.findFirst({
       where: { id: jobId, employer_id: employer.id }
     });
-    
+
     if (!job) {
       return res.status(404).json({ success: false, message: 'Job not found or not owned by you' });
     }
-    
+
     const applications = await prisma.jobApplication.findMany({
       where: { job_id: jobId },
       include: {
@@ -183,7 +183,7 @@ export const getJobApplications = async (req: Request, res: Response) => {
       },
       orderBy: { applied_at: 'desc' }
     });
-    
+
     res.json({ success: true, data: applications, count: applications.length });
   } catch (error) {
     console.error('Get job applications error:', error);
@@ -197,24 +197,24 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
     const { applicationId } = req.params;
     const { statusId, notes } = req.body;
     const userId = req.user.id;
-    
+
     const employer = await prisma.employerProfile.findFirst({
       where: { user_id: userId }
     });
-    
+
     if (!employer) {
       return res.status(404).json({ success: false, message: 'Employer profile not found' });
     }
-    
+
     const application = await prisma.jobApplication.findFirst({
       where: { id: applicationId },
       include: { job: true, seeker: true }
     });
-    
+
     if (!application || application.job.employer_id !== employer.id) {
       return res.status(404).json({ success: false, message: 'Application not found' });
     }
-    
+
     const updatedApplication = await prisma.jobApplication.update({
       where: { id: applicationId },
       data: {
@@ -224,11 +224,11 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
       },
       include: { status: true }
     });
-    
+
     const status = await prisma.jobApplicationStatus.findUnique({
       where: { id: statusId }
     });
-    
+
     await prisma.notification.create({
       data: {
         user_id: application.seeker.user_id,
@@ -238,7 +238,7 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
         created_at: new Date()
       }
     });
-    
+
     res.json({ success: true, data: updatedApplication, message: 'Status updated successfully' });
   } catch (error) {
     console.error('Update status error:', error);
@@ -251,24 +251,24 @@ export const addApplicationNote = async (req: Request, res: Response) => {
     const { applicationId } = req.params;
     const { note } = req.body;
     const userId = req.user.id;
-    
+
     const employer = await prisma.employerProfile.findFirst({
       where: { user_id: userId }
     });
-    
+
     if (!employer) {
       return res.status(404).json({ success: false, message: 'Employer profile not found' });
     }
-    
+
     const application = await prisma.jobApplication.findFirst({
       where: { id: applicationId },
       include: { job: true }
     });
-    
+
     if (!application || application.job.employer_id !== employer.id) {
       return res.status(404).json({ success: false, message: 'Application not found' });
     }
-    
+
     const applicationNote = await prisma.jobApplicationNote.create({
       data: {
         application_id: applicationId,
@@ -277,7 +277,7 @@ export const addApplicationNote = async (req: Request, res: Response) => {
         created_at: new Date()
       }
     });
-    
+
     res.status(201).json({ success: true, data: applicationNote, message: 'Note added successfully' });
   } catch (error) {
     console.error('Add note error:', error);
