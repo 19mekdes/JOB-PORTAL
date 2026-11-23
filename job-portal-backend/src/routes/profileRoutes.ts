@@ -29,24 +29,23 @@ const router = express.Router()
 router.use(protect)
 
 // ========== BASIC PROFILE ROUTES ==========
-// Get current user's profile
+
 router.get('/me', getProfile)
 
-// Get profile completion percentage
+
 router.get('/me/completion', getProfileCompletion)
 
 // ========== CLOUDINARY MEDIA UPLOAD ROUTES ==========
-// Upload Cover Image (Job Seeker specific)
+
 router.post('/cover', authorize('Job Seeker'), uploadCover.single('cover_image'), async (req, res, next) => {
   
-  // you can easily replace this inline function with a single named controller execution.
+
   try {
     const userId = req.user!.id;
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No cover image file uploaded' });
     }
 
-    // @ts-ignore - tracking profile update via Prisma client context global bindings
     const profile = await global.prisma.jobSeekerProfile.findFirst({ where: { user_id: userId } });
     if (!profile) return res.status(404).json({ success: false, message: 'Profile record not found' });
 
@@ -66,7 +65,7 @@ router.post('/cover', authorize('Job Seeker'), uploadCover.single('cover_image')
   }
 });
 
-// Upload Avatar / Profile Picture (Job Seeker specific)
+
 router.post('/avatar', authorize('Job Seeker'), uploadAvatar.single('avatar'), async (req, res, next) => {
   try {
     const userId = req.user!.id;

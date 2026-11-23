@@ -3,7 +3,6 @@ import {
   getSystemSettings,
   updateSystemSettings,
   
-  // Admin Management
   getAllAdmins,
   getAdminById,
   createAdmin,
@@ -22,8 +21,6 @@ import {
   getBackups,
   restoreBackup,
   toggleMaintenanceMode,
-  
-  // Email Templates
   getEmailTemplates,
   updateEmailTemplate,
   
