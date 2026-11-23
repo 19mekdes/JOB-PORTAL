@@ -32,7 +32,7 @@ router.use((req, res, next) => {
 });
 router.get('/settings', getSettings)
 router.put('/settings', updateSettings)
-// Apply authentication to all admin routes
+
 router.use(authMiddleware);
 
 router.use(isAdmin);

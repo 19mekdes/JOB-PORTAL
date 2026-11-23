@@ -49,7 +49,7 @@ router.post('/cover', authorize('Job Seeker'), uploadCover.single('cover_image')
     const profile = await global.prisma.jobSeekerProfile.findFirst({ where: { user_id: userId } });
     if (!profile) return res.status(404).json({ success: false, message: 'Profile record not found' });
 
-    // @ts-ignore
+  
     const updated = await global.prisma.jobSeekerProfile.update({
       where: { id: profile.id },
       data: { cover_image: req.file.path }
@@ -73,11 +73,10 @@ router.post('/avatar', authorize('Job Seeker'), uploadAvatar.single('avatar'), a
       return res.status(400).json({ success: false, message: 'No avatar file uploaded' });
     }
 
-    // @ts-ignore
     const profile = await global.prisma.jobSeekerProfile.findFirst({ where: { user_id: userId } });
     if (!profile) return res.status(404).json({ success: false, message: 'Profile record not found' });
 
-    // @ts-ignore
+    
     const updated = await global.prisma.jobSeekerProfile.update({
       where: { id: profile.id },
       data: { avatar: req.file.path }
@@ -94,7 +93,7 @@ router.post('/avatar', authorize('Job Seeker'), uploadAvatar.single('avatar'), a
 });
 
 // ========== JOB SEEKER PROFILE ROUTES ==========
-// Update job seeker profile
+
 router.put('/seeker', authorize('Job Seeker'), updateSeekerProfile)
 
 // Upload resume (Job Seeker)

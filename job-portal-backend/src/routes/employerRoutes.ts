@@ -12,11 +12,7 @@ import {
 } from '../controllers/employerController';
 
 const router = Router();
-
-
 router.use(authMiddleware);
-
-
 router.use(authorizeAny('Employer', 'Admin', 'Super Admin'));
 
 // Company management
