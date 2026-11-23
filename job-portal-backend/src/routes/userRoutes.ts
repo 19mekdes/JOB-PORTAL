@@ -12,8 +12,7 @@ import {
   uploadResume,
   deleteResume,
   getSavedJobs,
-  
-  // Employer Specific
+
   getEmployerProfile,
   updateEmployerProfile,
   uploadCompanyLogo,
@@ -23,8 +22,7 @@ import {
   
   getNotificationPreferences,
   updateNotificationPreferences,
-  
-  // Activity & Stats
+
   getActivityLog,
   getApplicationStats,
   getJobStats
@@ -92,10 +90,10 @@ const router = express.Router();
 router.use(protect);
 
 // ========== PROFILE MANAGEMENT ==========
-// Get current user profile
+
 router.get('/profile', getProfile);
 
-// Update user profile
+
 router.put('/profile', updateProfile);
 
 // Update password

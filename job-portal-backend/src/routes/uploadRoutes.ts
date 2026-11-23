@@ -8,7 +8,6 @@ import upload, { uploadAvatar, uploadCover, uploadResume } from '../middleware/u
 const router = express.Router()
 const prisma = new PrismaClient()
 
-// Extend Request type to include user
 interface AuthRequest extends Request {
   user?: any
 }
@@ -33,7 +32,7 @@ router.post('/cover', protect, uploadCover, async (req: AuthRequest, res: Respon
       return res.status(404).json({ success: false, message: 'Profile not found' })
     }
     
-    // Delete old cover image if exists
+    
     if (profile.cover_image) {
       const oldPath = path.join(process.cwd(), profile.cover_image)
       if (fs.existsSync(oldPath)) {
@@ -82,7 +81,7 @@ router.post('/avatar', protect, uploadAvatar, async (req: AuthRequest, res: Resp
       return res.status(404).json({ success: false, message: 'Profile not found' })
     }
     
-    // Delete old avatar if exists
+    
     if (profile.avatar) {
       const oldPath = path.join(process.cwd(), profile.avatar)
       if (fs.existsSync(oldPath)) {
@@ -130,8 +129,7 @@ router.post('/resume', protect, uploadResume, async (req: AuthRequest, res: Resp
       }
       return res.status(404).json({ success: false, message: 'Profile not found' })
     }
-    
-    // Delete old resume if exists
+ 
     if (profile.resume_url) {
       const oldPath = path.join(process.cwd(), profile.resume_url)
       if (fs.existsSync(oldPath)) {
