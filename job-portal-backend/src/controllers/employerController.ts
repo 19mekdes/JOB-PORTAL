@@ -373,15 +373,15 @@ export const updateCompanyProfile = async (req: AuthRequest, res: Response): Pro
     const userId = req.user!.id;
     const updateData = req.body;
 
-  
+
     let socialLinks = updateData.social_links;
     if (socialLinks !== undefined) {
       socialLinks = safeJsonParse(socialLinks, null)
     }
 
-   
+
     const dataToUpdate: any = {};
-    
+
     if (updateData.company_name !== undefined) dataToUpdate.company_name = updateData.company_name;
     if (updateData.company_description !== undefined) dataToUpdate.company_description = updateData.company_description;
     if (updateData.website !== undefined) dataToUpdate.website = updateData.website;
@@ -392,7 +392,7 @@ export const updateCompanyProfile = async (req: AuthRequest, res: Response): Pro
     if (updateData.founded_year !== undefined) dataToUpdate.founded_year = updateData.founded_year;
     if (updateData.headquarters !== undefined) dataToUpdate.headquarters = updateData.headquarters;
     if (socialLinks !== undefined) dataToUpdate.social_links = socialLinks;
-    
+
     dataToUpdate.updated_at = new Date();
 
     const employerProfile = await prisma.employerProfile.updateMany({

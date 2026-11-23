@@ -30,12 +30,12 @@ const generateRefreshToken = (userId: string): string => {
 
 const sendEmail = async (to: string, subject: string, html: string) => {
   console.log('📧 sendEmail called with:', { to, subject });
-  
+
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     console.error('❌ Email credentials missing!');
     throw new Error('Email configuration missing');
   }
-  
+
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -43,7 +43,7 @@ const sendEmail = async (to: string, subject: string, html: string) => {
       pass: process.env.EMAIL_PASS
     }
   });
-  
+
   await transporter.verify();
   const info = await transporter.sendMail({
     from: `"JobPortal" <${process.env.EMAIL_USER}>`,
@@ -51,7 +51,7 @@ const sendEmail = async (to: string, subject: string, html: string) => {
     subject,
     html
   });
-  
+
   console.log('✅ Email sent! Message ID:', info.messageId);
   return info;
 }
@@ -61,7 +61,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password, full_name, user_type, phone, location }: RegisterInput = req.body
 
-  
+
     if (!email || !password || !full_name || !user_type) {
       res.status(400).json({
         success: false,
@@ -70,7 +70,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-   
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       res.status(400).json({
@@ -80,7 +80,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    
+
     if (password.length < 6) {
       res.status(400).json({
         success: false,
@@ -89,7 +89,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    
+
     const existingUser = await prisma.user.findUnique({
       where: { email }
     })
@@ -115,18 +115,18 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     }
     const hashedPassword = await bcrypt.hash(password, 10)
 
-   
+
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         user_type_id: userType.id,
         is_active: true,
-        email_verified: true 
+        email_verified: true
       }
     })
 
-    
+
     if (user_type === 'Job Seeker') {
       await prisma.jobSeekerProfile.create({
         data: {
@@ -148,7 +148,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       })
     }
 
-  
+
     const token = generateToken(user.id, user.email)
     const refreshToken = generateRefreshToken(user.id)
 
@@ -529,9 +529,9 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
     const resetUrl = `${frontendUrl}/reset-password/${resetToken}`
 
-    const userName = user.seeker_profile?.full_name || 
-                     user.employer_profile?.company_name || 
-                     user.email.split('@')[0]
+    const userName = user.seeker_profile?.full_name ||
+      user.employer_profile?.company_name ||
+      user.email.split('@')[0]
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -563,7 +563,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     `
 
     await sendEmail(user.email, 'Reset Your Password', emailHtml)
-    
+
     res.json({
       success: true,
       message: 'If an account exists with that email, you will receive a password reset link'
