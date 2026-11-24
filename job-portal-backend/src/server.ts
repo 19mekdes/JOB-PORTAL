@@ -35,10 +35,9 @@ import {
   sendNewApplicationNotification,
 } from "./services/emailService";
 
-// Create express app 
-const app = express();
 
-// CORS configuration 
+const app = express();
+ 
 app.use(
   cors({
     origin: true,
@@ -53,7 +52,6 @@ app.use(
   })
 );
 
-// Handle preflight requests
 app.options("*", (req, res) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header(
@@ -67,7 +65,6 @@ app.options("*", (req, res) => {
   res.sendStatus(200);
 });
 
-// Then body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
