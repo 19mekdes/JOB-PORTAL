@@ -131,7 +131,7 @@ export const errorHandler = (
       statusCode: err.statusCode
     })
   } else {
-    
+
     if (!(err instanceof AppError) || !err.isOperational) {
       console.error('Unexpected error:', err)
     }
@@ -170,7 +170,7 @@ export const errorHandler = (
     code = handledError.code || 'AUTH_ERROR'
   }
 
-  
+
   else if (error.name === 'MulterError') {
     if (error.code === 'LIMIT_FILE_SIZE') {
       statusCode = 400
@@ -213,7 +213,7 @@ export const errorHandler = (
     code = 'INVALID_ID'
   }
 
- 
+
   const response: any = {
     success: false,
     status,
