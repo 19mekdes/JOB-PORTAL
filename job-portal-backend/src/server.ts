@@ -87,7 +87,7 @@ const getPublicIdFromUrl = (url: string): string | null => {
     const parts = url.split("/upload/");
     if (parts.length < 2) return null;
 
-   
+
     const pathWithExtension = parts[1].replace(/^v\d+\//, "");
     return pathWithExtension.substring(0, pathWithExtension.lastIndexOf("."));
   } catch (error) {
@@ -737,7 +737,7 @@ app.get(
           .status(404)
           .json({ success: false, message: "User not found" });
 
-    
+
       let profile = null;
       if (user.seeker_profile) {
         profile = {
@@ -860,19 +860,19 @@ app.put(
             : [];
       }
 
-   
+
       if (experience !== undefined) {
         updateData.experience = safeJsonParse(experience)
       }
 
-    
+
       if (education !== undefined) {
         updateData.education = safeJsonParse(education)
       }
 
       console.log("Updating fields:", Object.keys(updateData));
 
-  
+
       const updatedProfile = await prisma.jobSeekerProfile.update({
         where: { id: user.seeker_profile.id },
         data: updateData,
@@ -936,7 +936,7 @@ app.put("/api/profile/update-info",
             skills: [],
           },
         });
-      } 
+      }
       const updatedProfile = await prisma.jobSeekerProfile.update({
         where: { id: profile.id },
         data: {
@@ -1289,10 +1289,10 @@ app.get(
         },
       });
 
-      
+
       const companies = [];
       for (const employer of employers) {
-        
+
         let jobCount = 0;
         if (employer.employer_profile) {
           jobCount = await prisma.jobPost.count({
@@ -1369,7 +1369,7 @@ app.get(
           .json({ success: false, message: "Company not found" });
       }
 
-     
+
       let jobs = [];
       let jobCount = 0;
       if (company.employer_profile) {
@@ -1614,7 +1614,7 @@ app.get(
         },
       });
     } catch (error: any) {
-     
+
       res.json({
         success: true,
         data: {
@@ -1703,7 +1703,7 @@ app.get(
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      
+
       const content = `Backup ID: ${id}\nCreated: ${new Date().toISOString()}\nThis is a simulated backup file.`;
 
       res.setHeader("Content-Type", "application/octet-stream");
@@ -1858,7 +1858,7 @@ app.get(
         return res.json({ success: true, data: [] });
       }
 
-    
+
       const headers = [
         "ID",
         "Action",
@@ -2367,7 +2367,7 @@ app.post("/api/jobs", authMiddleware, async (req: Request, res: Response) => {
     const normalizedTitle = title.trim()
     const normalizedLocation = location.trim()
 
-  
+
     const duplicateJob = await prisma.jobPost.findFirst({
       where: {
         employer_id: user.employer_profile.id,
@@ -2464,7 +2464,7 @@ app.put(
         include: { employer: { include: { user: true } } },
       });
 
-    
+
       await prisma.notification.create({
         data: {
           user_id: job.employer.user_id,
@@ -2700,7 +2700,7 @@ app.get(
         orderBy: { created_at: "desc" },
       });
 
-      
+
       const allApplications = await prisma.jobApplication.findMany({
         where: {
           job: { employer_id: employer.id },
@@ -3253,9 +3253,9 @@ app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res:
     const targetRole = targetUser.user_type?.type_name;
     const targetEmail = targetUser.email;
 
-   
+
     if (currentRole === 'Admin') {
-    
+
       if (targetRole !== 'Job Seeker' && targetRole !== 'Employer') {
         return res.status(403).json({
           success: false,
@@ -3282,52 +3282,52 @@ app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res:
         });
       }
 
-    
+
       await prisma.jobApplication.deleteMany({
         where: { seeker_id: targetUser.seeker_profile.id }
       });
 
-     
+
       await prisma.jobBookmark.deleteMany({
         where: { seeker_id: targetUser.seeker_profile.id }
       });
 
-   
+
       await prisma.jobSeekerProfile.delete({
         where: { id: targetUser.seeker_profile.id }
       });
     }
 
     if (targetUser.employer_profile) {
-   
+
       const jobs = await prisma.jobPost.findMany({
         where: { employer_id: targetUser.employer_profile.id }
       });
 
       for (const job of jobs) {
-       
+
         await prisma.jobApplication.deleteMany({
           where: { job_id: job.id }
         });
 
-       
+
         await prisma.jobBookmark.deleteMany({
           where: { job_id: job.id }
         });
       }
 
-     
+
       await prisma.jobPost.deleteMany({
         where: { employer_id: targetUser.employer_profile.id }
       });
 
-    
+
       await prisma.employerProfile.delete({
         where: { id: targetUser.employer_profile.id }
       });
     }
 
-    
+
     await prisma.notification.deleteMany({
       where: { user_id: userId }
     });
@@ -3336,7 +3336,7 @@ app.delete('/api/admin/users/:userId', authMiddleware, async (req: Request, res:
       where: { user_id: userId }
     });
 
-    
+
     await prisma.user.delete({
       where: { id: userId }
     });
@@ -3388,7 +3388,7 @@ app.post('/api/admin/users/:userId/reset-password', authMiddleware, async (req: 
       });
     }
 
-  
+
     const targetUser = await prisma.user.findUnique({
       where: { id: userId }
     });
@@ -3412,7 +3412,7 @@ app.post('/api/admin/users/:userId/reset-password', authMiddleware, async (req: 
       data: { password: hashedPassword, updated_at: new Date() }
     });
 
-   
+
     await prisma.notification.create({
       data: {
         user_id: userId,
@@ -3494,7 +3494,7 @@ app.post("/api/contact", async (req: Request, res: Response) => {
       },
     });
 
-   
+
     const supportEmailHtml = `
       <!DOCTYPE html>
       <html>
@@ -3550,7 +3550,7 @@ app.post("/api/contact", async (req: Request, res: Response) => {
       </html>
     `;
 
-  
+
     const userEmailHtml = `
       <!DOCTYPE html>
       <html>
@@ -3601,7 +3601,7 @@ app.post("/api/contact", async (req: Request, res: Response) => {
       html: supportEmailHtml,
     });
 
-   
+
     await transporter.sendMail({
       from: `"JobPortal Support" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -3779,7 +3779,7 @@ app.post(
       const updatedEmployer = await prisma.employerProfile.update({
         where: { id: employer.id },
         data: {
-          logo_url: req.file.path, 
+          logo_url: req.file.path,
           updated_at: new Date(),
         },
       });
@@ -3877,7 +3877,7 @@ app.get(
       });
 
       if (!preferences) {
-        
+
         preferences = await prisma.notificationPreference.create({
           data: {
             user_id: req.user!.id,
@@ -3996,7 +3996,7 @@ app.post(
         });
       }
 
-      
+
       const isValid = await bcrypt.compare(current_password, user.password);
       if (!isValid) {
         return res.status(401).json({
@@ -4005,7 +4005,7 @@ app.post(
         });
       }
 
-      
+
       if (new_password.length < 6) {
         return res.status(400).json({
           success: false,
@@ -4013,10 +4013,10 @@ app.post(
         });
       }
 
-      
+
       const hashedPassword = await bcrypt.hash(new_password, 10);
 
-    
+
       await prisma.user.update({
         where: { id: req.user!.id },
         data: {
@@ -4091,7 +4091,7 @@ app.put(
           .json({ success: false, message: "Status is required" });
       }
 
-      
+
       const user = await prisma.user.findUnique({
         where: { id: req.user!.id },
         include: { employer_profile: true },
@@ -4501,14 +4501,14 @@ app.put(
       console.log("Request body:", req.body);
       console.log("Status received:", status);
 
-      
+
       if (!status) {
         return res
           .status(400)
           .json({ success: false, message: "Status is required" });
       }
 
-  
+
       if (status !== "Open" && status !== "Closed") {
         return res
           .status(400)
@@ -4544,7 +4544,7 @@ app.put(
           });
       }
 
-   
+
       const statusRecord = await prisma.jobPostStatus.findFirst({
         where: { status_name: status },
       });
@@ -4585,7 +4585,7 @@ app.put(
   }
 );
 
- 
+
 app.put(
   "/api/jobs/:id/status",
   authMiddleware,
@@ -4606,7 +4606,7 @@ app.delete(
   "/api/jobs/:id",
   authMiddleware,
   async (req: Request, res: Response) => {
-    
+
   }
 );
 
@@ -4624,7 +4624,7 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
       });
     }
 
-    
+
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
@@ -4642,7 +4642,7 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
       });
     }
 
-   
+
     if (!user.is_active) {
       console.log("❌ Account deactivated:", email);
       return res.status(401).json({
@@ -4661,7 +4661,7 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
       });
     }
 
- 
+
     const token = jwt.sign(
       { id: user.id, email: user.email, user_type: user.user_type?.type_name },
       process.env.JWT_SECRET!,
@@ -4670,7 +4670,7 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
 
     const userTypeName = user.user_type?.type_name || "Job Seeker";
 
-  
+
     let fullName = user.full_name || null;
     if (!fullName) {
       if (user.seeker_profile) {
@@ -4711,7 +4711,7 @@ app.get(
   authMiddleware,
   async (req: Request, res: Response) => {
     try {
-    
+
       const currentUser = await prisma.user.findUnique({
         where: { id: req.user!.id },
         include: { user_type: true },
@@ -5012,7 +5012,7 @@ app.get(
     try {
       console.log("📊 Getting users with job counts...");
 
-     
+
       const users = await prisma.user.findMany({
         include: {
           user_type: true,
@@ -5027,7 +5027,7 @@ app.get(
         let jobCount = 0;
         let appCount = 0;
 
-        
+
         if (user.employer_profile) {
           jobCount = await prisma.jobPost.count({
             where: { employer_id: user.employer_profile.id },
@@ -5065,7 +5065,7 @@ app.get(
         });
       }
 
-   
+
       const stats = {
         total: users.length,
         active: users.filter((u) => u.is_active).length,
@@ -5102,28 +5102,28 @@ app.get(
       let settings = await prisma.systemSetting.findFirst();
 
       if (!settings) {
-       
+
         res.json({
           success: true,
           data: {
-         
+
             siteName: "JobPortal",
             siteDescription: "Connect job seekers with employers",
             contactEmail: "admin@jobportal.com",
 
-           
+
             enableRegistration: true,
             emailVerification: true,
 
-           
+
             maxJobsPerEmployer: 50,
             jobExpiryDays: 30,
 
-  
+
             maxApplicationsPerSeeker: 100,
             requireResumeUpload: true,
 
-          
+
             maintenanceMode: false,
 
             allowedFileTypes: ["pdf", "doc", "docx", "txt"],
@@ -5165,12 +5165,12 @@ app.put(
     try {
       const settingsData = req.body;
 
-     
+
       const existingSettings = await prisma.systemSetting.findFirst();
 
       let settings;
       if (existingSettings) {
-        
+
         settings = await prisma.systemSetting.update({
           where: { id: existingSettings.id },
           data: {
@@ -5189,7 +5189,7 @@ app.put(
           },
         });
       } else {
-     
+
         settings = await prisma.systemSetting.create({
           data: {
             site_name: settingsData.siteName || "JobPortal",
@@ -5228,7 +5228,7 @@ app.put(
     }
   }
 );
- 
+
 app.post(
   "/api/admin/settings/test-email",
   authMiddleware,
@@ -5335,10 +5335,10 @@ app.get(
         take: Number(limit),
       });
 
-  
+
       const total = await prisma.jobApplication.count({ where });
 
-      
+
       const stats = {
         total: await prisma.jobApplication.count(),
         pending: await prisma.jobApplication.count({
@@ -5509,10 +5509,10 @@ app.put(
         );
       } catch (emailError) {
         console.error("❌ Failed to send status update email:", emailError);
-        
+
       }
 
-      
+
       await prisma.notification.create({
         data: {
           user_id: application.seeker.user_id,
@@ -5641,7 +5641,7 @@ app.put(
         console.error("❌ Failed to send job status email:", emailError);
       }
 
-  
+
       await prisma.notification.create({
         data: {
           user_id: job.employer.user_id,
@@ -5673,7 +5673,7 @@ app.get(
   superAdminMiddleware,
   async (req: Request, res: Response) => {
     try {
-    
+
       const admins = await prisma.user.findMany({
         where: {
           user_type: {
@@ -5688,7 +5688,7 @@ app.get(
         orderBy: { created_at: "desc" },
       });
 
-     
+
       const formattedAdmins = admins.map((admin) => ({
         id: admin.id,
         full_name: admin.full_name || admin.email?.split("@")[0] || "Admin",
@@ -5721,7 +5721,7 @@ app.post(
     try {
       const { full_name, email, password, phone, role } = req.body;
 
-   
+
       const existingUser = await prisma.user.findUnique({
         where: { email },
       });
@@ -5735,7 +5735,7 @@ app.post(
           });
       }
 
-   
+
       const userType = await prisma.userType.findFirst({
         where: { type_name: role || "Admin" },
       });
@@ -5748,7 +5748,7 @@ app.post(
 
       const hashedPassword = await bcrypt.hash(password, 10);
 
-    
+
       const user = await prisma.user.create({
         data: {
           email,
@@ -5761,7 +5761,7 @@ app.post(
         },
       });
 
-      
+
       await prisma.jobSeekerProfile.create({
         data: {
           user_id: user.id,
@@ -5797,7 +5797,7 @@ app.put(
       const { adminId } = req.params;
       const { full_name, phone, role, is_active } = req.body;
 
-    
+
       let userTypeId;
       if (role) {
         const userType = await prisma.userType.findFirst({
@@ -5898,7 +5898,7 @@ app.put(
     try {
       const { adminId } = req.params;
 
-     
+
       if (adminId === req.user!.id) {
         return res
           .status(400)
@@ -5961,14 +5961,14 @@ app.delete(
     try {
       const { adminId } = req.params;
 
-      
+
       if (adminId === req.user!.id) {
         return res
           .status(400)
           .json({ success: false, message: "Cannot delete your own account" });
       }
 
-      
+
       const admin = await prisma.user.findUnique({
         where: { id: adminId },
         include: { seeker_profile: true, employer_profile: true },
@@ -6013,7 +6013,7 @@ app.delete(
         where: { user_id: adminId },
       });
 
-    
+
       await prisma.user.delete({
         where: { id: adminId },
       });
@@ -6110,7 +6110,7 @@ app.delete(
 
       await prisma.jobPost.delete({ where: { id: jobId } });
 
-    
+
       await prisma.notification.create({
         data: {
           user_id: job.employer.user_id,
@@ -6153,7 +6153,7 @@ app.put(
 
       const currentRole = currentUser.user_type?.type_name;
 
-     
+
       if (currentRole !== "Admin" && currentRole !== "Super Admin") {
         return res.status(403).json({
           success: false,
@@ -6204,7 +6204,7 @@ app.put(
         }
       }
 
-     
+
       if (targetRole === "Super Admin" && !is_active) {
         const superAdminCount = await prisma.user.count({
           where: {
@@ -6222,7 +6222,7 @@ app.put(
         }
       }
 
-      
+
       if (targetUser.is_active === is_active) {
         const statusText = is_active ? "active" : "suspended";
         return res.status(400).json({
@@ -6459,7 +6459,7 @@ app.delete(
 
       const currentRole = currentUser.user_type?.type_name;
 
- 
+
       if (currentRole !== "Admin" && currentRole !== "Super Admin") {
         return res.status(403).json({
           success: false,
@@ -6469,7 +6469,7 @@ app.delete(
         });
       }
 
-  
+
       if (userId === req.user!.id) {
         return res.status(400).json({
           success: false,
@@ -6477,7 +6477,7 @@ app.delete(
         });
       }
 
- 
+
       const targetUser = await prisma.user.findUnique({
         where: { id: userId },
         include: {
@@ -6502,7 +6502,7 @@ app.delete(
       if (currentRole === "Super Admin") {
 
       }
-      
+
       else if (currentRole === "Admin") {
         if (targetRole !== "Job Seeker" && targetRole !== "Employer") {
           return res.status(403).json({
@@ -6556,7 +6556,7 @@ app.delete(
         deletionSummary.details["application_notes_deleted"] =
           applications.length;
 
-       
+
         const deletedApps = await prisma.jobApplication.deleteMany({
           where: { seeker_id: targetUser.seeker_profile.id },
         });
@@ -6567,7 +6567,7 @@ app.delete(
         });
         deletionSummary.details["bookmarks_deleted"] = deletedBookmarks.count;
 
-    
+
         await prisma.jobSeekerProfile.delete({
           where: { id: targetUser.seeker_profile.id },
         });
@@ -6575,7 +6575,7 @@ app.delete(
       }
 
       if (targetUser.employer_profile) {
-      
+
         const jobs = await prisma.jobPost.findMany({
           where: { employer_id: targetUser.employer_profile.id },
         });
@@ -6585,7 +6585,7 @@ app.delete(
         let totalBookmarksDeleted = 0;
 
         for (const job of jobs) {
-          
+
           const deletedJobApps = await prisma.jobApplication.deleteMany({
             where: { job_id: job.id },
           });
@@ -6613,7 +6613,7 @@ app.delete(
         deletionSummary.details["managed_companies_deleted"] =
           deletedCompanies.count;
 
-      
+
         await prisma.employerProfile.delete({
           where: { id: targetUser.employer_profile.id },
         });
@@ -6626,19 +6626,19 @@ app.delete(
       deletionSummary.details["notifications_deleted"] =
         deletedNotifications.count;
 
-    
+
       await prisma.notificationPreference.deleteMany({
         where: { user_id: userId },
       });
       deletionSummary.details["notification_preferences_deleted"] = true;
 
-  
+
       const deletedSearchLogs = await prisma.searchLog.deleteMany({
         where: { user_id: userId },
       });
       deletionSummary.details["search_logs_deleted"] = deletedSearchLogs.count;
 
-      
+
       const deletedAuditLogs = await prisma.auditLog.deleteMany({
         where: { admin_id: userId },
       });
@@ -6654,7 +6654,7 @@ app.delete(
       );
       console.log(`📊 Deletion summary:`, deletionSummary.details);
 
-      
+
       try {
         await prisma.auditLog.create({
           data: {
@@ -6756,7 +6756,7 @@ app.post(
         }
 
       }
-    
+
       else if (currentRole === "Admin") {
         if (targetRole !== "Job Seeker" && targetRole !== "Employer") {
           return res.status(403).json({
@@ -6904,7 +6904,7 @@ app.post(
       } catch (emailError) {
         console.error("❌ Failed to send password reset email:", emailError);
         emailError = emailError.message;
-        
+
       }
 
       // ========== CREATE IN-APP NOTIFICATION ==========
@@ -6977,7 +6977,7 @@ app.get(
     try {
       const userId = req.user!.id;
 
-    
+
       const seeker = await prisma.jobSeekerProfile.findFirst({
         where: { user_id: userId },
       });
@@ -7124,7 +7124,7 @@ app.get(
           .json({ success: false, message: "User not found" });
       }
 
-      
+
       let profile = null;
       let fullName = user.full_name || null;
       let phone = null;
@@ -7182,18 +7182,18 @@ app.get(
     try {
       const userId = req.user!.id;
 
-      
+
       let preferences = await prisma.notificationPreference.findUnique({
         where: { user_id: userId },
       });
 
       if (!preferences) {
-        
+
         preferences = await prisma.notificationPreference.create({
           data: {
             user_id: userId,
             email_notifications: true,
-            application_updates: true, 
+            application_updates: true,
             marketing_emails: false,
             push_notifications: true,
             status_changes: true,
@@ -7202,12 +7202,12 @@ app.get(
         });
       }
 
-      
+
       res.json({
         success: true,
         data: {
           email_notifications: preferences.email_notifications,
-          application_alerts: preferences.application_updates, 
+          application_alerts: preferences.application_updates,
           marketing_emails: preferences.marketing_emails,
           push_notifications: preferences.push_notifications,
           status_changes: preferences.status_changes,
@@ -7237,7 +7237,7 @@ app.put(
         weekly_digest,
       } = req.body;
 
-      
+
       const preferences = await prisma.notificationPreference.upsert({
         where: { user_id: userId },
         update: {
@@ -7266,7 +7266,7 @@ app.put(
         },
       });
 
- 
+
       res.json({
         success: true,
         data: {
@@ -7681,7 +7681,7 @@ app.post(
           });
       }
 
-  
+
       let seeker = await prisma.jobSeekerProfile.findFirst({
         where: { user_id: req.user!.id },
       });
@@ -7700,7 +7700,7 @@ app.post(
         console.log(`Created new seeker profile for: ${req.user!.email}`);
       }
 
-  
+
       const existing = await prisma.jobApplication.findFirst({
         where: { job_id: jobId, seeker_id: seeker.id },
       });
@@ -7714,7 +7714,7 @@ app.post(
           });
       }
 
-   
+
       const pendingStatus = await prisma.jobApplicationStatus.findFirst({
         where: { status_name: "Pending" },
       });
@@ -7728,7 +7728,7 @@ app.post(
           });
       }
 
-    
+
       const application = await prisma.jobApplication.create({
         data: {
           job_id: jobId,
@@ -7742,7 +7742,7 @@ app.post(
 
       console.log(`✅ Application created: ${application.id}`);
 
- 
+
       await prisma.jobPost.update({
         where: { id: jobId },
         data: { applications_count: { increment: 1 } },
@@ -7827,7 +7827,7 @@ app.post(
         );
       } catch (emailError) {
         console.error("❌ Failed to send email to job seeker:", emailError);
-        
+
       }
 
       // ========== SEND EMAIL TO EMPLOYER ==========
@@ -7904,7 +7904,7 @@ app.post(
         );
       } catch (emailError) {
         console.error("❌ Failed to send email to employer:", emailError);
-        
+
       }
 
       await createNotification(
@@ -7949,7 +7949,7 @@ app.put(
 
       console.log(`📝 Updating application ${id} status to: ${statusId}`);
 
-    
+
       const employer = await prisma.employerProfile.findFirst({
         where: { user_id: req.user!.id },
       });
@@ -7975,14 +7975,14 @@ app.put(
           .json({ success: false, message: "Application not found" });
       }
 
-    
+
       if (application.job.employer_id !== employer.id) {
         return res
           .status(403)
           .json({ success: false, message: "Not authorized" });
       }
 
-  
+
       const newStatus = await prisma.jobApplicationStatus.findUnique({
         where: { id: parseInt(statusId) },
       });
@@ -8003,7 +8003,7 @@ app.put(
         include: { status: true },
       });
 
-     
+
       try {
         console.log(
           `📧 Sending status update email to job seeker: ${application.seeker.user.email}`
@@ -8126,7 +8126,7 @@ app.post(
     try {
       const userId = req.user!.id;
 
-     
+
       const user = await prisma.user.findUnique({
         where: { id: userId },
         include: { seeker_profile: true, employer_profile: true },
@@ -8368,7 +8368,7 @@ app.get(
       const totalJobs = await prisma.jobPost.count();
       const totalApplications = await prisma.jobApplication.count();
 
-      
+
       res.json({
         success: true,
         data: {
@@ -8529,7 +8529,7 @@ app.get(
         where: { user_type: { type_name: { in: ["Admin", "Super Admin"] } } },
       });
 
-     
+
       const totalJobs = await prisma.jobPost.count();
       const activeJobs = await prisma.jobPost.count({
         where: { status: { status_name: "Open" } },
@@ -8558,7 +8558,7 @@ app.get(
         where: { status: { status_name: "Rejected" } },
       });
 
-   
+
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -8572,7 +8572,7 @@ app.get(
         where: { applied_at: { gte: thirtyDaysAgo } },
       });
 
-   
+
       const totalViewsResult = await prisma.jobPost.aggregate({
         _sum: { views_count: true },
       });
@@ -8588,7 +8588,7 @@ app.get(
           ? Math.round((acceptedApplications / totalApplications) * 100)
           : 0;
 
-   
+
       const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
       const jobsByMonth = [];
 
@@ -8620,7 +8620,7 @@ app.get(
         });
       }
 
-      
+
       const applicationsByStatus = [
         { status: "Pending", count: pendingApplications },
         { status: "Reviewed", count: reviewedApplications },
@@ -8636,11 +8636,11 @@ app.get(
         totalApplications,
       });
 
-      
+
       res.json({
         success: true,
         data: {
-       
+
           totalUsers,
           totalJobSeekers,
           totalEmployers,
@@ -8649,7 +8649,7 @@ app.get(
           userGrowth: 0,
           activeUsers: totalUsers,
 
-        
+
           totalJobs,
           activeJobs,
           closedJobs,
@@ -8658,7 +8658,7 @@ app.get(
           jobsByIndustry: [],
           jobsByType: [],
 
-       
+
           totalApplications,
           pendingApplications,
           reviewedApplications,
@@ -8686,7 +8686,7 @@ app.get(
           topEmployers: [],
           topSkills: [],
 
-          
+
           applicationsByStatus,
         },
       });
@@ -8742,7 +8742,7 @@ app.get(
     try {
       console.log("📊 Super Admin Analytics endpoint called - CORRECT VERSION");
 
-     
+
       const currentUser = await prisma.user.findUnique({
         where: { id: req.user!.id },
         include: { user_type: true },
@@ -8964,7 +8964,7 @@ app.get(
       res.json({
         success: true,
         data: {
-        
+
           totalUsers,
           totalJobSeekers,
           totalEmployers,
@@ -8973,7 +8973,7 @@ app.get(
           newUsersThisMonth,
           userGrowth,
 
-         
+
           totalJobs,
           activeJobs,
           closedJobs,
@@ -9050,7 +9050,7 @@ app.get(
     try {
       console.log("🏥 System Health endpoint called");
 
-      
+
       const currentUser = await prisma.user.findUnique({
         where: { id: req.user!.id },
         include: { user_type: true },
@@ -9072,7 +9072,7 @@ app.get(
 
       const dbStartTime = Date.now();
       try {
-       
+
         await prisma.$queryRaw`SELECT 1 as connected`;
         databaseLatency = Date.now() - dbStartTime;
       } catch (error: any) {
@@ -9097,7 +9097,7 @@ app.get(
 
       const apiStartTime = Date.now();
       try {
-     
+
         await prisma.user.count();
         apiLatency = Date.now() - apiStartTime;
       } catch (error: any) {
@@ -9114,13 +9114,13 @@ app.get(
       let storageError = null;
 
       try {
-        
+
         if (!fs.existsSync(uploadsDir)) {
           fs.mkdirSync(uploadsDir, { recursive: true });
         }
 
-      
-        
+
+
         const files = fs.readdirSync(uploadsDir);
         let totalSize = 0;
         for (const file of files) {
@@ -9161,8 +9161,8 @@ app.get(
       });
 
       // ========== ERROR RATE (Last 24 hours from logs) ==========
-      
-      const errorRate = 0.5; 
+
+      const errorRate = 0.5;
 
       // ========== RESPONSE TIME ==========
       const averageResponseTime = apiLatency > 0 ? apiLatency : 45; // ms
@@ -9243,7 +9243,7 @@ app.get(
           status: overallStatus,
           timestamp: new Date().toISOString(),
 
-   
+
           components: {
             database: {
               status: databaseStatus,
@@ -9267,7 +9267,7 @@ app.get(
             },
           },
 
-       
+
           server: {
             uptime_seconds: Math.floor(serverUptime),
             uptime_formatted: formatUptime(serverUptime),
@@ -9281,7 +9281,7 @@ app.get(
             platform: process.platform,
           },
 
-        
+
           statistics: {
             total_users: totalUsers,
             active_users: activeUsers,
@@ -9293,18 +9293,18 @@ app.get(
             recent_applications_7d: recentApplications,
           },
 
-        
+
           performance: {
             average_response_time_ms: averageResponseTime,
             error_rate_percent: errorRate,
-            requests_per_minute: 0, 
+            requests_per_minute: 0,
             dependencies: dependencies,
           },
 
-        
+
           alerts: alerts,
 
-         
+
           services: {
             database: databaseStatus === "healthy",
             api: apiStatus === "healthy",
@@ -9365,11 +9365,11 @@ app.get(
     try {
       console.log("⚙️ Super Admin fetching system settings");
 
-   
+
       let settings = await prisma.systemSetting.findFirst();
 
       if (!settings) {
-        
+
         settings = await prisma.systemSetting.create({
           data: {
             site_name: "JobPortal",
@@ -9439,11 +9439,11 @@ app.get(
         });
       }
 
-      
+
       res.json({
         success: true,
         data: {
-          
+
           siteName: settings.site_name,
           siteDescription: settings.site_description,
           siteLogo: settings.site_logo,
@@ -9548,7 +9548,7 @@ app.put(
       console.log("⚙️ Super Admin updating system settings");
 
       const {
-        
+
         siteName,
         siteDescription,
         siteLogo,
@@ -9719,7 +9719,7 @@ app.put(
       if (lockoutDuration !== undefined)
         updateData.lockout_duration = lockoutDuration;
 
-    
+
       if (emailNotifications !== undefined)
         updateData.email_notifications = emailNotifications;
       if (pushNotifications !== undefined)
@@ -9745,7 +9745,7 @@ app.put(
       if (fromEmail !== undefined) updateData.from_email = fromEmail;
       if (fromName !== undefined) updateData.from_name = fromName;
 
-      
+
       if (googleClientId !== undefined)
         updateData.google_client_id = googleClientId;
       if (googleClientSecret !== undefined && googleClientSecret !== "")
@@ -9759,7 +9759,7 @@ app.put(
       if (recaptchaSecretKey !== undefined && recaptchaSecretKey !== "")
         updateData.recaptcha_secret_key = recaptchaSecretKey;
 
-      
+
       if (autoBackup !== undefined) updateData.auto_backup = autoBackup;
       if (backupFrequency !== undefined)
         updateData.backup_frequency = backupFrequency;
@@ -9768,19 +9768,19 @@ app.put(
       if (logRetentionDays !== undefined)
         updateData.log_retention_days = logRetentionDays;
 
-   
+
       if (allowedFileTypes !== undefined)
         updateData.allowed_file_types = allowedFileTypes;
       if (maxFileSizeMb !== undefined)
         updateData.max_file_size_mb = maxFileSizeMb;
 
-   
+
       const updatedSettings = await prisma.systemSetting.update({
         where: { id: settings.id },
         data: updateData,
       });
 
-   
+
       await prisma.auditLog.create({
         data: {
           admin_id: req.user!.id,
@@ -9802,7 +9802,7 @@ app.put(
         `✅ System settings updated by Super Admin: ${req.user!.email}`
       );
 
-      
+
       if (
         maintenanceMode !== undefined &&
         maintenanceMode !== settings.maintenance_mode
