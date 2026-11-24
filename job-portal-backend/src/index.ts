@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
-// Import routes
 import authRoutes from './routes/authRoutes';
 import jobRoutes from './routes/jobRoutes';
 import * as bookmarkRoutesModule from './routes/bookmarkRoutes';
@@ -24,7 +23,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// API Routes
+
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);  
