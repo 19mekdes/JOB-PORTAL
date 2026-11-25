@@ -34,8 +34,6 @@ const upload = multer({
     }
   }
 });
-
-// Job seeker routes
 router.post('/apply/:jobId', protect, authorize('Job Seeker'), upload.single('resume'), applyForJob);
 router.get('/my-applications', protect, authorize('Job Seeker'), getMyApplications);
 
