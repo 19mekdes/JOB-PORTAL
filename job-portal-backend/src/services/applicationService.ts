@@ -101,7 +101,6 @@ export class ApplicationService {
       throw new ValidationError('Application status configuration error')
     }
 
-    
     const application = await this.prisma.jobApplication.create({
       data: {
         job_id: jobId,

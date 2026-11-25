@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 
 const prisma = new PrismaClient()
-
 export interface RegisterData {
   email: string
   password: string
@@ -13,7 +12,6 @@ export interface RegisterData {
   phone?: string
   location?: string
 }
-
 export interface LoginData {
   email: string
   password: string
@@ -26,7 +24,6 @@ export class AuthService {
     this.prisma = prisma
   }
 
-  
   private generateToken(userId: string, email: string): string {
     const payload = { id: userId, email: email }
     const secret = process.env.JWT_SECRET || 'default_secret'
@@ -36,7 +33,6 @@ export class AuthService {
     return jwt.sign(payload, secret, options)
   }
 
-  
   private generateRefreshToken(userId: string): string {
     const payload = { id: userId }
     const secret = process.env.JWT_REFRESH_SECRET || 'default_refresh_secret'

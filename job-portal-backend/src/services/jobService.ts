@@ -2,7 +2,6 @@ import { PrismaClient, Prisma } from '@prisma/client'
 import { AppError, NotFoundError, ValidationError } from '../middleware/errorMiddleware.js'
 
 const prisma = new PrismaClient()
-
 export interface JobFilters {
   search?: string
   location?: string
@@ -15,7 +14,6 @@ export interface JobFilters {
   limit?: number
   sort?: 'recent' | 'oldest' | 'salary_high' | 'salary_low'
 }
-
 export interface JobStats {
   total: number
   byStatus: {
