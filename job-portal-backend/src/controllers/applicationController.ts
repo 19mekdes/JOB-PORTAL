@@ -3,7 +3,6 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-
 export const applyForJob = async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
@@ -12,8 +11,7 @@ export const applyForJob = async (req: Request, res: Response) => {
 
     console.log('Applying for job:', jobId, 'User:', userId);
 
-
-    const job = await prisma.jobPost.findUnique({
+   const job = await prisma.jobPost.findUnique({
       where: { id: jobId },
       include: { status: true, employer: true }
     });

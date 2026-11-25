@@ -2,7 +2,6 @@ import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
 
-// Configure Cloudinary with your credentials
 cloudinary.config({
   cloud_name: 'dwpnbbcd7',
   api_key: '854783363296519',
@@ -10,7 +9,6 @@ cloudinary.config({
   secure: true,
 });
 
-// Create storage for cover images
 const coverStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
@@ -23,7 +21,6 @@ const coverStorage = new CloudinaryStorage({
   },
 });
 
-// Create storage for avatars
 const avatarStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
@@ -36,7 +33,6 @@ const avatarStorage = new CloudinaryStorage({
   },
 });
 
-// Create storage for resumes (optional)
 const resumeStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
