@@ -22,7 +22,7 @@ import { jobValidation, jobUpdateValidation } from '../middleware/validationMidd
 const router = express.Router()
 
 // ========== PUBLIC ROUTES (No authentication required) ==========
-// Get all jobs with filters
+
 router.get('/', getAllJobs)
 
 // Search jobs
@@ -41,11 +41,11 @@ router.get('/industry/:industryId', getJobsByIndustry)
 router.get('/location/:city', getJobsByLocation)
 
 // ========== PROTECTED ROUTES (Authentication required) ==========
-// Get recommended jobs for job seeker
+
 router.get('/recommended', protect, getRecommendedJobs)
 
 // ========== EMPLOYER ONLY ROUTES ==========
-// Create a new job
+
 router.post('/', protect, authorize('Employer'), jobValidation, createJob)
 
 // Get employer's jobs

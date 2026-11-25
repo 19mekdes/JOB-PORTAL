@@ -10,7 +10,6 @@ import {
   deleteAdmin,
   updateAdminRole,
   
-  // System Health
   getSystemHealth,
   getSystemLogs,
   clearCache,
@@ -23,8 +22,7 @@ import {
   toggleMaintenanceMode,
   getEmailTemplates,
   updateEmailTemplate,
-  
-  // Audit Logs
+
   getAuditLogs,
   clearAuditLogs
 } from '../controllers/superAdminController';
@@ -33,7 +31,6 @@ import { authorize } from '../middleware/roleMiddleware';
 
 const router = express.Router();
 
-// All Super Admin routes require authentication and Super Admin role
 router.use(protect);
 router.use(authorize('Super Admin'));
 
