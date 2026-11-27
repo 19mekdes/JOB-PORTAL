@@ -3,7 +3,6 @@ import bcrypt from 'bcryptjs'
 import { AppError, NotFoundError, ValidationError } from '../middleware/errorMiddleware'
 
 const prisma = new PrismaClient()
-
 export interface AdminUserData {
   email: string
   password: string
@@ -24,7 +23,6 @@ export interface SystemSettings {
   allowed_file_types: string[]
   max_file_size_mb: number
 }
-
 export interface AuditLogEntry {
   admin_id: string
   action: string

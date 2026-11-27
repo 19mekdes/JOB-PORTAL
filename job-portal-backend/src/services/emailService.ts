@@ -3,7 +3,6 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-
 let transporter: nodemailer.Transporter;
 
 const configureTransporter = () => {

@@ -16,7 +16,6 @@ export interface LoginData {
   email: string
   password: string
 }
-
 export class AuthService {
   private prisma: PrismaClient
 

@@ -38,8 +38,6 @@ export interface ApplicationNote {
     company_name: string
   }
 }
-
-// ========== APPLICATION SERVICE ==========
 export class ApplicationService {
   private prisma: PrismaClient
 
