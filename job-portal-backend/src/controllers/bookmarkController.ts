@@ -1,7 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-
 const getBookmarks = async (req, res) => {
   try {
     const userId = req.user.id;

@@ -5,7 +5,6 @@ import fs from 'fs';
 
 const prisma = new PrismaClient();
 
-
 const getUserId = (req: Request): string => {
   return (req as any).user?.id;
 };

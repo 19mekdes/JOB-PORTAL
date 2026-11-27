@@ -4,7 +4,6 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-
 const getUserId = (req: Request): string => {
   return (req as any).user?.id;
 };
